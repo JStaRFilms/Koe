@@ -5,7 +5,8 @@ const CHANNELS = {
     // Renderer -> Main
     GET_SETTINGS: 'settings:get',
     SAVE_SETTINGS: 'settings:save',
-    LOG: 'app:log'
+    LOG: 'app:log',
+    AUDIO_CHUNK: 'audio:chunk'
 };
 
 const DEFAULT_SETTINGS = {

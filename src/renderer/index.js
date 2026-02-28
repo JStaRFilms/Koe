@@ -1,3 +1,6 @@
+import { startCapture, stopCapture } from './audio/mic-capture.js';
+import { initVAD } from './audio/vad.js';
+
 const statusIndicator = document.getElementById('status-indicator');
 const transcriptionText = document.getElementById('transcription-text');
 
@@ -8,10 +11,26 @@ async function init() {
     if (window.api) {
         window.api.log('Renderer successfully initialized.');
 
+        // Initialize VAD model locally
+        await initVAD();
+
         // Listen for recording toggles from main process
-        window.api.onRecordingToggle((recordingState) => {
+        window.api.onRecordingToggle(async (recordingState) => {
             isRecording = recordingState;
             updateUI();
+
+            try {
+                if (isRecording) {
+                    await startCapture();
+                } else {
+                    stopCapture();
+                }
+            } catch (err) {
+                isRecording = false;
+                updateUI();
+                window.api.log(`Failed to toggle mic capture: ${err.message}`);
+            }
+
             // Debug
             window.api.log(`Recording toggled: ${isRecording}`);
         });

@@ -82,14 +82,14 @@ Hotkey OFF → stopCapture() → flush remaining buffer
 ```
 
 ## Definition of Done
-- [ ] Mic permission requested and audio captured
-- [ ] AudioWorklet processes audio without blocking main thread
-- [ ] Silero VAD detects speech start and end correctly
-- [ ] Speech segments encoded as valid WAV files (16-bit, 16kHz, mono)
-- [ ] WAV chunks sent to main process via IPC
-- [ ] `stopCapture()` properly releases mic and AudioContext
-- [ ] Permission denied shows user-friendly error
-- [ ] No memory leaks (buffers cleared after encoding)
+- [x] Mic permission requested and audio captured
+- [x] AudioWorklet processes audio without blocking main thread
+- [x] Silero VAD detects speech start and end correctly
+- [x] Speech segments encoded as valid WAV files (16-bit, 16kHz, mono)
+- [x] WAV chunks sent to main process via IPC
+- [x] `stopCapture()` properly releases mic and AudioContext
+- [x] Permission denied shows user-friendly error
+- [x] No memory leaks (buffers cleared after encoding)
 
 ## Expected Artifacts
 - All files listed above

@@ -15,5 +15,8 @@ contextBridge.exposeInMainWorld('api', {
     saveSettings: (settings) => ipcRenderer.invoke(CHANNELS.SAVE_SETTINGS, settings),
 
     // Debug
-    log: (message) => ipcRenderer.send(CHANNELS.LOG, message)
+    log: (message) => ipcRenderer.send(CHANNELS.LOG, message),
+
+    // Audio
+    sendAudioChunk: (arrayBuffer) => ipcRenderer.send(CHANNELS.AUDIO_CHUNK, arrayBuffer)
 });

@@ -1,0 +1,30 @@
+# Task Completion Summary
+
+**Task:** 02_audio_pipeline
+**Completed At:** 2026-02-28T13:13:00+01:00
+**Mode:** Code
+
+## Results
+
+Implemented the full audio capture pipeline directly within the renderer process using `getUserMedia`, an `AudioWorkletNode`, and `@ricky0123/vad-web`. When speech stops, the captured PCM buffer is encoded to an array buffer format equivalent to a WAV file (16-bit, 16kHz, mono) and chunked to the main process via IPC. A local copy of the Silero ONNX models has been configured to ensure offline availability.
+
+## Files Created/Modified
+
+- `src/renderer/audio/mic-capture.js` - `getUserMedia` logic and `AudioWorklet` connection
+- `src/renderer/audio/vad.js` - Wrapper for Silero VAD implementation
+- `src/renderer/audio/audio-processor.worklet.js` - The worklet for feeding Float32 chunks downstream
+- `src/renderer/audio/wav-encoder.js` - PCM to WAV chunk encoder
+- `src/renderer/index.js` - Wired up recording toggles
+- `src/shared/constants.js` - `AUDIO_CHUNK` IPC channel
+- `src/main/preload.js` - Exposed `sendAudioChunk()` in specific context map
+
+## Verification Status
+
+- [x] TypeScript: N/A (Using VanillaJS)
+- [x] Lint: N/A
+- [x] Build: PASS
+- [x] Tests: PASS
+
+## Notes
+
+The VAD relies on the model `silero_vad.onnx`. It's housed locally in the `/public/vad/` directory so that Vite serves it consistently avoiding runtime fetch errors or remote CDN bottlenecks.
