@@ -1,23 +1,52 @@
 const { ipcMain } = require('electron');
-const { CHANNELS, DEFAULT_SETTINGS } = require('../shared/constants');
+const { CHANNELS } = require('../shared/constants');
+const { getSettings, setSettings } = require('./services/settings');
+const { transcribe } = require('./services/groq');
+const rateLimiter = require('./services/rate-limiter');
 
 function setupIpcHandlers(mainWindow) {
-    // Simple stub for getting settings
-    ipcMain.handle(CHANNELS.GET_SETTINGS, async (event) => {
-        // In a future phase, retrieve from electron-store Here we just return defaults for skeleton
-        return DEFAULT_SETTINGS;
+    ipcMain.handle(CHANNELS.GET_SETTINGS, async () => {
+        return getSettings();
     });
 
-    // Simple stub for saving settings
     ipcMain.handle(CHANNELS.SAVE_SETTINGS, async (event, newSettings) => {
-        // In a future phase, save to electron-store
-        console.log('Main process received new settings to save:', newSettings);
+        setSettings(newSettings);
         return true;
     });
 
-    // Custom log handler for debugging 
+    ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => {
+        return rateLimiter.getUsageStats();
+    });
+
     ipcMain.on(CHANNELS.LOG, (event, message) => {
         console.log('[Renderer]', message);
+    });
+
+    ipcMain.handle(CHANNELS.AUDIO_CHUNK, async (event, { buffer, audioSeconds }) => {
+        try {
+            const settings = getSettings();
+
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, 'processing');
+            }
+
+            const text = await transcribe(buffer, audioSeconds, settings.language || 'auto');
+
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
+                if (text) {
+                    mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_RESULT, text);
+                }
+            }
+            return text;
+        } catch (error) {
+            console.error('Transcription error:', error);
+            if (mainWindow && !mainWindow.isDestroyed()) {
+                mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, `error: ${error.message}`);
+                mainWindow.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
+            }
+            throw error;
+        }
     });
 }
 

@@ -1,11 +1,8 @@
 {
   "name": "2026-02-28_whisper_alt-v2",
   "version": "1.0.0",
-  "description": "",
+  "description": "Voice Dictation Desktop App",
   "main": "src/main/main.js",
-  "directories": {
-    "doc": "docs"
-  },
   "scripts": {
     "dev": "concurrently -k \"vite\" \"electron .\"",
     "build": "vite build && electron-builder"
@@ -30,6 +27,7 @@
   },
   "dependencies": {
     "@ricky0123/vad-web": "^0.0.30",
+    "electron-store": "^11.0.2",
     "onnxruntime-web": "^1.24.2"
   }
 }

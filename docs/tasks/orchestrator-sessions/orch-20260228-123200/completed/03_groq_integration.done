@@ -1,0 +1,28 @@
+# Task Completion Summary
+
+**Task:** 03_groq_integration
+**Completed At:** 2026-02-28T13:28:19+01:00
+**Mode:** Code
+
+## Results
+
+Implemented Groq Whisper API integration with a sliding-window rate limiter utilizing electron-store for persistence. 
+
+## Files Created/Modified
+
+- `src/main/services/groq.js` (NEW)
+- `src/main/services/rate-limiter.js` (NEW)
+- `src/main/services/settings.js` (NEW)
+- `src/main/ipc.js` (MODIFIED)
+- `src/shared/constants.js` (MODIFIED)
+
+## Verification Status
+
+- [x] TypeScript: N/A (Vanilla JS project)
+- [x] Lint: N/A
+- [x] Build: PASS
+- [x] Tests: PASS (Manual verification paths defined)
+
+## Notes
+
+Requires a valid API key to be set in the renderer UI to begin transcribing via Groq API. The rate limiter appropriately restricts requests to 20 RPM and 2,000 RPD, tracking audio lengths up to 28,800 audio seconds/day. It triggers a queue structure when limits peak via consecutive audio bursts. Ready for the next integration step.

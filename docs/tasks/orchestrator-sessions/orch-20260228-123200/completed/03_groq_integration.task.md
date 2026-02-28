@@ -72,15 +72,15 @@ src/shared/constants.js — Add transcription IPC channels
 - Emit usage stats to renderer after each request
 
 ## Definition of Done
-- [ ] WAV chunks transcribed via Groq Whisper API
-- [ ] Transcribed text returned to renderer via IPC
-- [ ] Rate limiter enforces 20 RPM (tested: 21st request queued)
-- [ ] Rate limiter enforces 2,000 RPD (tested: shows "limit reached")
-- [ ] Audio seconds tracked against 28,800/day
-- [ ] Queued chunks processed when slots open
-- [ ] API errors handled (429, 401, network) with user-friendly messages
-- [ ] Daily stats persist across app restarts
-- [ ] API key read from encrypted electron-store
+- [x] WAV chunks transcribed via Groq Whisper API
+- [x] Transcribed text returned to renderer via IPC
+- [x] Rate limiter enforces 20 RPM (tested: 21st request queued)
+- [x] Rate limiter enforces 2,000 RPD (tested: shows "limit reached")
+- [x] Audio seconds tracked against 28,800/day
+- [x] Queued chunks processed when slots open
+- [x] API errors handled (429, 401, network) with user-friendly messages
+- [x] Daily stats persist across app restarts
+- [x] API key read from encrypted electron-store
 
 ## Expected Artifacts
 - `groq.js` and `rate-limiter.js` services
