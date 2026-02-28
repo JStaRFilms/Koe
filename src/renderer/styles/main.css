@@ -1,22 +1,45 @@
 :root {
-  /* Colors */
-  --koe-bg: rgba(20, 20, 25, 0.75);
-  --koe-surface: rgba(30, 30, 35, 0.6);
+  /* Colors - Premium Futuristic Theme */
+  --koe-bg-solid: #0a0a0f;
+  --koe-bg-glass: rgba(10, 10, 15, 0.8);
+  --koe-surface-glass: rgba(30, 30, 35, 0.5);
+
   --koe-text: #ffffff;
-  --koe-text-muted: #a0a0aa;
-  --koe-accent: #6366f1; /* Indigo */
-  --koe-danger: #ef4444; /* Red */
-  --koe-success: #10b981; /* Emerald */
-  
+  --koe-text-muted: #8c8c9a;
+
+  --koe-accent: #00d4aa;
+  /* Vivid cyan/teal */
+  --koe-accent-glow: rgba(0, 212, 170, 0.4);
+
+  --koe-danger: #ef4444;
+  /* Red for recording */
+  --koe-danger-glow: rgba(239, 68, 68, 0.4);
+
+  --koe-success: #10b981;
+  /* Emerald */
+
   /* Borders */
-  --koe-border: rgba(255, 255, 255, 0.1);
-  --koe-border-active: rgba(99, 102, 241, 0.5);
+  --koe-border: rgba(255, 255, 255, 0.08);
+  --koe-border-highlight: rgba(255, 255, 255, 0.15);
+  --koe-border-active: rgba(0, 212, 170, 0.5);
 
   /* Spacing */
   --sp-xs: 4px;
   --sp-sm: 8px;
   --sp-md: 16px;
   --sp-lg: 24px;
+
+  /* Typography */
+  --font-family: 'Inter', system-ui, -apple-system, blinkmacsystemfont, 'Segoe UI', roboto, helvetica, arial, sans-serif;
+
+  /* Radii */
+  --radius-window: 16px;
+  --radius-inner: 8px;
+  --radius-round: 9999px;
+
+  /* Shadows */
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --shadow-inner: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 * {
@@ -26,85 +49,36 @@
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-  background-color: transparent; /* Required for frameless window transparency */
+  font-family: var(--font-family);
+  background-color: transparent;
+  /* Required for frameless window transparency */
   color: var(--koe-text);
-  overflow: hidden; /* Prevent scrollbars in floating window */
+  overflow: hidden;
+  /* Prevent scrollbars in floating window */
   user-select: none;
   height: 100vh;
+  margin: 0;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: var(--sp-sm);
+  /* Padding to let shadow and glow breathe */
 }
 
-/* Drag region for frameless window */
+/* Glassmorphism Panel Base */
+.glass-panel {
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  background: var(--koe-bg-glass);
+  border: 1px solid var(--koe-border);
+  box-shadow: var(--shadow-glass), var(--shadow-inner);
+}
+
+/* Drag utility */
 .drag-region {
   -webkit-app-region: drag;
-  height: 24px;
-  width: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
-  z-index: 100;
 }
 
-/* Main minimal container */
-.app-container {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  background: var(--koe-bg);
-  border: 1px solid var(--koe-border);
-  border-radius: 12px;
-  margin: var(--sp-md);
-  padding: var(--sp-sm) var(--sp-md);
-  height: calc(100% - 32px); /* Account for margin */
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-/* Status dots */
-.status-indicator {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: var(--koe-text-muted);
-  margin-right: var(--sp-md);
-  flex-shrink: 0;
-  transition: background-color 0.3s ease;
-}
-
-.status-indicator.recording {
-  background-color: var(--koe-danger);
-  box-shadow: 0 0 8px var(--koe-danger);
-  animation: pulse 2s infinite;
-}
-
-/* Text area */
-.transcription-container {
-  flex-grow: 1;
-  overflow: hidden;
-  display: flex;
-  align-items: center;
-}
-
-#transcription-text {
-  font-size: 14px;
-  line-height: 1.5;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  color: var(--koe-text);
-  max-height: 100%;
-  overflow-y: auto;
-}
-
-#transcription-text.placeholder {
-  color: var(--koe-text-muted);
-  font-style: italic;
-}
-
-@keyframes pulse {
-  0% { opacity: 1; }
-  50% { opacity: 0.6; }
-  100% { opacity: 1; }
+.no-drag {
+  -webkit-app-region: no-drag;
 }

@@ -10,7 +10,9 @@ const CHANNELS = {
     SAVE_SETTINGS: 'settings:save',
     GET_USAGE_STATS: 'app:get-usage-stats',
     LOG: 'app:log',
-    AUDIO_CHUNK: 'audio:chunk'
+    AUDIO_CHUNK: 'audio:chunk',
+    WINDOW_MINIMIZE: 'window:minimize',
+    WINDOW_CLOSE: 'window:close'
 };
 
 const DEFAULT_SETTINGS = {

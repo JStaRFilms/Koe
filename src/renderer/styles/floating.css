@@ -1,0 +1,299 @@
+/* Floating Window Specific Styles */
+.app-container {
+    width: 100%;
+    height: 100%;
+    border-radius: var(--radius-window);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+/* Dynamic State Glowing Border */
+.app-container.state-recording {
+    border-color: var(--koe-danger-glow);
+    box-shadow: 0 0 16px var(--koe-danger-glow), var(--shadow-glass), var(--shadow-inner);
+}
+
+.app-container.state-processing {
+    border-color: var(--koe-accent-glow);
+    box-shadow: 0 0 16px var(--koe-accent-glow), var(--shadow-glass), var(--shadow-inner);
+}
+
+/* Title Bar */
+.title-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 36px;
+    padding: 0 var(--sp-md);
+    border-bottom: 1px solid var(--koe-border);
+    background: rgba(0, 0, 0, 0.2);
+    /* Make the header draggable */
+    -webkit-app-region: drag;
+}
+
+.title-bar__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-sm);
+    opacity: 0.8;
+}
+
+.title-bar__icon {
+    font-size: 14px;
+}
+
+.title-bar__title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    color: var(--koe-text);
+}
+
+.title-bar__controls {
+    display: flex;
+    gap: var(--sp-xs);
+}
+
+.control-btn {
+    background: transparent;
+    border: none;
+    -webkit-app-region: no-drag;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    color: var(--koe-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.15s ease;
+}
+
+.control-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--koe-text);
+}
+
+#btn-close:hover {
+    background: var(--koe-danger);
+    color: white;
+}
+
+/* Transcription Area */
+.transcription-area {
+    flex: 1;
+    padding: var(--sp-md);
+    overflow-y: auto;
+    position: relative;
+
+    /* Dragging can still work on empty space but normally user-select text is here */
+    -webkit-app-region: no-drag;
+}
+
+/* Custom Scrollbar */
+.transcription-area::-webkit-scrollbar {
+    width: 6px;
+}
+
+.transcription-area::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.transcription-area::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-round);
+}
+
+.transcription-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.transcription-content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-sm);
+    font-size: 14px;
+    line-height: 1.6;
+    font-weight: 400;
+    color: var(--koe-text);
+    /* Enable text selection */
+    user-select: text;
+}
+
+.placeholder-text {
+    color: var(--koe-text-muted);
+    font-style: italic;
+    opacity: 0.5;
+    text-align: center;
+    margin-top: calc(var(--sp-lg) * 1.5);
+}
+
+/* Transcript Segment Animations */
+.transcript-segment {
+    animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+.transcript-segment.partial {
+    color: var(--koe-text-muted);
+}
+
+@keyframes slideUpFade {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Status Bar */
+.status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--sp-sm) var(--sp-md);
+    border-top: 1px solid var(--koe-border);
+    background: var(--koe-surface-glass);
+}
+
+.status-bar__state {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-sm);
+}
+
+/* Smart recording indicator */
+.status-indicator {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: var(--koe-text-muted);
+    transition: all 0.3s ease;
+}
+
+/* State: Idle */
+.state-idle .status-indicator {
+    background-color: var(--koe-text-muted);
+    opacity: 0.5;
+}
+
+/* State: Recording */
+.state-recording .status-indicator {
+    background-color: var(--koe-danger);
+    box-shadow: 0 0 8px var(--koe-danger);
+    animation: pulse-danger 1.5s infinite;
+}
+
+/* State: Processing */
+.state-processing .status-indicator {
+    background-color: var(--koe-accent);
+    box-shadow: 0 0 8px var(--koe-accent);
+    animation: pulse-accent 1s infinite alternate;
+}
+
+.status-text {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--koe-text-muted);
+    transition: color 0.3s ease;
+}
+
+.state-recording .status-text {
+    color: var(--koe-danger);
+}
+
+.state-processing .status-text {
+    color: var(--koe-accent);
+}
+
+@keyframes pulse-danger {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    50% {
+        transform: scale(1.2);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes pulse-accent {
+    to {
+        opacity: 0.4;
+        transform: scale(0.8);
+    }
+}
+
+/* Action Buttons */
+.status-bar__actions {
+    display: flex;
+    gap: var(--sp-sm);
+}
+
+.action-btn {
+    background: var(--koe-surface-glass);
+    border: 1px solid var(--koe-border);
+    border-radius: var(--radius-inner);
+    color: var(--koe-text);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: var(--font-family);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.action-btn.icon-only {
+    padding: 4px 8px;
+}
+
+.action-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--koe-border-highlight);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn:active {
+    transform: scale(0.95);
+}
+
+/* Toast */
+.toast {
+    position: absolute;
+    bottom: 60px;
+    /* Above status bar */
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--koe-success);
+    color: #fff;
+    padding: 8px 16px;
+    border-radius: var(--radius-round);
+    font-size: 12px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    pointer-events: none;
+    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}

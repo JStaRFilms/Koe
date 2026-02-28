@@ -1,4 +1,4 @@
-const Store = require('electron-store');
+const Store = require('electron-store').default || require('electron-store');
 
 const usageStore = new Store({
     name: 'usage-stats'

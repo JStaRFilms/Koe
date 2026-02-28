@@ -1,23 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Koe</title>
-    <link rel="stylesheet" href="./styles/main.css">
-  </head>
-  <body>
-    <!-- Drag region for title bar -->
-    <div class="drag-region"></div>
-    
-    <div class="app-container">
-      <div id="status-indicator" class="status-indicator"></div>
-      <div class="transcription-container">
-         <p id="transcription-text" class="placeholder">Waiting to start...</p>
-      </div>
-    </div>
 
-    <!-- The index.js should be loaded as a module in Vite -->
-    <script type="module" src="./index.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Koe</title>
+  <!-- Preconnect to Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles/main.css">
+  <link rel="stylesheet" href="./styles/floating.css">
+  <script>
+    window.onerror = function (message, source, lineno, colno, error) {
+      if (window.api && window.api.log) {
+        window.api.log('GLOBAL ERROR: ' + message + ' at ' + source + ':' + lineno + ':' + colno + '\n' + (error ? error.stack : ''));
+      }
+    };
+    window.addEventListener('unhandledrejection', function (event) {
+      if (window.api && window.api.log) {
+        window.api.log('UNHANDLED PROMISE REJECTION: ' + event.reason);
+      }
+    });
+  </script>
+</head>
+
+<body>
+  <!-- Drag region for title bar -->
+  <div class="drag-region"></div>
+
+  <div id="app" class="app-container glass-panel">
+    <!-- Title Bar -->
+    <header class="title-bar">
+      <div class="title-bar__brand">
+        <span class="title-bar__icon">🎤</span>
+        <span class="title-bar__title">Koe</span>
+      </div>
+      <div class="title-bar__controls no-drag">
+        <button id="btn-minimize" class="control-btn" aria-label="Minimize">−</button>
+        <button id="btn-close" class="control-btn" aria-label="Close">×</button>
+      </div>
+    </header>
+
+    <!-- Transcription Text Area -->
+    <main class="transcription-area" id="transcription-area">
+      <div class="transcription-content" id="transcription-content">
+        <p class="placeholder-text">Waiting for speech...</p>
+      </div>
+    </main>
+
+    <!-- Status Bar -->
+    <footer class="status-bar no-drag">
+      <div class="status-bar__state" id="recording-state">
+        <div class="status-indicator"></div>
+        <span class="status-text" id="status-text">Idle</span>
+      </div>
+
+      <div class="status-bar__actions">
+        <button id="btn-copy" class="action-btn" aria-label="Copy">📋 <span class="action-label">Copy</span></button>
+        <button id="btn-settings" class="action-btn icon-only" aria-label="Settings">⚙️</button>
+      </div>
+    </footer>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+      <span class="toast-icon">✓</span>
+      <span class="toast-text">Copied to clipboard</span>
+    </div>
+  </div>
+
+  <!-- The index.js should be loaded as a module in Vite -->
+  <script type="module" src="./index.js"></script>
+</body>
+
 </html>

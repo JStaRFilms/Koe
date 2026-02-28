@@ -18,5 +18,19 @@ contextBridge.exposeInMainWorld('api', {
     log: (message) => ipcRenderer.send(CHANNELS.LOG, message),
 
     // Audio
-    sendAudioChunk: (arrayBuffer) => ipcRenderer.send(CHANNELS.AUDIO_CHUNK, arrayBuffer)
+    sendAudioChunk: (arrayBuffer) => ipcRenderer.send(CHANNELS.AUDIO_CHUNK, arrayBuffer),
+
+    // Window Controls
+    minimizeWindow: () => ipcRenderer.send(CHANNELS.WINDOW_MINIMIZE),
+    closeWindow: () => ipcRenderer.send(CHANNELS.WINDOW_CLOSE),
+
+    // Transcription Events
+    onTranscriptionStatus: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.TRANSCRIPTION_STATUS);
+        ipcRenderer.on(CHANNELS.TRANSCRIPTION_STATUS, (event, status) => callback(status));
+    },
+    onTranscriptionResult: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.TRANSCRIPTION_RESULT);
+        ipcRenderer.on(CHANNELS.TRANSCRIPTION_RESULT, (event, text) => callback({ text }));
+    }
 });

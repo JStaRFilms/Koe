@@ -22,6 +22,18 @@ function setupIpcHandlers(mainWindow) {
         console.log('[Renderer]', message);
     });
 
+    ipcMain.on(CHANNELS.WINDOW_MINIMIZE, () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.minimize();
+        }
+    });
+
+    ipcMain.on(CHANNELS.WINDOW_CLOSE, () => {
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.hide(); // As per main.js logic, close hides it to tray
+        }
+    });
+
     ipcMain.handle(CHANNELS.AUDIO_CHUNK, async (event, { buffer, audioSeconds }) => {
         try {
             const settings = getSettings();

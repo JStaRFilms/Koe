@@ -1,4 +1,4 @@
-const Store = require('electron-store');
+const Store = require('electron-store').default || require('electron-store');
 const { DEFAULT_SETTINGS } = require('../../shared/constants');
 
 const store = new Store({
