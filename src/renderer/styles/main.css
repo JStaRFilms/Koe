@@ -1,0 +1,110 @@
+:root {
+  /* Colors */
+  --koe-bg: rgba(20, 20, 25, 0.75);
+  --koe-surface: rgba(30, 30, 35, 0.6);
+  --koe-text: #ffffff;
+  --koe-text-muted: #a0a0aa;
+  --koe-accent: #6366f1; /* Indigo */
+  --koe-danger: #ef4444; /* Red */
+  --koe-success: #10b981; /* Emerald */
+  
+  /* Borders */
+  --koe-border: rgba(255, 255, 255, 0.1);
+  --koe-border-active: rgba(99, 102, 241, 0.5);
+
+  /* Spacing */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  background-color: transparent; /* Required for frameless window transparency */
+  color: var(--koe-text);
+  overflow: hidden; /* Prevent scrollbars in floating window */
+  user-select: none;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Drag region for frameless window */
+.drag-region {
+  -webkit-app-region: drag;
+  height: 24px;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 100;
+}
+
+/* Main minimal container */
+.app-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: var(--koe-bg);
+  border: 1px solid var(--koe-border);
+  border-radius: 12px;
+  margin: var(--sp-md);
+  padding: var(--sp-sm) var(--sp-md);
+  height: calc(100% - 32px); /* Account for margin */
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Status dots */
+.status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--koe-text-muted);
+  margin-right: var(--sp-md);
+  flex-shrink: 0;
+  transition: background-color 0.3s ease;
+}
+
+.status-indicator.recording {
+  background-color: var(--koe-danger);
+  box-shadow: 0 0 8px var(--koe-danger);
+  animation: pulse 2s infinite;
+}
+
+/* Text area */
+.transcription-container {
+  flex-grow: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+#transcription-text {
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: var(--koe-text);
+  max-height: 100%;
+  overflow-y: auto;
+}
+
+#transcription-text.placeholder {
+  color: var(--koe-text-muted);
+  font-style: italic;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.6; }
+  100% { opacity: 1; }
+}

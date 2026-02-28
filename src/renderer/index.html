@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koe</title>
+    <link rel="stylesheet" href="./styles/main.css">
+  </head>
+  <body>
+    <!-- Drag region for title bar -->
+    <div class="drag-region"></div>
+    
+    <div class="app-container">
+      <div id="status-indicator" class="status-indicator"></div>
+      <div class="transcription-container">
+         <p id="transcription-text" class="placeholder">Waiting to start...</p>
+      </div>
+    </div>
+
+    <!-- The index.js should be loaded as a module in Vite -->
+    <script type="module" src="./index.js"></script>
+  </body>
+</html>

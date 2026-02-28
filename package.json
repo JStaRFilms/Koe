@@ -1,0 +1,31 @@
+{
+  "name": "2026-02-28_whisper_alt-v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/main/main.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"electron .\"",
+    "build": "vite build && electron-builder"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JStaRFilms/Koe-------Voice-Dictation-Desktop-App.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/JStaRFilms/Koe-------Voice-Dictation-Desktop-App/issues"
+  },
+  "homepage": "https://github.com/JStaRFilms/Koe-------Voice-Dictation-Desktop-App#readme",
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "electron": "^40.6.1",
+    "electron-builder": "^26.8.1",
+    "vite": "^7.3.1"
+  }
+}
