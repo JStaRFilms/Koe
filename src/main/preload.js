@@ -1,19 +1,17 @@
 const { contextBridge, ipcRenderer } = require('electron');
 const { CHANNELS } = require('../shared/constants');
 
-// Default expose empty functions if API fails
-let apiGetUsageStats = () => { };
-try {
-    apiGetUsageStats = () => ipcRenderer.invoke(CHANNELS.GET_USAGE_STATS);
-} catch (e) { }
-
-// Expose safe APIs to the renderer process
 contextBridge.exposeInMainWorld('api', {
-    // Receive hotkey/tray toggle events
+    // Recording toggle events from main process
     onRecordingToggle: (callback) => {
-        // Remove all previous listeners to avoid duplicates on reload
         ipcRenderer.removeAllListeners(CHANNELS.RECORDING_TOGGLED);
         ipcRenderer.on(CHANNELS.RECORDING_TOGGLED, (event, isRecording) => callback(isRecording));
+    },
+
+    // Window animate-in event
+    onAnimateIn: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.WINDOW_ANIMATE_IN);
+        ipcRenderer.on(CHANNELS.WINDOW_ANIMATE_IN, () => callback());
     },
 
     // Settings
@@ -22,7 +20,7 @@ contextBridge.exposeInMainWorld('api', {
     testGroqKey: (apiKey) => ipcRenderer.invoke(CHANNELS.TEST_GROQ_KEY, apiKey),
 
     // Usage Stats
-    getUsageStats: apiGetUsageStats,
+    getUsageStats: () => ipcRenderer.invoke(CHANNELS.GET_USAGE_STATS),
 
     // Debug
     log: (message) => ipcRenderer.send(CHANNELS.LOG, message),
@@ -35,7 +33,7 @@ contextBridge.exposeInMainWorld('api', {
     sendAudioChunk: (arrayBuffer) => ipcRenderer.send(CHANNELS.AUDIO_CHUNK, arrayBuffer),
 
     // Window Controls
-    minimizeWindow: () => ipcRenderer.send(CHANNELS.WINDOW_MINIMIZE),
+    hideWindow: () => ipcRenderer.send(CHANNELS.WINDOW_HIDE),
     closeWindow: () => ipcRenderer.send(CHANNELS.WINDOW_CLOSE),
 
     // Transcription Events
@@ -46,5 +44,15 @@ contextBridge.exposeInMainWorld('api', {
     onTranscriptionResult: (callback) => {
         ipcRenderer.removeAllListeners(CHANNELS.TRANSCRIPTION_RESULT);
         ipcRenderer.on(CHANNELS.TRANSCRIPTION_RESULT, (event, text) => callback({ text }));
+    },
+    onTranscriptionComplete: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.TRANSCRIPTION_COMPLETE);
+        ipcRenderer.on(CHANNELS.TRANSCRIPTION_COMPLETE, (event, text) => callback(text));
+    },
+
+    // Usage stats stream
+    onUsageStats: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.USAGE_STATS);
+        ipcRenderer.on(CHANNELS.USAGE_STATS, (event, stats) => callback(stats));
     }
 });

@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, screen } = require('electron');
 const path = require('path');
 const { setupTray } = require('./tray');
 const { registerShortcuts, unregisterShortcuts } = require('./shortcuts');
@@ -7,12 +7,28 @@ const { setupIpcHandlers } = require('./ipc');
 let mainWindow = null;
 
 function createWindow() {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width: screenW, height: screenH } = primaryDisplay.workAreaSize;
+
+    // Pill dimensions: 400 wide, 68 tall (56 pill + padding for glow/shadow)
+    const pillWidth = 400;
+    const pillHeight = 68;
+    const pillX = Math.round((screenW - pillWidth) / 2);
+    const pillY = screenH - pillHeight - 16; // 16px from bottom edge
+
     mainWindow = new BrowserWindow({
-        width: 420,
-        height: 220,
+        width: pillWidth,
+        height: pillHeight,
+        x: pillX,
+        y: pillY,
         frame: false,
         transparent: true,
         alwaysOnTop: true,
+        resizable: false,
+        skipTaskbar: true,
+        focusable: false, // CRITICAL: never steal focus from user's active app
+        show: false,
+        hasShadow: false,
         webPreferences: {
             nodeIntegration: false,
             contextIsolation: true,
@@ -25,19 +41,22 @@ function createWindow() {
     const isDev = !app.isPackaged;
     if (isDev) {
         mainWindow.loadURL('http://localhost:5173');
-        // mainWindow.webContents.openDevTools({ mode: 'detach' }); // Optional: open devtools
+        // mainWindow.webContents.openDevTools({ mode: 'detach' });
     } else {
         mainWindow.loadFile(path.join(__dirname, '../../dist/renderer/index.html'));
     }
 
-    // Prevent window from closing, just hide it to tray
-    mainWindow.on('close', (event) => {
-        if (!app.isQuitting) {
-            event.preventDefault();
-            mainWindow.hide();
+    // When window is shown, tell renderer to play entrance animation
+    mainWindow.on('show', () => {
+        const { CHANNELS } = require('../shared/constants');
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            mainWindow.webContents.send(CHANNELS.WINDOW_ANIMATE_IN);
         }
-        return false;
     });
+}
+
+function getMainWindow() {
+    return mainWindow;
 }
 
 app.whenReady().then(() => {
@@ -49,15 +68,11 @@ app.whenReady().then(() => {
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
             createWindow();
-        } else if (mainWindow) {
-            mainWindow.show();
         }
     });
 });
 
 app.on('window-all-closed', () => {
-    // On macOS it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
     if (process.platform !== 'darwin') {
         app.quit();
     }
@@ -67,3 +82,5 @@ app.on('before-quit', () => {
     app.isQuitting = true;
     unregisterShortcuts();
 });
+
+module.exports = { getMainWindow };

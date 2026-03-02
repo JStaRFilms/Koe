@@ -2,12 +2,10 @@ const { globalShortcut } = require('electron');
 const { CHANNELS, DEFAULT_SETTINGS } = require('../shared/constants');
 const { setRecordingState } = require('./tray');
 
-// Keeps track of the recording state for the hotkey
 let isRecording = false;
 
 function registerShortcuts(mainWindow) {
-    // Read hotkey from settings if available, else default
-    const hotkey = DEFAULT_SETTINGS.hotkey; // later read from electron-store
+    const hotkey = DEFAULT_SETTINGS.hotkey;
 
     globalShortcut.register(hotkey, () => {
         isRecording = !isRecording;
@@ -16,8 +14,12 @@ function registerShortcuts(mainWindow) {
         // Update tray UI
         setRecordingState(isRecording, mainWindow);
 
-        // Notify renderer
         if (mainWindow && !mainWindow.isDestroyed()) {
+            if (isRecording) {
+                // Starting recording → show pill WITHOUT stealing focus
+                mainWindow.showInactive();
+            }
+            // Always notify renderer of the toggle
             mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, isRecording);
         }
     });

@@ -2,6 +2,14 @@ import { MicVAD } from "@ricky0123/vad-web";
 import { encodeWAV } from "./wav-encoder.js";
 
 let vad;
+let isSpeaking = false;
+
+/**
+ * Accumulate raw speech frames ourselves.
+ * MicVAD's onSpeechEnd only fires on natural silence detection —
+ * if the user manually stops mid-speech, we need to flush this buffer.
+ */
+let speechFrames = [];
 
 export async function initVAD() {
     if (vad) return;
@@ -10,29 +18,32 @@ export async function initVAD() {
             positiveSpeechThreshold: 0.5,
             minSpeechFrames: 3,
             startOnLoad: false,
-            // Serve VAD assets from custom /vad/ middleware (bypasses Vite transforms)
             baseAssetPath: '/vad/',
             onnxWASMBasePath: '/vad/',
 
-            // Let MicVAD handle mic access internally via its own getUserMedia + AudioWorklet.
-            // No getStream override — it uses the real mic when start() is called.
+            onFrameProcessed: (probabilities, frame) => {
+                // Collect frames while speaking so we can flush on manual stop
+                if (isSpeaking && frame && frame.length > 0) {
+                    speechFrames.push(new Float32Array(frame));
+                }
+            },
 
             onSpeechStart: () => {
+                isSpeaking = true;
+                speechFrames = []; // Reset buffer on new speech segment
                 window.api.log('VAD: Speech started');
             },
 
             onSpeechEnd: (audio) => {
+                isSpeaking = false;
+                speechFrames = []; // Clear our buffer — VAD handled it
                 window.api.log('VAD: Speech ended');
-
-                // audio is Float32Array of PCM samples at 16kHz
-                if (audio && audio.length > 0) {
-                    const wavBuffer = encodeWAV(audio, 16000);
-                    const audioSeconds = audio.length / 16000;
-                    window.api.sendAudioChunk({ buffer: wavBuffer, audioSeconds });
-                    window.api.log(`Sent WAV chunk: ${wavBuffer.byteLength} bytes (${audioSeconds.toFixed(1)}s).`);
-                }
+                sendAudioChunk(audio);
             },
+
             onVADMisfire: () => {
+                isSpeaking = false;
+                speechFrames = [];
                 window.api.log('VAD: Misfire (speech too short)');
             }
         });
@@ -44,19 +55,54 @@ export async function initVAD() {
     }
 }
 
-/** Start listening — MicVAD gets the mic and begins speech detection */
+/** Start listening */
 export async function startListening() {
     if (!vad) {
         window.api.log('VAD not initialized, cannot start listening.');
         return;
     }
+    isSpeaking = false;
+    speechFrames = [];
     await vad.start();
     window.api.log('VAD: Listening started.');
 }
 
-/** Pause listening — stops processing but keeps model loaded */
+/**
+ * Stop listening with manual flush.
+ * If the user was mid-speech, we concatenate our accumulated frames
+ * and send them as a WAV chunk — ensuring nothing is lost.
+ */
 export function stopListening() {
     if (!vad) return;
+
+    // Flush: if user was speaking, encode our collected frames and send
+    if (isSpeaking && speechFrames.length > 0) {
+        window.api.log(`VAD: Force-flushing ${speechFrames.length} speech frames.`);
+
+        // Concatenate all collected Float32Arrays into one
+        const totalLength = speechFrames.reduce((sum, f) => sum + f.length, 0);
+        const merged = new Float32Array(totalLength);
+        let offset = 0;
+        for (const frame of speechFrames) {
+            merged.set(frame, offset);
+            offset += frame.length;
+        }
+
+        sendAudioChunk(merged);
+    }
+
+    isSpeaking = false;
+    speechFrames = [];
     vad.pause();
     window.api.log('VAD: Listening paused.');
+}
+
+/** Encode and send audio chunk to main process */
+function sendAudioChunk(audio) {
+    if (audio && audio.length > 0) {
+        const wavBuffer = encodeWAV(audio, 16000);
+        const audioSeconds = audio.length / 16000;
+        window.api.sendAudioChunk({ buffer: wavBuffer, audioSeconds });
+        window.api.log(`Sent WAV chunk: ${wavBuffer.byteLength} bytes (${audioSeconds.toFixed(1)}s).`);
+    }
 }

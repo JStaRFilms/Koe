@@ -5,15 +5,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Koe</title>
-  <!-- Preconnect to Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/floating.css">
-  <link rel="stylesheet" href="./styles/settings.css">
-  <link rel="stylesheet" href="./styles/history.css">
-  <link rel="stylesheet" href="./styles/usage.css">
   <script>
     window.onerror = function (message, source, lineno, colno, error) {
       if (window.api && window.api.log) {
@@ -29,167 +25,60 @@
 </head>
 
 <body>
-  <!-- Drag region for title bar -->
-  <div class="drag-region"></div>
+  <!-- The Pill -->
+  <div id="pill" class="pill glass-pill state-idle">
+    <!-- Animated gradient border overlay -->
+    <div class="pill__border-glow"></div>
 
-  <div id="app" class="app-container glass-panel">
-    <!-- Title Bar -->
-    <header class="title-bar">
-      <div class="title-bar__brand">
-        <span class="title-bar__icon">🎤</span>
-        <span class="title-bar__title">Koe</span>
-      </div>
-      <div class="title-bar__controls no-drag">
-        <button id="btn-minimize" class="control-btn" aria-label="Minimize">−</button>
-        <button id="btn-close" class="control-btn" aria-label="Close">×</button>
-      </div>
-    </header>
-
-    <!-- Transcription Text Area -->
-    <main class="transcription-area" id="transcription-area">
-      <div class="transcription-content" id="transcription-content">
-        <p class="placeholder-text">Waiting for speech...</p>
-      </div>
-    </main>
-
-    <!-- Status Bar -->
-    <footer class="status-bar no-drag">
-      <div class="status-bar__state" id="recording-state">
-        <div class="status-indicator"></div>
-        <span class="status-text" id="status-text">Idle</span>
-      </div>
-
-      <div class="status-bar__actions">
-        <button id="btn-history" class="action-btn icon-only" aria-label="History">🕒</button>
-        <button id="btn-copy" class="action-btn" aria-label="Copy">📋 <span class="action-label">Copy</span></button>
-        <button id="btn-settings" class="action-btn icon-only" aria-label="Settings">⚙️</button>
-      </div>
-    </footer>
-
-    <!-- Usage Meter -->
-    <div id="usage-meter" class="usage-meter hide">
-      <div class="usage-header">
-        <h3>API Usage</h3>
-        <span class="usage-time-label" id="usage-time-label">Resets at midnight</span>
-      </div>
-      <div class="usage-row">
-        <div class="usage-labels">
-          <span>Requests (2K limit)</span>
-          <span id="text-rpd">0 / 2000 Reqs</span>
-        </div>
-        <div class="usage-bar-track">
-          <div class="usage-bar-fill bar-green" id="bar-rpd" style="width: 0%"></div>
+    <!-- Inner content -->
+    <div class="pill__content">
+      <!-- Left: Status indicator -->
+      <div class="pill__left">
+        <div class="pill__indicator" id="pill-indicator">
+          <!-- SVG mic icon for idle -->
+          <svg class="pill__icon pill__icon--mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="8" y1="23" x2="16" y2="23" />
+          </svg>
+          <!-- Recording pulse dot -->
+          <div class="pill__pulse-dot"></div>
         </div>
       </div>
-      <div class="usage-row">
-        <div class="usage-labels">
-          <span>Audio Time (8hr limit)</span>
-          <span id="text-audio">0 / 28800 Secs</span>
-        </div>
-        <div class="usage-bar-track">
-          <div class="usage-bar-fill bar-green" id="bar-audio" style="width: 0%"></div>
+
+      <!-- Center: Status text + audio visualizer -->
+      <div class="pill__center">
+        <span class="pill__status" id="pill-status">Ready</span>
+        <div class="pill__visualizer" id="pill-visualizer">
+          <div class="viz-bar" style="--i:0"></div>
+          <div class="viz-bar" style="--i:1"></div>
+          <div class="viz-bar" style="--i:2"></div>
+          <div class="viz-bar" style="--i:3"></div>
+          <div class="viz-bar" style="--i:4"></div>
+          <div class="viz-bar" style="--i:5"></div>
+          <div class="viz-bar" style="--i:6"></div>
         </div>
       </div>
-      <div class="usage-row">
-        <div class="usage-labels">
-          <span>RPM (20 limit)</span>
-          <span id="text-rpm">0 / 20 RPM</span>
-        </div>
-        <div class="usage-bar-track">
-          <div class="usage-bar-fill bar-green" id="bar-rpm" style="width: 0%"></div>
-        </div>
+
+      <!-- Right: Timer -->
+      <div class="pill__right">
+        <span class="pill__timer" id="pill-timer"></span>
+        <!-- Processing spinner -->
+        <svg class="pill__spinner" id="pill-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+          stroke-width="2.5" stroke-linecap="round">
+          <path d="M12 2a10 10 0 0 1 10 10" />
+        </svg>
+        <!-- Done checkmark -->
+        <svg class="pill__check" id="pill-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+          stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12" />
+        </svg>
       </div>
-    </div>
-
-    <!-- History Panel Overlay -->
-    <div id="history-panel" class="history-panel hide">
-      <header class="history-header">
-        <h2>History</h2>
-        <div class="history-header-actions">
-          <button id="btn-copy-history" class="icon-btn" aria-label="Copy All" title="Copy All">📋</button>
-          <button id="btn-close-history" class="control-btn" aria-label="Close History">×</button>
-        </div>
-      </header>
-      <div class="history-body" id="history-content">
-        <!-- History entries will be injected here -->
-      </div>
-      <footer class="history-footer">
-        <button id="btn-clear-history" class="secondary-btn">Clear History</button>
-      </footer>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toast" class="toast">
-      <span class="toast-icon">✓</span>
-      <span class="toast-text">Copied to clipboard</span>
-    </div>
-
-    <!-- Settings Panel Overlay -->
-    <div id="settings-panel" class="settings-panel hide">
-      <header class="settings-header">
-        <h2>Settings</h2>
-        <button id="btn-close-settings" class="control-btn" aria-label="Close Settings">×</button>
-      </header>
-      <div class="settings-body">
-        <div class="setting-group">
-          <label for="api-key">Groq API Key</label>
-          <div class="input-with-button">
-            <input type="password" id="api-key" placeholder="gsk_..." />
-            <button id="btn-toggle-key" class="icon-btn">👁️</button>
-          </div>
-          <button id="btn-test-key" class="secondary-btn">Test Connection</button>
-          <span id="test-key-result" class="test-result"></span>
-        </div>
-
-        <div class="setting-group">
-          <label for="language">Speech Language</label>
-          <select id="language">
-            <option value="auto">Auto-detect</option>
-            <option value="en">English</option>
-            <option value="es">Spanish</option>
-            <option value="fr">French</option>
-            <option value="de">German</option>
-            <option value="pt">Portuguese</option>
-            <option value="ja">Japanese</option>
-            <option value="zh">Chinese</option>
-            <option value="ko">Korean</option>
-          </select>
-        </div>
-
-        <div class="setting-group checkbox-group">
-          <input type="checkbox" id="enhance-text" />
-          <label for="enhance-text">AI Text Enhancement (Llama)</label>
-        </div>
-
-        <div class="setting-group" id="prompt-style-group">
-          <label for="prompt-style">Enhancement Style</label>
-          <select id="prompt-style">
-            <option value="Clean">Clean (Default)</option>
-            <option value="Formal">Formal</option>
-            <option value="Casual">Casual</option>
-            <option value="Bullets">Bullet Points</option>
-          </select>
-        </div>
-
-        <div class="setting-group checkbox-group">
-          <input type="checkbox" id="auto-paste" />
-          <label for="auto-paste">Auto-Paste <span class="badge">Experimental</span></label>
-        </div>
-
-        <div class="setting-group read-only">
-          <label>Global Hotkey</label>
-          <div class="shortcut-keys">
-            <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Space</kbd>
-          </div>
-        </div>
-      </div>
-      <footer class="settings-footer">
-        <button id="btn-save-settings" class="primary-btn">Save Settings</button>
-      </footer>
     </div>
   </div>
 
-  <!-- The index.js should be loaded as a module in Vite -->
   <script type="module" src="./index.js"></script>
 </body>
 

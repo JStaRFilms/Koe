@@ -1,5 +1,6 @@
 const { Tray, Menu, app, nativeImage } = require('electron');
 const path = require('path');
+const { CHANNELS } = require('../shared/constants');
 
 let tray = null;
 let isRecording = false;
@@ -7,14 +8,16 @@ let isRecording = false;
 function setupTray(mainWindow) {
     const iconPath = path.join(__dirname, '../assets/icons/tray-icon.png');
     tray = new Tray(iconPath);
-    tray.setToolTip('Koe — Idle');
+    tray.setToolTip('Koe — Ready');
 
+    // Single click on tray: toggle pill visibility
     tray.on('click', () => {
-        if (mainWindow.isVisible()) {
-            mainWindow.hide();
-        } else {
-            mainWindow.show();
-            mainWindow.focus();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            if (mainWindow.isVisible()) {
+                mainWindow.hide();
+            } else {
+                mainWindow.showInactive();
+            }
         }
     });
 
@@ -26,31 +29,32 @@ function updateContextMenu(mainWindow) {
 
     const contextMenu = Menu.buildFromTemplate([
         {
-            label: isRecording ? 'Stop Recording' : 'Start Recording',
+            label: isRecording ? '⏹ Stop Recording' : '⏺ Start Recording',
             click: () => {
-                // Toggle recording logic via IPC
-                const { CHANNELS } = require('../shared/constants');
                 isRecording = !isRecording;
                 updateContextMenu(mainWindow);
-                tray.setToolTip(isRecording ? 'Koe — Recording' : 'Koe — Idle');
-                if (mainWindow) {
+                tray.setToolTip(isRecording ? 'Koe — Recording' : 'Koe — Ready');
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    if (isRecording) {
+                        mainWindow.showInactive();
+                    }
                     mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, isRecording);
                 }
             }
         },
         { type: 'separator' },
         {
-            label: 'Settings',
+            label: 'Settings...',
             click: () => {
-                if (mainWindow) {
-                    mainWindow.show();
-                    mainWindow.focus();
-                    // Ideally send an IPC event to tell renderer to open settings view
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.showInactive();
+                    mainWindow.webContents.send(CHANNELS.OPEN_SETTINGS);
                 }
             }
         },
+        { type: 'separator' },
         {
-            label: 'Quit',
+            label: 'Quit Koe',
             click: () => {
                 app.isQuitting = true;
                 app.quit();
@@ -65,7 +69,7 @@ function setRecordingState(state, mainWindow) {
     isRecording = state;
     if (tray) {
         updateContextMenu(mainWindow);
-        tray.setToolTip(isRecording ? 'Koe — Recording' : 'Koe — Idle');
+        tray.setToolTip(isRecording ? 'Koe — Recording' : 'Koe — Ready');
     }
 }
 

@@ -1,299 +1,406 @@
-/* Floating Window Specific Styles */
-.app-container {
-    width: 100%;
-    height: 100%;
-    border-radius: var(--radius-window);
-    display: flex;
-    flex-direction: column;
+/* ═══════════════════════════════════════════════════════════
+   KOE PILL — HUD-Style Floating Status Indicator
+   ═══════════════════════════════════════════════════════════ */
+
+/* ─── Pill Container ────────────────────────────────── */
+.pill {
     position: relative;
+    width: 380px;
+    height: var(--pill-height);
+    border-radius: var(--pill-radius);
     overflow: hidden;
-    transition: all 0.3s ease;
-}
+    cursor: default;
 
-/* Dynamic State Glowing Border */
-.app-container.state-recording {
-    border-color: var(--koe-danger-glow);
-    box-shadow: 0 0 16px var(--koe-danger-glow), var(--shadow-glass), var(--shadow-inner);
-}
-
-.app-container.state-processing {
-    border-color: var(--koe-accent-glow);
-    box-shadow: 0 0 16px var(--koe-accent-glow), var(--shadow-glass), var(--shadow-inner);
-}
-
-/* Title Bar */
-.title-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    height: 36px;
-    padding: 0 var(--sp-md);
-    border-bottom: 1px solid var(--koe-border);
-    background: rgba(0, 0, 0, 0.2);
-    /* Make the header draggable */
-    -webkit-app-region: drag;
-}
-
-.title-bar__brand {
-    display: flex;
-    align-items: center;
-    gap: var(--sp-sm);
-    opacity: 0.8;
-}
-
-.title-bar__icon {
-    font-size: 14px;
-}
-
-.title-bar__title {
-    font-size: 12px;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    color: var(--koe-text);
-}
-
-.title-bar__controls {
-    display: flex;
-    gap: var(--sp-xs);
-}
-
-.control-btn {
-    background: transparent;
-    border: none;
-    -webkit-app-region: no-drag;
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
-    color: var(--koe-text-muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.15s ease;
-}
-
-.control-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--koe-text);
-}
-
-#btn-close:hover {
-    background: var(--koe-danger);
-    color: white;
-}
-
-/* Transcription Area */
-.transcription-area {
-    flex: 1;
-    padding: var(--sp-md);
-    overflow-y: auto;
-    position: relative;
-
-    /* Dragging can still work on empty space but normally user-select text is here */
-    -webkit-app-region: no-drag;
-}
-
-/* Custom Scrollbar */
-.transcription-area::-webkit-scrollbar {
-    width: 6px;
-}
-
-.transcription-area::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.transcription-area::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius-round);
-}
-
-.transcription-area::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.2);
-}
-
-.transcription-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--sp-sm);
-    font-size: 14px;
-    line-height: 1.6;
-    font-weight: 400;
-    color: var(--koe-text);
-    /* Enable text selection */
-    user-select: text;
-}
-
-.placeholder-text {
-    color: var(--koe-text-muted);
-    font-style: italic;
-    opacity: 0.5;
-    text-align: center;
-    margin-top: calc(var(--sp-lg) * 1.5);
-}
-
-/* Transcript Segment Animations */
-.transcript-segment {
-    animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    /* Entrance animation state */
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px) scale(0.95);
+    transition:
+        opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+        transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.transcript-segment.partial {
-    color: var(--koe-text-muted);
+.pill.animate-in {
+    opacity: 1;
+    transform: translateY(0) scale(1);
 }
 
-@keyframes slideUpFade {
+.pill.animate-out {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+    transition:
+        opacity 0.25s cubic-bezier(0.4, 0, 1, 1),
+        transform 0.25s cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ─── Glass Background ──────────────────────────────── */
+.glass-pill {
+    backdrop-filter: blur(28px) saturate(1.5);
+    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    background: var(--koe-surface);
+    border: 1px solid var(--koe-border);
+    box-shadow: var(--shadow-pill);
+}
+
+/* ─── Animated Gradient Border (the "magic ring") ──── */
+.pill__border-glow {
+    position: absolute;
+    inset: -1px;
+    border-radius: calc(var(--pill-radius) + 1px);
+    padding: 1px;
+    pointer-events: none;
+    z-index: 0;
+
+    /* Conic gradient that rotates */
+    background: conic-gradient(from var(--glow-angle, 0deg),
+            transparent 0%,
+            transparent 30%,
+            var(--glow-color, var(--koe-text-dim)) 50%,
+            transparent 70%,
+            transparent 100%);
+
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+
+    opacity: 0;
+    transition: opacity 0.5s ease;
+}
+
+/* Glow rotation animation */
+@property --glow-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+@keyframes rotate-glow {
     to {
-        opacity: 1;
-        transform: translateY(0);
+        --glow-angle: 360deg;
     }
 }
 
-/* Status Bar */
-.status-bar {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: var(--sp-sm) var(--sp-md);
-    border-top: 1px solid var(--koe-border);
-    background: var(--koe-surface-glass);
-}
-
-.status-bar__state {
+/* ─── Inner Content Layout ──────────────────────────── */
+.pill__content {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
-    gap: var(--sp-sm);
+    height: 100%;
+    padding: 0 20px;
+    gap: 14px;
 }
 
-/* Smart recording indicator */
-.status-indicator {
+/* ─── Left: Indicator ───────────────────────────────── */
+.pill__left {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.pill__indicator {
+    position: relative;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pill__icon {
+    width: 18px;
+    height: 18px;
+    color: var(--koe-text-muted);
+    transition: color 0.3s ease, opacity 0.3s ease;
+}
+
+.pill__pulse-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    background-color: var(--koe-text-muted);
-    transition: all 0.3s ease;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
 }
 
-/* State: Idle */
-.state-idle .status-indicator {
-    background-color: var(--koe-text-muted);
-    opacity: 0.5;
+/* ─── Center: Status + Visualizer ───────────────────── */
+.pill__center {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
 }
 
-/* State: Recording */
-.state-recording .status-indicator {
-    background-color: var(--koe-danger);
-    box-shadow: 0 0 8px var(--koe-danger);
-    animation: pulse-danger 1.5s infinite;
-}
-
-/* State: Processing */
-.state-processing .status-indicator {
-    background-color: var(--koe-accent);
-    box-shadow: 0 0 8px var(--koe-accent);
-    animation: pulse-accent 1s infinite alternate;
-}
-
-.status-text {
-    font-size: 12px;
+.pill__status {
+    font-size: 12.5px;
     font-weight: 500;
+    letter-spacing: 0.4px;
     color: var(--koe-text-muted);
+    white-space: nowrap;
     transition: color 0.3s ease;
 }
 
-.state-recording .status-text {
+/* ─── Audio Visualizer Bars ─────────────────────────── */
+.pill__visualizer {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 20px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.viz-bar {
+    width: 3px;
+    height: 4px;
+    border-radius: 1.5px;
+    background: var(--koe-danger);
+    transition: background 0.3s ease;
+}
+
+/* ─── Right: Timer / Spinner / Check ────────────────── */
+.pill__right {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    min-width: 50px;
+    justify-content: flex-end;
+}
+
+.pill__timer {
+    font-size: 12px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--koe-text-dim);
+    letter-spacing: 0.5px;
+    opacity: 0;
+    transition: opacity 0.3s ease, color 0.3s ease;
+}
+
+.pill__spinner {
+    width: 18px;
+    height: 18px;
+    color: var(--koe-process);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.pill__check {
+    width: 20px;
+    height: 20px;
+    color: var(--koe-success);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    stroke-dasharray: 24;
+    stroke-dashoffset: 24;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE: IDLE
+   Subtle, dim, waiting. Mic icon visible, muted.
+   ═══════════════════════════════════════════════════════════ */
+.state-idle .pill__icon--mic {
+    color: var(--koe-text-dim);
+    opacity: 0.6;
+}
+
+.state-idle .pill__status {
+    color: var(--koe-text-dim);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE: RECORDING
+   Alive. Red glow, pulsing dot, visualizer active.
+   ═══════════════════════════════════════════════════════════ */
+.state-recording {
+    --glow-color: var(--koe-danger);
+}
+
+.state-recording .pill__border-glow {
+    opacity: 0.8;
+    animation: rotate-glow 3s linear infinite;
+}
+
+.state-recording .pill__icon--mic {
+    color: var(--koe-danger);
+    opacity: 1;
+}
+
+.state-recording .pill__pulse-dot {
+    opacity: 1;
+    background: var(--koe-danger);
+    box-shadow: 0 0 12px var(--koe-danger-glow);
+    animation: pulse-beat 1.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.state-recording .pill__status {
     color: var(--koe-danger);
 }
 
-.state-processing .status-text {
-    color: var(--koe-accent);
+.state-recording .pill__visualizer {
+    opacity: 1;
 }
 
-@keyframes pulse-danger {
-    0% {
-        transform: scale(1);
+.state-recording .viz-bar {
+    animation: viz-dance 0.6s ease-in-out infinite alternate;
+    animation-delay: calc(var(--i) * 0.08s);
+}
+
+.state-recording .pill__timer {
+    opacity: 1;
+    color: var(--koe-text-muted);
+}
+
+.state-recording .glass-pill,
+.state-recording.glass-pill {
+    box-shadow:
+        var(--shadow-pill),
+        0 0 40px var(--koe-danger-dim),
+        inset 0 0 30px var(--koe-danger-dim);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE: PROCESSING
+   Purple glow, spinner visible, calm.
+   ═══════════════════════════════════════════════════════════ */
+.state-processing {
+    --glow-color: var(--koe-process);
+}
+
+.state-processing .pill__border-glow {
+    opacity: 0.7;
+    animation: rotate-glow 2s linear infinite;
+}
+
+.state-processing .pill__icon--mic {
+    opacity: 0.3;
+    color: var(--koe-process);
+}
+
+.state-processing .pill__pulse-dot {
+    opacity: 0;
+}
+
+.state-processing .pill__status {
+    color: var(--koe-process);
+}
+
+.state-processing .pill__visualizer {
+    opacity: 0;
+}
+
+.state-processing .pill__timer {
+    opacity: 0;
+}
+
+.state-processing .pill__spinner {
+    opacity: 1;
+    animation: spin 0.8s linear infinite;
+}
+
+.state-processing.glass-pill {
+    box-shadow:
+        var(--shadow-pill),
+        0 0 40px var(--koe-process-dim),
+        inset 0 0 20px var(--koe-process-dim);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE: DONE
+   Green flash, checkmark draw, then fade.
+   ═══════════════════════════════════════════════════════════ */
+.state-done {
+    --glow-color: var(--koe-success);
+}
+
+.state-done .pill__border-glow {
+    opacity: 0.9;
+    animation: none;
+    background: var(--koe-success);
+    transition: opacity 0.3s ease;
+}
+
+.state-done .pill__icon--mic {
+    opacity: 0;
+}
+
+.state-done .pill__pulse-dot {
+    opacity: 0;
+}
+
+.state-done .pill__status {
+    color: var(--koe-success);
+    font-weight: 600;
+}
+
+.state-done .pill__visualizer {
+    opacity: 0;
+}
+
+.state-done .pill__timer {
+    opacity: 0;
+}
+
+.state-done .pill__spinner {
+    opacity: 0;
+}
+
+.state-done .pill__check {
+    opacity: 1;
+    animation: draw-check 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.state-done.glass-pill {
+    box-shadow:
+        var(--shadow-pill),
+        0 0 50px var(--koe-success-dim),
+        inset 0 0 25px var(--koe-success-dim);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════════════════════ */
+
+@keyframes pulse-beat {
+
+    0%,
+    100% {
+        transform: translate(-50%, -50%) scale(1);
         opacity: 1;
     }
 
     50% {
-        transform: scale(1.2);
-        opacity: 0.6;
+        transform: translate(-50%, -50%) scale(2.2);
+        opacity: 0;
+    }
+}
+
+@keyframes viz-dance {
+    0% {
+        height: 4px;
+        opacity: 0.5;
     }
 
     100% {
-        transform: scale(1);
+        height: calc(6px + var(--i) * 2px);
         opacity: 1;
     }
 }
 
-@keyframes pulse-accent {
+@keyframes spin {
     to {
-        opacity: 0.4;
-        transform: scale(0.8);
+        transform: rotate(360deg);
     }
 }
 
-/* Action Buttons */
-.status-bar__actions {
-    display: flex;
-    gap: var(--sp-sm);
-}
-
-.action-btn {
-    background: var(--koe-surface-glass);
-    border: 1px solid var(--koe-border);
-    border-radius: var(--radius-inner);
-    color: var(--koe-text);
-    padding: 4px 10px;
-    font-size: 12px;
-    font-weight: 500;
-    font-family: var(--font-family);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.action-btn.icon-only {
-    padding: 4px 8px;
-}
-
-.action-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--koe-border-highlight);
-    transform: scale(1.05);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.action-btn:active {
-    transform: scale(0.95);
-}
-
-/* Toast */
-.toast {
-    position: absolute;
-    bottom: 60px;
-    /* Above status bar */
-    left: 50%;
-    transform: translateX(-50%) translateY(20px);
-    background: var(--koe-success);
-    color: #fff;
-    padding: 8px 16px;
-    border-radius: var(--radius-round);
-    font-size: 12px;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    opacity: 0;
-    pointer-events: none;
-    box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.toast.show {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
+@keyframes draw-check {
+    to {
+        stroke-dashoffset: 0;
+    }
 }

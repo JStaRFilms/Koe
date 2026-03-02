@@ -4,6 +4,8 @@ const CHANNELS = {
     USAGE_STATS: 'app:usage-stats',
     TRANSCRIPTION_RESULT: 'transcription:result',
     TRANSCRIPTION_STATUS: 'transcription:status',
+    TRANSCRIPTION_COMPLETE: 'transcription:complete',
+    WINDOW_ANIMATE_IN: 'window:animate-in',
 
     // Renderer -> Main
     GET_SETTINGS: 'settings:get',
@@ -13,6 +15,7 @@ const CHANNELS = {
     AUDIO_CHUNK: 'audio:chunk',
     WINDOW_MINIMIZE: 'window:minimize',
     WINDOW_CLOSE: 'window:close',
+    WINDOW_HIDE: 'window:hide',
     TEST_GROQ_KEY: 'settings:test-key',
     OPEN_SETTINGS: 'window:open-settings',
     GET_HISTORY: 'history:get',
@@ -24,7 +27,7 @@ const DEFAULT_SETTINGS = {
     hotkey: 'CommandOrControl+Shift+Space',
     language: 'auto',
     enhanceText: true,
-    autoPaste: false,
+    autoPaste: true, // Now default true — pill auto-pastes
     theme: 'dark',
     promptStyle: 'Clean'
 };
