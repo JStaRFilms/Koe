@@ -1,6 +1,7 @@
 const { Tray, Menu, app, nativeImage } = require('electron');
 const path = require('path');
 const { CHANNELS } = require('../shared/constants');
+const { createSettingsWindow } = require('./settings-window');
 
 let tray = null;
 let isRecording = false;
@@ -46,10 +47,19 @@ function updateContextMenu(mainWindow) {
         {
             label: 'Settings...',
             click: () => {
-                if (mainWindow && !mainWindow.isDestroyed()) {
-                    mainWindow.showInactive();
-                    mainWindow.webContents.send(CHANNELS.OPEN_SETTINGS);
-                }
+                createSettingsWindow('settings');
+            }
+        },
+        {
+            label: 'History...',
+            click: () => {
+                createSettingsWindow('history');
+            }
+        },
+        {
+            label: 'Usage...',
+            click: () => {
+                createSettingsWindow('usage');
             }
         },
         { type: 'separator' },

@@ -43,6 +43,44 @@
   --shadow-pill: 0 8px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* Light Theme Variables */
+[data-theme="light"] {
+  --koe-void: #f5f5f7;
+  --koe-surface: rgba(255, 255, 255, 0.85);
+  --koe-glass: rgba(255, 255, 255, 0.72);
+
+  --koe-text: #1a1a2e;
+  --koe-text-muted: #6c6c7a;
+  --koe-text-dim: #a0a0ae;
+
+  /* Accent stays the same for brand consistency */
+  --koe-accent: #00c9a7;
+  --koe-accent-dim: rgba(0, 201, 167, 0.15);
+  --koe-accent-glow: rgba(0, 201, 167, 0.35);
+
+  /* Recording state */
+  --koe-danger: #e6294a;
+  --koe-danger-dim: rgba(230, 41, 74, 0.15);
+  --koe-danger-glow: rgba(230, 41, 74, 0.4);
+
+  /* Success state */
+  --koe-success: #00c853;
+  --koe-success-dim: rgba(0, 200, 83, 0.15);
+  --koe-success-glow: rgba(0, 200, 83, 0.35);
+
+  /* Processing state */
+  --koe-process: #5e4fe0;
+  --koe-process-dim: rgba(94, 79, 224, 0.15);
+  --koe-process-glow: rgba(94, 79, 224, 0.35);
+
+  /* Borders */
+  --koe-border: rgba(0, 0, 0, 0.08);
+  --koe-border-highlight: rgba(0, 0, 0, 0.15);
+
+  /* Shadows */
+  --shadow-pill: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
 * {
   box-sizing: border-box;
   margin: 0;

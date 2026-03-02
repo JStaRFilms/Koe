@@ -19,7 +19,14 @@ const CHANNELS = {
     TEST_GROQ_KEY: 'settings:test-key',
     OPEN_SETTINGS: 'window:open-settings',
     GET_HISTORY: 'history:get',
-    CLEAR_HISTORY: 'history:clear'
+    CLEAR_HISTORY: 'history:clear',
+
+    // Settings Window
+    OPEN_SETTINGS_WINDOW: 'window:open-settings-window',
+    CLOSE_SETTINGS_WINDOW: 'window:close-settings-window',
+    OPEN_SETTINGS_TAB: 'tab:open-settings',
+    OPEN_HISTORY_TAB: 'tab:open-history',
+    OPEN_USAGE_TAB: 'tab:open-usage'
 };
 
 const DEFAULT_SETTINGS = {
@@ -29,7 +36,8 @@ const DEFAULT_SETTINGS = {
     enhanceText: true,
     autoPaste: true, // Now default true — pill auto-pastes
     theme: 'dark',
-    promptStyle: 'Clean'
+    promptStyle: 'Clean',
+    model: 'whisper-large-v3-turbo' // 'whisper-large-v3-turbo' (fast) or 'whisper-large-v3' (accurate)
 };
 
 module.exports = {

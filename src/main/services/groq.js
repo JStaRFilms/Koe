@@ -3,7 +3,7 @@ const rateLimiter = require('./rate-limiter');
 
 const GROQ_WHISPER_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'whisper-large-v3-turbo';
+const DEFAULT_MODEL = 'whisper-large-v3-turbo';
 const ENHANCE_MODEL = 'llama-3.3-70b-versatile';
 
 async function transcribeDirect(wavBuffer, language = 'auto') {
@@ -12,10 +12,13 @@ async function transcribeDirect(wavBuffer, language = 'auto') {
         throw new Error('Groq API Key is not configured. Please open settings and add your API Key.');
     }
 
+    // Get model from settings, fallback to default
+    const model = getSetting('model') || DEFAULT_MODEL;
+
     const formData = new FormData();
     const blob = new Blob([wavBuffer], { type: 'audio/wav' });
     formData.append('file', blob, 'audio.wav');
-    formData.append('model', MODEL);
+    formData.append('model', model);
 
     if (language && language !== 'auto') {
         formData.append('language', language);

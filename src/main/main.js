@@ -3,6 +3,7 @@ const path = require('path');
 const { setupTray } = require('./tray');
 const { registerShortcuts, unregisterShortcuts } = require('./shortcuts');
 const { setupIpcHandlers } = require('./ipc');
+const { createSettingsWindow } = require('./settings-window');
 
 let mainWindow = null;
 
@@ -83,4 +84,7 @@ app.on('before-quit', () => {
     unregisterShortcuts();
 });
 
-module.exports = { getMainWindow };
+module.exports = {
+    getMainWindow,
+    createSettingsWindow
+};

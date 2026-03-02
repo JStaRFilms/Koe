@@ -228,3 +228,48 @@ input[type="checkbox"] {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     background: rgba(0, 0, 0, 0.2);
 }
+
+/* Input help text */
+.input-help {
+    font-size: 11px;
+    color: var(--koe-text-muted);
+    margin-top: 2px;
+}
+
+/* Hotkey input styles */
+#hotkey {
+    cursor: pointer;
+    text-align: center;
+    font-family: monospace;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+#hotkey.recording {
+    border-color: var(--koe-accent);
+    background: rgba(0, 229, 191, 0.1);
+    animation: pulse-border 1s infinite;
+}
+
+@keyframes pulse-border {
+
+    0%,
+    100% {
+        border-color: var(--koe-accent);
+    }
+
+    50% {
+        border-color: rgba(0, 229, 191, 0.3);
+    }
+}
+
+.hotkey-error {
+    font-size: 11px;
+    color: var(--koe-danger);
+    margin-top: 4px;
+    display: none;
+}
+
+.hotkey-error.show {
+    display: block;
+}
