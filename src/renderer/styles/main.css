@@ -69,7 +69,9 @@ body {
 .glass-panel {
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  background: var(--koe-bg-glass);
+  background: rgba(18, 18, 23, 0.7);
+  /* Slightly more solid to prevent text bleed when floating over white windows */
+  border-radius: var(--radius-window);
   border: 1px solid var(--koe-border);
   box-shadow: var(--shadow-glass), var(--shadow-inner);
 }

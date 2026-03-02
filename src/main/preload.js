@@ -1,6 +1,12 @@
 const { contextBridge, ipcRenderer } = require('electron');
 const { CHANNELS } = require('../shared/constants');
 
+// Default expose empty functions if API fails
+let apiGetUsageStats = () => { };
+try {
+    apiGetUsageStats = () => ipcRenderer.invoke(CHANNELS.GET_USAGE_STATS);
+} catch (e) { }
+
 // Expose safe APIs to the renderer process
 contextBridge.exposeInMainWorld('api', {
     // Receive hotkey/tray toggle events
@@ -15,8 +21,15 @@ contextBridge.exposeInMainWorld('api', {
     saveSettings: (settings) => ipcRenderer.invoke(CHANNELS.SAVE_SETTINGS, settings),
     testGroqKey: (apiKey) => ipcRenderer.invoke(CHANNELS.TEST_GROQ_KEY, apiKey),
 
+    // Usage Stats
+    getUsageStats: apiGetUsageStats,
+
     // Debug
     log: (message) => ipcRenderer.send(CHANNELS.LOG, message),
+
+    // History
+    getHistory: () => ipcRenderer.invoke(CHANNELS.GET_HISTORY),
+    clearHistory: () => ipcRenderer.invoke(CHANNELS.CLEAR_HISTORY),
 
     // Audio
     sendAudioChunk: (arrayBuffer) => ipcRenderer.send(CHANNELS.AUDIO_CHUNK, arrayBuffer),

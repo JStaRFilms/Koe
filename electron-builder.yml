@@ -9,7 +9,6 @@ files:
   - package.json
 win:
   target: nsis
-  icon: src/assets/icons/app-icon.ico
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

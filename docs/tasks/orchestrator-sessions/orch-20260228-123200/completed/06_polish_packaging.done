@@ -1,0 +1,27 @@
+# Polish & Packaging - Verification Report
+
+## 1. History Panel
+- [x] Stores basic history of text entries mapped to a `UUID`.
+- [x] Limit is set (100).
+- [x] UI lists history properly.
+- [x] Slide-out from right side of floating window.
+- [x] Includes button to expand/collapse entries.
+- [x] Includes button to copy individual entry.
+- [x] Includes a clear all history button.
+
+## 2. API Usage Meter
+- [x] Visual representation of Groq RPM/RPD or audio length.
+- [x] Resets properly or shows countdown till refresh.
+- [x] Toggled from UI.
+- [x] Integrated effectively in floating UI.
+- [x] Updates live per transcription request.
+
+## 3. Packaging
+- [x] `electron-builder.yml` configured.
+- [x] Required assets (`@ricky0123/vad-web` models) bundled correctly.
+- [x] Executable `.exe` generated.
+- [x] Addressed icon requirement by running default installer (icon can be provided later, 256x256).
+
+## Test Output
+- Dev server successfully runs interactions between history, settings, and main UI.
+- `pnpm run build` succeeds, outputting NSIS installer inside `dist/`.

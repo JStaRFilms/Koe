@@ -12,6 +12,8 @@
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/floating.css">
   <link rel="stylesheet" href="./styles/settings.css">
+  <link rel="stylesheet" href="./styles/history.css">
+  <link rel="stylesheet" href="./styles/usage.css">
   <script>
     window.onerror = function (message, source, lineno, colno, error) {
       if (window.api && window.api.log) {
@@ -58,10 +60,63 @@
       </div>
 
       <div class="status-bar__actions">
+        <button id="btn-history" class="action-btn icon-only" aria-label="History">🕒</button>
         <button id="btn-copy" class="action-btn" aria-label="Copy">📋 <span class="action-label">Copy</span></button>
         <button id="btn-settings" class="action-btn icon-only" aria-label="Settings">⚙️</button>
       </div>
     </footer>
+
+    <!-- Usage Meter -->
+    <div id="usage-meter" class="usage-meter hide">
+      <div class="usage-header">
+        <h3>API Usage</h3>
+        <span class="usage-time-label" id="usage-time-label">Resets at midnight</span>
+      </div>
+      <div class="usage-row">
+        <div class="usage-labels">
+          <span>Requests (2K limit)</span>
+          <span id="text-rpd">0 / 2000 Reqs</span>
+        </div>
+        <div class="usage-bar-track">
+          <div class="usage-bar-fill bar-green" id="bar-rpd" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="usage-row">
+        <div class="usage-labels">
+          <span>Audio Time (8hr limit)</span>
+          <span id="text-audio">0 / 28800 Secs</span>
+        </div>
+        <div class="usage-bar-track">
+          <div class="usage-bar-fill bar-green" id="bar-audio" style="width: 0%"></div>
+        </div>
+      </div>
+      <div class="usage-row">
+        <div class="usage-labels">
+          <span>RPM (20 limit)</span>
+          <span id="text-rpm">0 / 20 RPM</span>
+        </div>
+        <div class="usage-bar-track">
+          <div class="usage-bar-fill bar-green" id="bar-rpm" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- History Panel Overlay -->
+    <div id="history-panel" class="history-panel hide">
+      <header class="history-header">
+        <h2>History</h2>
+        <div class="history-header-actions">
+          <button id="btn-copy-history" class="icon-btn" aria-label="Copy All" title="Copy All">📋</button>
+          <button id="btn-close-history" class="control-btn" aria-label="Close History">×</button>
+        </div>
+      </header>
+      <div class="history-body" id="history-content">
+        <!-- History entries will be injected here -->
+      </div>
+      <footer class="history-footer">
+        <button id="btn-clear-history" class="secondary-btn">Clear History</button>
+      </footer>
+    </div>
 
     <!-- Toast Notification -->
     <div id="toast" class="toast">

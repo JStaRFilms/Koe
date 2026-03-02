@@ -4,6 +4,7 @@ const { getSettings, setSettings } = require('./services/settings');
 const { transcribe, enhance, validateApiKey } = require('./services/groq');
 const rateLimiter = require('./services/rate-limiter');
 const { autoPaste } = require('./services/clipboard');
+const historyService = require('./services/history');
 
 function setupIpcHandlers(mainWindow) {
     ipcMain.handle(CHANNELS.GET_SETTINGS, async () => {
@@ -21,6 +22,14 @@ function setupIpcHandlers(mainWindow) {
 
     ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => {
         return rateLimiter.getUsageStats();
+    });
+
+    ipcMain.handle(CHANNELS.GET_HISTORY, async () => {
+        return historyService.getHistory();
+    });
+
+    ipcMain.handle(CHANNELS.CLEAR_HISTORY, async () => {
+        return historyService.clearHistory();
     });
 
     ipcMain.on(CHANNELS.LOG, (event, message) => {
@@ -60,6 +69,10 @@ function setupIpcHandlers(mainWindow) {
 
             if (text && settings.autoPaste) {
                 autoPaste(text);
+            }
+
+            if (text) {
+                historyService.addHistoryEntry(text, settings.language || 'auto', settings.enhanceText && !!text);
             }
 
             if (mainWindow && !mainWindow.isDestroyed()) {

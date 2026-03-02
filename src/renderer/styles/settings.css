@@ -4,7 +4,8 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(30, 30, 35, 0.95);
+    background: rgba(18, 18, 23, 0.98);
+    /* Solid enough to avoid desktop bleed */
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     z-index: 100;
@@ -13,7 +14,8 @@
     opacity: 1;
     transform: translateY(0);
     transition: opacity 0.2s ease, transform 0.2s ease;
-    border-radius: 12px;
+    border-radius: var(--radius-window);
+    /* Match main window radius */
 }
 
 .settings-panel.hide {
@@ -31,7 +33,7 @@
 }
 
 .settings-header h2 {
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--koe-text);
     margin: 0;
@@ -74,8 +76,10 @@
 
 .setting-group label {
     font-size: 12px;
-    color: var(--koe-text-dim);
-    font-weight: 500;
+    color: var(--koe-text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .input-with-button {
@@ -91,21 +95,22 @@
 input[type="text"],
 input[type="password"],
 select {
-    background: rgba(0, 0, 0, 0.2);
+    background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--koe-text);
-    border-radius: 6px;
-    padding: 8px 10px;
-    font-size: 12px;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
     font-family: 'Inter', sans-serif;
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 input[type="text"]:focus,
 input[type="password"]:focus,
 select:focus {
-    border-color: var(--koe-muted);
+    border-color: var(--koe-accent);
+    box-shadow: 0 0 0 2px var(--koe-accent-glow);
 }
 
 select option {
@@ -121,33 +126,33 @@ input[type="checkbox"] {
 }
 
 .icon-btn {
-    background: transparent;
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
+    border-radius: 8px;
     color: var(--koe-text);
     cursor: pointer;
-    width: 32px;
-    height: 32px;
+    width: 38px;
+    height: 38px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s ease;
+    transition: background 0.2s ease, transform 0.1s ease;
 }
 
 .icon-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .secondary-btn,
 .primary-btn {
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 500;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
     cursor: pointer;
     border: none;
     font-family: inherit;
-    transition: background 0.2s ease, transform 0.1s ease;
+    transition: background 0.2s ease, transform 0.1s ease, box-shadow 0.2s ease;
 }
 
 .secondary-btn {
@@ -160,13 +165,15 @@ input[type="checkbox"] {
 }
 
 .primary-btn {
-    background: var(--koe-muted);
-    color: white;
+    background: var(--koe-accent);
+    color: #000;
     width: 100%;
 }
 
 .primary-btn:hover {
-    background: #737373;
+    background: #00f2c2;
+    /* Brighter accent */
+    box-shadow: 0 4px 12px var(--koe-accent-glow);
 }
 
 .primary-btn:active,

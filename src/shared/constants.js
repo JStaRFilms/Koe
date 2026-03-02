@@ -14,7 +14,9 @@ const CHANNELS = {
     WINDOW_MINIMIZE: 'window:minimize',
     WINDOW_CLOSE: 'window:close',
     TEST_GROQ_KEY: 'settings:test-key',
-    OPEN_SETTINGS: 'window:open-settings'
+    OPEN_SETTINGS: 'window:open-settings',
+    GET_HISTORY: 'history:get',
+    CLEAR_HISTORY: 'history:clear'
 };
 
 const DEFAULT_SETTINGS = {

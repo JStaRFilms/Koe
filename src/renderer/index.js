@@ -1,10 +1,14 @@
 import { initVAD, startListening, stopListening } from './audio/vad.js';
 import { FloatingWindow } from './components/floating-window.js';
 import { SettingsPanel } from './components/settings-panel.js';
+import { HistoryPanel } from './components/history-panel.js';
+import { UsageMeter } from './components/usage-meter.js';
 
 let isRecording = false;
 let ui;
 let settingsUI;
+let historyUI;
+let usageUI;
 
 // Initialize app
 async function init() {
@@ -12,11 +16,36 @@ async function init() {
     ui.setState('idle');
 
     settingsUI = new SettingsPanel();
+    historyUI = new HistoryPanel();
+    usageUI = new UsageMeter();
+
+    // Show usage meter by default if we have stats -> removed based on user feedback.
+    usageUI.hide();
 
     const btnSettings = document.getElementById('btn-settings');
     if (btnSettings) {
         btnSettings.addEventListener('click', () => {
-            settingsUI.show();
+            if (!settingsUI.panel.classList.contains('hide')) {
+                settingsUI.hide();
+            } else {
+                settingsUI.show();
+                historyUI.hide(); // Hide history if opening settings
+                usageUI.hide(); // Also hide usage meter
+            }
+        });
+    }
+
+    const btnHistory = document.getElementById('btn-history');
+    if (btnHistory) {
+        btnHistory.addEventListener('click', () => {
+            if (!historyUI.container.classList.contains('hide')) {
+                historyUI.hide();
+                usageUI.hide();
+            } else {
+                historyUI.show();
+                usageUI.show(); // Show usage meter along with history
+                settingsUI.hide(); // Hide settings if opening history
+            }
         });
     }
 
@@ -61,13 +90,20 @@ async function init() {
         // Listen for processing status updates (if available)
         if (window.api.onTranscriptionStatus) {
             window.api.onTranscriptionStatus((status) => {
-                // status: 'processing', 'done', 'error'
-                if (status === 'processing') {
+                // status: 'processing', 'done', 'error', 'enhancing'
+                if (status === 'processing' || status === 'enhancing') {
                     ui.setState('processing');
-                } else if (status === 'done' || status === 'error') {
+                } else if (status === 'done' || status === 'error' || status.startsWith('error:')) {
                     // Revert to recording state if we are still capturing
                     ui.setState(isRecording ? 'recording' : 'idle');
                 }
+            });
+        }
+
+        // Listen for Usage Stats updates
+        if (window.api.onUsageStats) {
+            window.api.onUsageStats((stats) => {
+                usageUI.updateMeters(stats);
             });
         }
 
