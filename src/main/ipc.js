@@ -1,8 +1,9 @@
 const { ipcMain } = require('electron');
 const { CHANNELS } = require('../shared/constants');
 const { getSettings, setSettings } = require('./services/settings');
-const { transcribe } = require('./services/groq');
+const { transcribe, enhance, validateApiKey } = require('./services/groq');
 const rateLimiter = require('./services/rate-limiter');
+const { autoPaste } = require('./services/clipboard');
 
 function setupIpcHandlers(mainWindow) {
     ipcMain.handle(CHANNELS.GET_SETTINGS, async () => {
@@ -12,6 +13,10 @@ function setupIpcHandlers(mainWindow) {
     ipcMain.handle(CHANNELS.SAVE_SETTINGS, async (event, newSettings) => {
         setSettings(newSettings);
         return true;
+    });
+
+    ipcMain.handle(CHANNELS.TEST_GROQ_KEY, async (event, apiKey) => {
+        return validateApiKey(apiKey);
     });
 
     ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => {
@@ -34,15 +39,28 @@ function setupIpcHandlers(mainWindow) {
         }
     });
 
-    ipcMain.handle(CHANNELS.AUDIO_CHUNK, async (event, { buffer, audioSeconds }) => {
+    // Use ipcMain.on() to match ipcRenderer.send() in preload.js (fire-and-forget)
+    ipcMain.on(CHANNELS.AUDIO_CHUNK, async (event, audioData) => {
         try {
+            const { buffer, audioSeconds } = audioData;
             const settings = getSettings();
 
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, 'processing');
             }
 
-            const text = await transcribe(buffer, audioSeconds, settings.language || 'auto');
+            let text = await transcribe(buffer, audioSeconds, settings.language || 'auto');
+
+            if (text && settings.enhanceText) {
+                if (mainWindow && !mainWindow.isDestroyed()) {
+                    mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, 'enhancing');
+                }
+                text = await enhance(text, settings.promptStyle || 'Clean');
+            }
+
+            if (text && settings.autoPaste) {
+                autoPaste(text);
+            }
 
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
@@ -50,14 +68,12 @@ function setupIpcHandlers(mainWindow) {
                     mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_RESULT, text);
                 }
             }
-            return text;
         } catch (error) {
             console.error('Transcription error:', error);
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, `error: ${error.message}`);
                 mainWindow.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
             }
-            throw error;
         }
     });
 }

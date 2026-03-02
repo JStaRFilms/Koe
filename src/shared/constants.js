@@ -12,7 +12,9 @@ const CHANNELS = {
     LOG: 'app:log',
     AUDIO_CHUNK: 'audio:chunk',
     WINDOW_MINIMIZE: 'window:minimize',
-    WINDOW_CLOSE: 'window:close'
+    WINDOW_CLOSE: 'window:close',
+    TEST_GROQ_KEY: 'settings:test-key',
+    OPEN_SETTINGS: 'window:open-settings'
 };
 
 const DEFAULT_SETTINGS = {
@@ -21,7 +23,8 @@ const DEFAULT_SETTINGS = {
     language: 'auto',
     enhanceText: true,
     autoPaste: false,
-    theme: 'dark'
+    theme: 'dark',
+    promptStyle: 'Clean'
 };
 
 module.exports = {

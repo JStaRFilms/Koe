@@ -23,7 +23,8 @@
     "concurrently": "^9.2.1",
     "electron": "^40.6.1",
     "electron-builder": "^26.8.1",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "vite-plugin-static-copy": "^3.2.0"
   },
   "dependencies": {
     "@ricky0123/vad-web": "^0.0.30",

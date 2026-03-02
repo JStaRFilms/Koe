@@ -11,6 +11,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/floating.css">
+  <link rel="stylesheet" href="./styles/settings.css">
   <script>
     window.onerror = function (message, source, lineno, colno, error) {
       if (window.api && window.api.log) {
@@ -66,6 +67,70 @@
     <div id="toast" class="toast">
       <span class="toast-icon">✓</span>
       <span class="toast-text">Copied to clipboard</span>
+    </div>
+
+    <!-- Settings Panel Overlay -->
+    <div id="settings-panel" class="settings-panel hide">
+      <header class="settings-header">
+        <h2>Settings</h2>
+        <button id="btn-close-settings" class="control-btn" aria-label="Close Settings">×</button>
+      </header>
+      <div class="settings-body">
+        <div class="setting-group">
+          <label for="api-key">Groq API Key</label>
+          <div class="input-with-button">
+            <input type="password" id="api-key" placeholder="gsk_..." />
+            <button id="btn-toggle-key" class="icon-btn">👁️</button>
+          </div>
+          <button id="btn-test-key" class="secondary-btn">Test Connection</button>
+          <span id="test-key-result" class="test-result"></span>
+        </div>
+
+        <div class="setting-group">
+          <label for="language">Speech Language</label>
+          <select id="language">
+            <option value="auto">Auto-detect</option>
+            <option value="en">English</option>
+            <option value="es">Spanish</option>
+            <option value="fr">French</option>
+            <option value="de">German</option>
+            <option value="pt">Portuguese</option>
+            <option value="ja">Japanese</option>
+            <option value="zh">Chinese</option>
+            <option value="ko">Korean</option>
+          </select>
+        </div>
+
+        <div class="setting-group checkbox-group">
+          <input type="checkbox" id="enhance-text" />
+          <label for="enhance-text">AI Text Enhancement (Llama)</label>
+        </div>
+
+        <div class="setting-group" id="prompt-style-group">
+          <label for="prompt-style">Enhancement Style</label>
+          <select id="prompt-style">
+            <option value="Clean">Clean (Default)</option>
+            <option value="Formal">Formal</option>
+            <option value="Casual">Casual</option>
+            <option value="Bullets">Bullet Points</option>
+          </select>
+        </div>
+
+        <div class="setting-group checkbox-group">
+          <input type="checkbox" id="auto-paste" />
+          <label for="auto-paste">Auto-Paste <span class="badge">Experimental</span></label>
+        </div>
+
+        <div class="setting-group read-only">
+          <label>Global Hotkey</label>
+          <div class="shortcut-keys">
+            <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Space</kbd>
+          </div>
+        </div>
+      </div>
+      <footer class="settings-footer">
+        <button id="btn-save-settings" class="primary-btn">Save Settings</button>
+      </footer>
     </div>
   </div>
 

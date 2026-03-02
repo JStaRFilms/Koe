@@ -86,17 +86,17 @@ src/renderer/index.html  — Add settings panel markup
 - Restore focus to previous window before pasting
 
 ## Definition of Done
-- [ ] Llama enhancement cleans up transcribed text
-- [ ] Enhancement toggle works (on/off)
-- [ ] Prompt styles change Llama behavior
-- [ ] Settings panel opens/closes smoothly
-- [ ] API key saved encrypted, test connection works
-- [ ] Language selection persists and is sent to Whisper
-- [ ] Auto-paste works when enabled (text pasted in previous app)
-- [ ] Auto-paste off by default, labeled "experimental"
-- [ ] Settings persist across restarts
-- [ ] First-launch shows onboarding prompt for API key
-- [ ] Enhancement failure gracefully falls back to raw text
+- [x] Llama enhancement cleans up transcribed text
+- [x] Enhancement toggle works (on/off)
+- [x] Prompt styles change Llama behavior
+- [x] Settings panel opens/closes smoothly
+- [x] API key saved encrypted, test connection works
+- [x] Language selection persists and is sent to Whisper
+- [x] Auto-paste works when enabled (text pasted in previous app)
+- [x] Auto-paste off by default, labeled "experimental"
+- [x] Settings persist across restarts
+- [x] First-launch shows onboarding prompt for API key
+- [x] Enhancement failure gracefully falls back to raw text
 
 ## Constraints
 - API key NEVER leaves main process or gets logged

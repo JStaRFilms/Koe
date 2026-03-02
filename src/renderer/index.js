@@ -1,14 +1,24 @@
-import { startCapture, stopCapture } from './audio/mic-capture.js';
-import { initVAD } from './audio/vad.js';
+import { initVAD, startListening, stopListening } from './audio/vad.js';
 import { FloatingWindow } from './components/floating-window.js';
+import { SettingsPanel } from './components/settings-panel.js';
 
 let isRecording = false;
 let ui;
+let settingsUI;
 
 // Initialize app
 async function init() {
     ui = new FloatingWindow();
     ui.setState('idle');
+
+    settingsUI = new SettingsPanel();
+
+    const btnSettings = document.getElementById('btn-settings');
+    if (btnSettings) {
+        btnSettings.addEventListener('click', () => {
+            settingsUI.show();
+        });
+    }
 
     if (window.api) {
         window.api.log('Renderer successfully initialized.');
@@ -23,14 +33,15 @@ async function init() {
 
             try {
                 if (isRecording) {
-                    await startCapture();
+                    // MicVAD handles mic access + speech detection internally
+                    await startListening();
                 } else {
-                    stopCapture();
+                    stopListening();
                 }
             } catch (err) {
                 isRecording = false;
                 updateUI();
-                window.api.log(`Failed to toggle mic capture: ${err.message}`);
+                window.api.log(`Failed to toggle recording: ${err.message}`);
             }
 
             // Debug
@@ -60,9 +71,14 @@ async function init() {
             });
         }
 
-        // Test settings fetch
+        // Initial settings fetch and onboarding check
         const settings = await window.api.getSettings();
         window.api.log(`Loaded settings with hotkey: ${settings.hotkey}`);
+
+        if (!settings.groqApiKey) {
+            window.api.log('No API key found. Triggering first-launch settings panel.');
+            settingsUI.show();
+        }
     } else {
         console.warn('API bridge not found. Make sure Electron preload script is configured correctly.');
     }

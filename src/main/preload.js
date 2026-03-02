@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('api', {
     // Settings
     getSettings: () => ipcRenderer.invoke(CHANNELS.GET_SETTINGS),
     saveSettings: (settings) => ipcRenderer.invoke(CHANNELS.SAVE_SETTINGS, settings),
+    testGroqKey: (apiKey) => ipcRenderer.invoke(CHANNELS.TEST_GROQ_KEY, apiKey),
 
     // Debug
     log: (message) => ipcRenderer.send(CHANNELS.LOG, message),
