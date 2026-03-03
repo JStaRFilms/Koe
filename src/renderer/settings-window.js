@@ -177,20 +177,17 @@ class SettingsWindow {
             // Initialize Settings Panel
             this.panels.settings = new SettingsPanel();
 
-            // Override the hide method since we don't hide in this context
-            this.panels.settings.hide = () => {
-                // In the settings window, we don't hide - we close the window
-                if (window.api && window.api.closeSettingsWindow) {
-                    window.api.closeSettingsWindow();
-                }
-            };
-
-            // Override save to close window after saving
+            // To provide a good UX, we should show a completion toast when saving settings
+            // instead of closing the window automatically.
             const originalSave = this.panels.settings.saveSettings.bind(this.panels.settings);
             this.panels.settings.saveSettings = async () => {
                 await originalSave();
-                if (window.api && window.api.closeSettingsWindow) {
-                    window.api.closeSettingsWindow();
+                // We'll show a toast notification here
+                const toast = document.getElementById('toast');
+                if (toast) {
+                    toast.querySelector('.toast-text').innerText = 'Settings saved successfully';
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 2000);
                 }
             };
         } catch (error) {

@@ -97,9 +97,8 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+    // This is a tray app that runs in the background.
+    // Do not quit when the settings or pill window is closed.
 });
 
 app.on('before-quit', () => {

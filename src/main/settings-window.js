@@ -3,7 +3,7 @@
  * Handles creation and lifecycle of the secondary settings window
  */
 
-const { BrowserWindow, screen } = require('electron');
+const { app, BrowserWindow, screen } = require('electron');
 const path = require('path');
 const { CHANNELS } = require('../shared/constants');
 
@@ -76,7 +76,15 @@ function createSettingsWindow(initialTab = 'settings') {
         settingsWindow.webContents.send(getTabChannel(initialTab));
     });
 
-    // Handle window closed
+    // Intercept close to hide instead (unless app is quitting)
+    settingsWindow.on('close', (event) => {
+        if (!app.isQuitting) {
+            event.preventDefault();
+            settingsWindow.hide();
+        }
+    });
+
+    // Handle window closed (only happens when app is quitting now)
     settingsWindow.on('closed', () => {
         settingsWindow = null;
     });
@@ -106,8 +114,7 @@ function getTabChannel(tabName) {
  */
 function closeSettingsWindow() {
     if (settingsWindow && !settingsWindow.isDestroyed()) {
-        settingsWindow.close();
-        settingsWindow = null;
+        settingsWindow.hide();
     }
 }
 
