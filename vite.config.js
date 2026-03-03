@@ -30,39 +30,43 @@ function resolveVadAsset(filename) {
 }
 
 /**
- * Custom Vite plugin: serves /vad/* assets as raw files BEFORE Vite's
+ * Custom Vite plugin: serves /assets/vad/* assets as raw files BEFORE Vite's
  * transform pipeline ever touches them. This prevents Vite from treating
  * .mjs WASM glue files as ES modules to be processed.
  */
 function vadAssetsPlugin() {
   return {
     name: 'vad-assets',
+    enforce: 'pre', // Run before other plugins
     configureServer(server) {
-      // Registering directly (not in a returned fn) ensures this runs
-      // BEFORE Vite's internal middleware, bypassing transforms.
-      server.middlewares.use((req, res, next) => {
-        if (!req.url || !req.url.startsWith('/vad/')) return next();
+      // Return a function to register middleware before Vite's internal middleware
+      return () => {
+        server.middlewares.use('/assets/vad/', (req, res, next) => {
+          // Strip query strings Vite may append (?import, ?t=...)
+          const cleanUrl = req.url.split('?')[0];
+          const filename = cleanUrl.replace(/^\//, ''); // Remove leading slash
+          const filePath = resolveVadAsset(filename);
 
-        // Strip query strings Vite may append (?import, ?t=...)
-        const clean = req.url.split('?')[0];
-        const filename = clean.replace('/vad/', '');
-        const filePath = resolveVadAsset(filename);
+          if (!filePath) {
+            console.warn(`[VAD Plugin] File not found: ${filename}`);
+            return next();
+          }
 
-        if (!filePath) return next();
+          const ext = '.' + filename.split('.').pop();
+          const contentType = MIME_TYPES[ext] || 'application/octet-stream';
 
-        const ext = '.' + filename.split('.').pop();
-        const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-
-        try {
-          const data = readFileSync(filePath);
-          res.setHeader('Content-Type', contentType);
-          res.setHeader('Cache-Control', 'no-cache');
-          res.setHeader('Access-Control-Allow-Origin', '*');
-          res.end(data);
-        } catch {
-          next();
-        }
-      });
+          try {
+            const data = readFileSync(filePath);
+            res.setHeader('Content-Type', contentType);
+            res.setHeader('Cache-Control', 'no-cache');
+            res.setHeader('Access-Control-Allow-Origin', '*');
+            res.end(data);
+          } catch (err) {
+            console.error(`[VAD Plugin] Error reading file: ${filePath}`, err);
+            next();
+          }
+        });
+      };
     },
   };
 }
@@ -73,6 +77,16 @@ export default defineConfig({
   build: {
     outDir: resolve(__dirname, 'dist/renderer'),
     emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'src/renderer/index.html'),
+        settings: resolve(__dirname, 'src/renderer/settings-window.html')
+      }
+    }
+  },
+  optimizeDeps: {
+    // Include VAD-related packages for proper CommonJS handling
+    include: ['@ricky0123/vad-web', 'onnxruntime-web']
   },
   plugins: [
     vadAssetsPlugin(),
@@ -81,17 +95,22 @@ export default defineConfig({
         {
           // ORT WASM glue + binaries (relative to Vite root: src/renderer)
           src: '../../node_modules/onnxruntime-web/dist/ort-wasm-simd-threaded.{mjs,wasm}',
-          dest: 'vad',
+          dest: 'assets/vad',
         },
         {
           // Silero VAD ONNX models
           src: '../../node_modules/@ricky0123/vad-web/dist/silero_vad_{legacy,v5}.onnx',
-          dest: 'vad',
+          dest: 'assets/vad',
         },
         {
           // VAD worklet
           src: '../../node_modules/@ricky0123/vad-web/dist/vad.worklet.bundle.min.js',
-          dest: 'vad',
+          dest: 'assets/vad',
+        },
+        {
+          // Public VAD folder files (for production)
+          src: '../../public/vad/*',
+          dest: 'assets/vad',
         },
       ],
     }),

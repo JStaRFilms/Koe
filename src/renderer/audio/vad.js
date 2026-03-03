@@ -1,5 +1,14 @@
-import { MicVAD } from "@ricky0123/vad-web";
 import { encodeWAV } from "./wav-encoder.js";
+
+// Dynamic import for CommonJS module
+let MicVAD;
+async function loadVAD() {
+    if (!MicVAD) {
+        const vad = await import("@ricky0123/vad-web");
+        MicVAD = vad.MicVAD;
+    }
+    return MicVAD;
+}
 
 let vad;
 let isSpeaking = false;
@@ -11,15 +20,45 @@ let isSpeaking = false;
  */
 let speechFrames = [];
 
+/**
+ * Get the base path for VAD assets.
+ * Uses different strategies for dev vs production.
+ */
+async function getVadBasePath() {
+    try {
+        // Check if we're in a packaged app
+        const isPackaged = await window.api?.isPackaged?.() || false;
+        window.api?.log?.(`VAD: isPackaged = ${isPackaged}`);
+
+        if (isPackaged) {
+            // In packaged app, files are in dist/renderer/assets/vad/
+            // The renderer is loaded from app.asar/dist/renderer/index.html
+            // Use relative path - the library will resolve it
+            return './assets/vad/';
+        } else {
+            // In dev, use absolute path to bypass Vite's dep optimization
+            return '/assets/vad/';
+        }
+    } catch (e) {
+        window.api?.log?.(`VAD: Error checking isPackaged: ${e.message}, defaulting to dev path`);
+        return '/assets/vad/';
+    }
+}
+
 export async function initVAD() {
     if (vad) return;
+
+    const basePath = await getVadBasePath();
+    window.api?.log?.(`VAD: Initializing with basePath: ${basePath}`);
+
     try {
-        vad = await MicVAD.new({
+        const VADClass = await loadVAD();
+        vad = await VADClass.new({
             positiveSpeechThreshold: 0.5,
             minSpeechFrames: 3,
             startOnLoad: false,
-            baseAssetPath: '/vad/',
-            onnxWASMBasePath: '/vad/',
+            baseAssetPath: basePath,
+            onnxWASMBasePath: basePath,
 
             onFrameProcessed: (probabilities, frame) => {
                 // Collect frames while speaking so we can flush on manual stop

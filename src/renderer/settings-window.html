@@ -26,7 +26,7 @@
             box-sizing: border-box;
         }
 
-        body {
+        #settings-window-body {
             display: block;
             margin: 0;
             padding: 0;
@@ -183,7 +183,7 @@
         }
 
         /* Settings Panel Adaptation */
-        .settings-panel {
+        #settings-window-body .settings-panel {
             position: static;
             background: transparent;
             backdrop-filter: none;
@@ -191,7 +191,7 @@
             height: auto;
         }
 
-        .settings-panel.hide {
+        #settings-window-body .settings-panel.hide {
             opacity: 1;
             transform: none;
             pointer-events: all;
@@ -202,7 +202,7 @@
         }
 
         /* History Panel Adaptation */
-        .history-panel {
+        #settings-window-body .history-panel {
             position: static;
             left: 0;
             width: 100%;
@@ -213,11 +213,11 @@
             box-shadow: none;
         }
 
-        .history-panel.show {
+        #settings-window-body .history-panel.show {
             left: 0;
         }
 
-        .history-panel.hide {
+        #settings-window-body .history-panel.hide {
             opacity: 1;
             transform: none;
             pointer-events: all;
@@ -228,7 +228,7 @@
         }
 
         /* Usage Meter Adaptation — full-panel card */
-        .usage-meter {
+        #settings-window-body .usage-meter {
             position: static;
             bottom: auto;
             left: auto;
@@ -258,7 +258,7 @@
             height: 6px;
         }
 
-        .usage-meter.hide {
+        #settings-window-body .usage-meter.hide {
             opacity: 1;
             transform: none;
             pointer-events: all;
@@ -320,7 +320,7 @@
     </style>
 </head>
 
-<body>
+<body id="settings-window-body">
     <!-- Custom Title Bar -->
     <div class="title-bar">
         <div class="title-bar-text">
@@ -470,6 +470,24 @@
                     <div class="setting-group checkbox-group">
                         <input type="checkbox" id="auto-paste" checked>
                         <label for="auto-paste">Auto-paste after transcription</label>
+                    </div>
+
+                    <div class="section-header">Advanced</div>
+                    <div class="setting-group">
+                        <label>Debug & Support</label>
+                        <button class="secondary-btn" id="btn-open-logs">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="margin-right: 6px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                            Open Logs Folder
+                        </button>
+                        <small class="input-help">View application logs for troubleshooting</small>
                     </div>
                 </div>
                 <div class="settings-footer">

@@ -2,6 +2,8 @@ const { contextBridge, ipcRenderer } = require('electron');
 const { CHANNELS } = require('../shared/constants');
 
 contextBridge.exposeInMainWorld('api', {
+    // App info
+    isPackaged: () => ipcRenderer.invoke('app:is-packaged'),
     // Recording toggle events from main process
     onRecordingToggle: (callback) => {
         ipcRenderer.removeAllListeners(CHANNELS.RECORDING_TOGGLED);
@@ -29,6 +31,9 @@ contextBridge.exposeInMainWorld('api', {
     getHistory: () => ipcRenderer.invoke(CHANNELS.GET_HISTORY),
     clearHistory: () => ipcRenderer.invoke(CHANNELS.CLEAR_HISTORY),
     exportHistory: (format) => ipcRenderer.invoke('history:export', format),
+
+    // Logs
+    openLogsFolder: () => ipcRenderer.invoke('app:open-logs'),
 
     // Audio
     sendAudioChunk: (arrayBuffer) => ipcRenderer.send(CHANNELS.AUDIO_CHUNK, arrayBuffer),

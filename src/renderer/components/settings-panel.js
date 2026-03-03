@@ -5,6 +5,7 @@ export class SettingsPanel {
         this.btnSave = document.getElementById('btn-save-settings');
         this.btnToggleKey = document.getElementById('btn-toggle-key');
         this.btnTestKey = document.getElementById('btn-test-key');
+        this.btnOpenLogs = document.getElementById('btn-open-logs');
         this.inputApiKey = document.getElementById('api-key');
         this.selLanguage = document.getElementById('language');
         this.chkEnhance = document.getElementById('enhance-text');
@@ -69,6 +70,11 @@ export class SettingsPanel {
             this.inputHotkey.addEventListener('focus', () => this.startHotkeyRecording());
             this.inputHotkey.addEventListener('blur', () => this.stopHotkeyRecording());
             this.inputHotkey.addEventListener('keydown', (e) => this.handleHotkeyInput(e));
+        }
+
+        // Open Logs button
+        if (this.btnOpenLogs) {
+            this.btnOpenLogs.addEventListener('click', () => this.openLogsFolder());
         }
     }
 
@@ -245,5 +251,54 @@ export class SettingsPanel {
         this.testResult.textContent = message;
         this.testResult.className = `test-result ${isSuccess ? 'success' : 'error'}`;
         this.testResult.style.display = 'block';
+    }
+
+    /**
+     * Open the logs folder in the system file explorer
+     */
+    async openLogsFolder() {
+        if (!window.api || !window.api.openLogsFolder) {
+            console.error('openLogsFolder API not available');
+            return;
+        }
+
+        try {
+            this.btnOpenLogs.disabled = true;
+            this.btnOpenLogs.innerHTML = `
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <path d="M12 6v6l4 2"/>
+                </svg>
+                Opening...
+            `;
+
+            const result = await window.api.openLogsFolder();
+
+            if (!result.success) {
+                console.error('Failed to open logs folder:', result.error);
+                // Show error toast
+                const toast = document.getElementById('toast');
+                if (toast) {
+                    toast.querySelector('.toast-text').innerText = 'Failed to open logs folder';
+                    toast.classList.add('show');
+                    setTimeout(() => toast.classList.remove('show'), 2000);
+                }
+            }
+        } catch (error) {
+            console.error('Error opening logs folder:', error);
+        } finally {
+            // Restore button state
+            this.btnOpenLogs.disabled = false;
+            this.btnOpenLogs.innerHTML = `
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10 9 9 9 8 9"/>
+                </svg>
+                Open Logs Folder
+            `;
+        }
     }
 }

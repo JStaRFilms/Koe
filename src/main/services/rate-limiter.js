@@ -1,8 +1,15 @@
 const Store = require('electron-store').default || require('electron-store');
 
-const usageStore = new Store({
-    name: 'usage-stats'
-});
+let usageStore = null;
+
+function getStore() {
+    if (!usageStore) {
+        usageStore = new Store({
+            name: 'usage-stats'
+        });
+    }
+    return usageStore;
+}
 
 const LIMITS = {
     RPM: 20,
@@ -23,13 +30,13 @@ function getTodayKey() {
 
 function getDailyStats() {
     const todayKey = getTodayKey();
-    const stats = usageStore.get(todayKey, { requests: 0, audioSeconds: 0 });
+    const stats = getStore().get(todayKey, { requests: 0, audioSeconds: 0 });
     return stats;
 }
 
 function saveDailyStats(stats) {
     const todayKey = getTodayKey();
-    usageStore.set(todayKey, stats);
+    getStore().set(todayKey, stats);
 }
 
 // Clean up old requests beyond the 1-minute window

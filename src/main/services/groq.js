@@ -1,5 +1,6 @@
 const { getSetting } = require('./settings');
 const rateLimiter = require('./rate-limiter');
+const logger = require('./logger');
 
 const GROQ_WHISPER_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
@@ -58,7 +59,7 @@ async function transcribeDirect(wavBuffer, language = 'auto') {
             if (error.message.includes('Rate limit') || error.message.includes('Invalid API Key') || retries === 0) {
                 throw error;
             }
-            console.warn(`[Groq] Network error, retrying... (${error.message})`);
+            logger.warn(`[Groq] Network error, retrying... (${error.message})`);
             await new Promise(r => setTimeout(r, 1000));
             retries--;
         }
@@ -120,14 +121,14 @@ async function enhance(rawText, promptStyle = 'Clean') {
         });
 
         if (!response.ok) {
-            console.warn('[Enhance] API error', response.status);
+            logger.warn('[Enhance] API error', response.status);
             return rawText; // fallback
         }
 
         const data = await response.json();
         return data.choices[0].message.content.trim();
     } catch (error) {
-        console.warn('[Enhance] Network error', error.message);
+        logger.warn('[Enhance] Network error', error.message);
         return rawText; // fallback
     }
 }

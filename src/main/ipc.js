@@ -1,4 +1,4 @@
-const { ipcMain, dialog } = require('electron');
+const { ipcMain, dialog, shell, app } = require('electron');
 const { CHANNELS } = require('../shared/constants');
 const { getSettings, setSettings, getSetting } = require('./services/settings');
 const { transcribe, enhance, validateApiKey } = require('./services/groq');
@@ -7,6 +7,7 @@ const { autoPaste } = require('./services/clipboard');
 const historyService = require('./services/history');
 const { closeSettingsWindow } = require('./settings-window');
 const { updateHotkey } = require('./shortcuts');
+const logger = require('./services/logger');
 const fs = require('fs');
 const path = require('path');
 
@@ -55,7 +56,7 @@ function setupIpcHandlers(mainWindow) {
     });
 
     ipcMain.on(CHANNELS.LOG, (event, message) => {
-        console.log('[Renderer]', message);
+        logger.info('[Renderer]', message);
     });
 
     ipcMain.on(CHANNELS.WINDOW_MINIMIZE, () => {
@@ -87,28 +88,28 @@ function setupIpcHandlers(mainWindow) {
         try {
             const { buffer, audioSeconds } = audioData;
             const settings = getSettings();
-            console.log(`[Pipeline] Received audio chunk: ${buffer?.byteLength || 'N/A'} bytes, ${audioSeconds?.toFixed(1)}s`);
+            logger.info(`[Pipeline] Received audio chunk: ${buffer?.byteLength || 'N/A'} bytes, ${audioSeconds?.toFixed(1)}s`);
 
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, 'processing');
             }
 
-            console.log('[Pipeline] Calling Groq transcribe...');
+            logger.info('[Pipeline] Calling Groq transcribe...');
             let text = await transcribe(buffer, audioSeconds, settings.language || 'auto');
-            console.log(`[Pipeline] Transcription result: "${text?.substring(0, 80) || 'null'}"`);
+            logger.info(`[Pipeline] Transcription result: "${text?.substring(0, 80) || 'null'}"`);
 
             if (text && settings.enhanceText) {
                 if (mainWindow && !mainWindow.isDestroyed()) {
                     mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, 'enhancing');
                 }
-                console.log('[Pipeline] Enhancing text...');
+                logger.info('[Pipeline] Enhancing text...');
                 text = await enhance(text, settings.promptStyle || 'Clean');
-                console.log(`[Pipeline] Enhanced: "${text?.substring(0, 80) || 'null'}"`);
+                logger.info(`[Pipeline] Enhanced: "${text?.substring(0, 80) || 'null'}"`);
             }
 
             // Auto-paste is now always on by default
             if (text) {
-                console.log('[Pipeline] Hiding pill and preparing to paste...');
+                logger.info('[Pipeline] Hiding pill and preparing to paste...');
                 // Hide the pill before pasting so focus returns to the user's app
                 if (mainWindow && !mainWindow.isDestroyed()) {
                     mainWindow.hide();
@@ -116,7 +117,7 @@ function setupIpcHandlers(mainWindow) {
 
                 // Small delay to let OS focus the previous window
                 await new Promise(r => setTimeout(r, 200));
-                console.log('[Pipeline] Firing autoPaste...');
+                logger.info('[Pipeline] Firing autoPaste...');
                 autoPaste(text);
 
                 historyService.addHistoryEntry(text, settings.language || 'auto', settings.enhanceText && !!text);
@@ -129,9 +130,9 @@ function setupIpcHandlers(mainWindow) {
                     mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, text);
                 }
             }
-            console.log('[Pipeline] Done.');
+            logger.info('[Pipeline] Done.');
         } catch (error) {
-            console.error('[Pipeline] Transcription error:', error);
+            logger.error('[Pipeline] Transcription error:', error);
             if (mainWindow && !mainWindow.isDestroyed()) {
                 mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, `error: ${error.message}`);
                 mainWindow.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
@@ -180,9 +181,27 @@ function setupIpcHandlers(mainWindow) {
 
             return { success: true, filePath };
         } catch (error) {
-            console.error('[Export] Error exporting history:', error);
+            logger.error('[Export] Error exporting history:', error);
             return { success: false, error: error.message };
         }
+    });
+
+    // Open logs folder in file explorer
+    ipcMain.handle('app:open-logs', async () => {
+        try {
+            const logDir = logger.getLogDirectory();
+            logger.info('[IPC] Opening logs folder:', logDir);
+            await shell.openPath(logDir);
+            return { success: true, path: logDir };
+        } catch (error) {
+            logger.error('[IPC] Failed to open logs folder:', error);
+            return { success: false, error: error.message };
+        }
+    });
+
+    // Check if app is packaged (production) or in dev mode
+    ipcMain.handle('app:is-packaged', () => {
+        return app.isPackaged;
     });
 }
 

@@ -4,6 +4,7 @@ const { setupTray } = require('./tray');
 const { registerShortcuts, unregisterShortcuts } = require('./shortcuts');
 const { setupIpcHandlers } = require('./ipc');
 const { createSettingsWindow } = require('./settings-window');
+const logger = require('./services/logger');
 
 let mainWindow = null;
 
@@ -67,16 +68,17 @@ function getMainWindow() {
 
 app.whenReady().then(() => {
     try {
-        console.log('[Main] App starting...');
-        console.log('[Main] __dirname:', __dirname);
-        console.log('[Main] app.getAppPath():', app.getAppPath());
-        console.log('[Main] process.resourcesPath:', process.resourcesPath);
-        console.log('[Main] isPackaged:', app.isPackaged);
+        logger.info('[Main] App starting...');
+        logger.info('[Main] __dirname:', __dirname);
+        logger.info('[Main] app.getAppPath():', app.getAppPath());
+        logger.info('[Main] process.resourcesPath:', process.resourcesPath);
+        logger.info('[Main] isPackaged:', app.isPackaged);
+        logger.info('[Main] Log file location:', logger.getLogPath());
 
         createWindow();
 
         if (!mainWindow) {
-            console.error('[Main] Failed to create main window');
+            logger.error('[Main] Failed to create main window');
             return;
         }
 
@@ -84,9 +86,9 @@ app.whenReady().then(() => {
         registerShortcuts(mainWindow);
         setupIpcHandlers(mainWindow);
 
-        console.log('[Main] App started successfully');
+        logger.info('[Main] App started successfully');
     } catch (error) {
-        console.error('[Main] Error during startup:', error);
+        logger.error('[Main] Error during startup:', error);
     }
 
     app.on('activate', () => {
