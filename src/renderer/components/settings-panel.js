@@ -43,10 +43,10 @@ export class SettingsPanel {
         this.btnToggleKey.addEventListener('click', () => {
             if (this.inputApiKey.type === 'password') {
                 this.inputApiKey.type = 'text';
-                this.btnToggleKey.textContent = '🙈';
+                this.btnToggleKey.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
             } else {
                 this.inputApiKey.type = 'password';
-                this.btnToggleKey.textContent = '👁️';
+                this.btnToggleKey.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
             }
         });
 
@@ -220,7 +220,8 @@ export class SettingsPanel {
             return;
         }
 
-        this.btnTestKey.textContent = 'Testing...';
+        const svgIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+        this.btnTestKey.innerHTML = svgIcon + ' Testing...';
         this.btnTestKey.disabled = true;
         this.testResult.style.display = 'none';
 
@@ -234,7 +235,8 @@ export class SettingsPanel {
         } catch (e) {
             this.showTestResult('Connection failed ✗', false);
         } finally {
-            this.btnTestKey.textContent = 'Test Connection';
+            const svgIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+            this.btnTestKey.innerHTML = svgIcon + ' Test Connection';
             this.btnTestKey.disabled = false;
         }
     }

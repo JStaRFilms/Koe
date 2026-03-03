@@ -42,7 +42,7 @@
         /* Custom Title Bar */
         .title-bar {
             height: var(--title-bar-height);
-            background: rgba(10, 10, 15, 0.95);
+            background: var(--koe-surface-solid);
             border-bottom: 1px solid var(--koe-border);
             display: flex;
             align-items: center;
@@ -88,7 +88,7 @@
         }
 
         .window-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--koe-border-highlight);
             color: var(--koe-text);
         }
 
@@ -100,7 +100,7 @@
         /* Tab Bar */
         .tab-bar {
             height: var(--tab-bar-height);
-            background: rgba(12, 12, 18, 0.9);
+            background: var(--koe-surface-elevated);
             border-bottom: 1px solid var(--koe-border);
             display: flex;
             padding: 0 8px;
@@ -130,7 +130,7 @@
 
         .tab-btn:hover {
             color: var(--koe-text);
-            background: rgba(255, 255, 255, 0.03);
+            background: var(--koe-border);
         }
 
         .tab-btn.active {
@@ -227,14 +227,35 @@
             padding: 0;
         }
 
-        /* Usage Meter Adaptation */
+        /* Usage Meter Adaptation — full-panel card */
         .usage-meter {
             position: static;
             bottom: auto;
             left: auto;
             right: auto;
-            background: rgba(20, 20, 25, 0.6);
+            background: var(--koe-input-bg);
             box-shadow: none;
+            border: 1px solid var(--koe-border-highlight);
+            border-radius: var(--radius-inner);
+            padding: 16px;
+            gap: 16px;
+        }
+
+        .usage-meter .usage-header {
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--koe-border);
+        }
+
+        .usage-meter .usage-header h3 {
+            font-size: 13px;
+        }
+
+        .usage-meter .usage-labels {
+            font-size: 12px;
+        }
+
+        .usage-meter .usage-bar-track {
+            height: 6px;
         }
 
         .usage-meter.hide {
@@ -279,7 +300,7 @@
             bottom: 60px;
             left: 50%;
             transform: translateX(-50%) translateY(20px);
-            background: rgba(30, 30, 35, 0.95);
+            background: var(--koe-surface-solid);
             border: 1px solid var(--koe-border);
             border-radius: var(--radius-inner);
             padding: 10px 20px;
@@ -367,8 +388,21 @@
                         <label>Groq API Key</label>
                         <div class="input-with-button">
                             <input type="password" id="api-key" placeholder="Enter your Groq API key">
-                            <button class="icon-btn" id="btn-toggle-key" title="Show/Hide">👁️</button>
-                            <button class="icon-btn" id="btn-test-key" title="Test Connection">↻</button>
+                            <button class="icon-btn" id="btn-toggle-key" title="Show/Hide">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </button>
+                            <button class="test-btn" id="btn-test-key" title="Test Connection">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </svg>
+                                Test Connection
+                            </button>
                         </div>
                         <div class="test-result" id="test-key-result"></div>
                     </div>

@@ -65,7 +65,7 @@
 }
 
 .history-entry {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--koe-input-bg);
     border: 1px solid var(--koe-border);
     border-radius: var(--radius-inner);
     padding: var(--sp-sm);
@@ -76,7 +76,7 @@
 }
 
 .history-entry:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--koe-border-highlight);
 }
 
 .history-entry-header {
