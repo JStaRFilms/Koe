@@ -47,6 +47,11 @@ function createWindow() {
         mainWindow.loadFile(path.join(__dirname, '../../dist/renderer/index.html'));
     }
 
+    // Show window when ready (critical for production)
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.showInactive();
+    });
+
     // When window is shown, tell renderer to play entrance animation
     mainWindow.on('show', () => {
         const { CHANNELS } = require('../shared/constants');
@@ -61,10 +66,28 @@ function getMainWindow() {
 }
 
 app.whenReady().then(() => {
-    createWindow();
-    setupTray(mainWindow);
-    registerShortcuts(mainWindow);
-    setupIpcHandlers(mainWindow);
+    try {
+        console.log('[Main] App starting...');
+        console.log('[Main] __dirname:', __dirname);
+        console.log('[Main] app.getAppPath():', app.getAppPath());
+        console.log('[Main] process.resourcesPath:', process.resourcesPath);
+        console.log('[Main] isPackaged:', app.isPackaged);
+
+        createWindow();
+
+        if (!mainWindow) {
+            console.error('[Main] Failed to create main window');
+            return;
+        }
+
+        setupTray(mainWindow);
+        registerShortcuts(mainWindow);
+        setupIpcHandlers(mainWindow);
+
+        console.log('[Main] App started successfully');
+    } catch (error) {
+        console.error('[Main] Error during startup:', error);
+    }
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {

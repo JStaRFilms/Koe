@@ -1,11 +1,12 @@
 appId: com.koe.app
 productName: Koe
 directories:
-  output: dist
+  output: release
 files:
   - dist/renderer/**/*
   - src/main/**/*
   - src/shared/**/*
+  - src/assets/**/*
   - package.json
 win:
   target: nsis

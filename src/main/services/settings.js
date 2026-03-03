@@ -31,10 +31,32 @@ function getEncryptionKey() {
     }
 }
 
-const store = new Store({
-    defaults: DEFAULT_SETTINGS,
-    encryptionKey: getEncryptionKey()
-});
+let store;
+try {
+    store = new Store({
+        defaults: DEFAULT_SETTINGS,
+        encryptionKey: getEncryptionKey()
+    });
+    // Trigger a read to surface any deserialization errors immediately
+    store.store;
+} catch (error) {
+    console.warn('Settings store corrupted or encryption key changed, resetting to defaults:', error.message);
+    // The config file exists but can't be decrypted — delete it and start fresh
+    const configPath = path.join(app.getPath('userData'), 'config.json');
+    try {
+        if (fs.existsSync(configPath)) {
+            fs.unlinkSync(configPath);
+            console.log('Deleted corrupt config file:', configPath);
+        }
+    } catch (deleteErr) {
+        console.error('Failed to delete corrupt config:', deleteErr);
+    }
+    // Create a fresh store
+    store = new Store({
+        defaults: DEFAULT_SETTINGS,
+        encryptionKey: getEncryptionKey()
+    });
+}
 
 function getSettings() {
     return store.store;
