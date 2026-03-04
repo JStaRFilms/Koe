@@ -4,6 +4,7 @@ const { CHANNELS } = require('../shared/constants');
 contextBridge.exposeInMainWorld('api', {
     // App info
     isPackaged: () => ipcRenderer.invoke('app:is-packaged'),
+    getResourcesPath: () => ipcRenderer.invoke('app:resources-path'),
     // Recording toggle events from main process
     onRecordingToggle: (callback) => {
         ipcRenderer.removeAllListeners(CHANNELS.RECORDING_TOGGLED);

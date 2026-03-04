@@ -22,21 +22,31 @@ let speechFrames = [];
 
 /**
  * Get the base path for VAD assets.
- * Uses different strategies for dev vs production.
+ * - Dev: Vite serves them from /assets/vad/ via the custom plugin
+ * - Production: Files are asarUnpacked to resources/app.asar.unpacked/dist/renderer/assets/vad/
+ *   We must use an absolute file:// URL to avoid double-nesting and asar read failures.
  */
 async function getVadBasePath() {
     try {
-        // Check if we're in a packaged app
         const isPackaged = await window.api?.isPackaged?.() || false;
         window.api?.log?.(`VAD: isPackaged = ${isPackaged}`);
 
         if (isPackaged) {
-            // In packaged app, files are in dist/renderer/assets/vad/
-            // The renderer is loaded from app.asar/dist/renderer/index.html
-            // Use relative path - the library will resolve it
+            // In production, get the resources path from main process
+            // The unpacked assets live at: resources/app.asar.unpacked/dist/renderer/assets/vad/
+            const resourcesPath = await window.api?.getResourcesPath?.();
+            if (resourcesPath) {
+                // Convert backslashes to forward slashes for file:// URL
+                const normalizedPath = resourcesPath.replace(/\\/g, '/');
+                const vadPath = `file:///${normalizedPath}/app.asar.unpacked/dist/renderer/assets/vad/`;
+                window.api?.log?.(`VAD: Using unpacked path: ${vadPath}`);
+                return vadPath;
+            }
+            // Fallback: try relative path (may not work inside asar)
+            window.api?.log?.('VAD: resourcesPath not available, falling back to relative path');
             return './assets/vad/';
         } else {
-            // In dev, use absolute path to bypass Vite's dep optimization
+            // In dev, use absolute path served by the Vite VAD plugin
             return '/assets/vad/';
         }
     } catch (e) {
@@ -91,6 +101,7 @@ export async function initVAD() {
     } catch (error) {
         console.error('VAD init error:', error);
         window.api.log(`VAD init error: ${error.message}`);
+        throw error; // Re-throw so caller can detect the failure
     }
 }
 
@@ -104,6 +115,11 @@ export async function startListening() {
     speechFrames = [];
     await vad.start();
     window.api.log('VAD: Listening started.');
+}
+
+/** Check if VAD is initialized and ready */
+export function isVADReady() {
+    return !!vad;
 }
 
 /**

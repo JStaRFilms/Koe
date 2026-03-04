@@ -203,6 +203,11 @@ function setupIpcHandlers(mainWindow) {
     ipcMain.handle('app:is-packaged', () => {
         return app.isPackaged;
     });
+
+    // Get the resources path (needed for VAD asset resolution in production)
+    ipcMain.handle('app:resources-path', () => {
+        return process.resourcesPath;
+    });
 }
 
 module.exports = {

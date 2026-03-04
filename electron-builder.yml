@@ -1,5 +1,6 @@
-appId: com.koe.app
+appId: com.jstarfilmsstudios.koe
 productName: Koe
+copyright: "Copyright © 2026 J StaR Films Studios"
 directories:
   output: release
 files:
@@ -8,8 +9,12 @@ files:
   - src/shared/**/*
   - src/assets/**/*
   - package.json
+asarUnpack:
+  - "dist/renderer/assets/vad/**/*"
 win:
   target: nsis
+  icon: src/assets/icons/app-icon.png
+  legalTrademarks: "J StaR Films Studios"
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

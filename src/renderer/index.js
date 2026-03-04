@@ -1,8 +1,32 @@
-import { initVAD, startListening, stopListening } from './audio/vad.js';
+import { initVAD, startListening, stopListening, isVADReady } from './audio/vad.js';
 import { PillUI } from './components/pill-ui.js';
 
 let isRecording = false;
 let pill;
+let vadInitFailed = false;
+
+/**
+ * Parse an error message into a short, user-friendly label.
+ */
+function getErrorLabel(errorMsg) {
+    const msg = (errorMsg || '').toLowerCase();
+    if (msg.includes('fetch') || msg.includes('network') || msg.includes('enotfound') || msg.includes('timeout')) {
+        return 'Network Error';
+    }
+    if (msg.includes('401') || msg.includes('403') || msg.includes('api key') || msg.includes('unauthorized')) {
+        return 'API Key Invalid';
+    }
+    if (msg.includes('429') || msg.includes('rate limit')) {
+        return 'Rate Limited';
+    }
+    if (msg.includes('500') || msg.includes('server')) {
+        return 'Server Error';
+    }
+    if (msg.includes('vad') || msg.includes('backend') || msg.includes('wasm')) {
+        return 'Audio Engine Failed';
+    }
+    return 'Transcription Error';
+}
 
 async function init() {
     pill = new PillUI();
@@ -15,7 +39,12 @@ async function init() {
     window.api.log('Renderer initialized — pill mode.');
 
     // Initialize VAD in the background
-    initVAD().catch(e => window.api.log(`VAD init error: ${e.message}`));
+    try {
+        await initVAD();
+    } catch (e) {
+        vadInitFailed = true;
+        window.api.log(`VAD init error: ${e.message}`);
+    }
 
     // ─── Animate-in event from main process ───
     window.api.onAnimateIn(() => {
@@ -24,11 +53,24 @@ async function init() {
 
     // ─── Recording toggle from hotkey / tray ───
     window.api.onRecordingToggle(async (recordingState) => {
-        isRecording = recordingState;
-
-        if (isRecording) {
+        if (recordingState) {
+            // Check if VAD is ready before recording
+            if (vadInitFailed || !isVADReady()) {
+                isRecording = false;
+                pill.setError('Audio Not Ready');
+                window.api.log('Recording attempted but VAD not initialized.');
+                return;
+            }
+            isRecording = true;
             pill.setState('recording');
         } else {
+            // If we weren't actually recording (e.g. VAD rejected the start),
+            // don't enter processing state — just ignore.
+            if (!isRecording) {
+                window.api.log('Stop toggle received but was not recording. Ignoring.');
+                return;
+            }
+            isRecording = false;
             // Stop recording → show processing state while waiting for transcription
             pill.setState('processing');
         }
@@ -41,7 +83,7 @@ async function init() {
             }
         } catch (err) {
             isRecording = false;
-            pill.setState('idle');
+            pill.setError(getErrorLabel(err.message));
             window.api.log(`Toggle recording error: ${err.message}`);
         }
 
@@ -53,10 +95,11 @@ async function init() {
         window.api.onTranscriptionStatus((status) => {
             if (status === 'processing' || status === 'enhancing') {
                 pill.setState('processing');
-            } else if (status.startsWith && status.startsWith('error:')) {
-                // On error, briefly show error then hide
-                pill.setState('idle');
-                setTimeout(() => pill.animateOut(), 2000);
+            } else if (status && typeof status === 'string' && status.startsWith('error:')) {
+                // Parse the error and show a user-friendly label
+                const errorDetail = status.replace('error:', '').trim();
+                pill.setError(getErrorLabel(errorDetail));
+                window.api.log(`Transcription error surfaced to UI: ${errorDetail}`);
             }
         });
     }
@@ -80,3 +123,4 @@ async function init() {
 }
 
 document.addEventListener('DOMContentLoaded', init);
+

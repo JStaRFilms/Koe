@@ -115,6 +115,10 @@
     transition: color 0.3s ease, opacity 0.3s ease;
 }
 
+.pill__icon--error {
+    display: none;
+}
+
 .pill__pulse-dot {
     position: absolute;
     top: 50%;
@@ -361,6 +365,64 @@
         var(--shadow-pill),
         0 0 50px var(--koe-success-dim),
         inset 0 0 25px var(--koe-success-dim);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   STATE: ERROR
+   Amber/orange glow, warning icon, user-facing error message.
+   ═══════════════════════════════════════════════════════════ */
+.state-error {
+    --glow-color: #f59e0b;
+}
+
+.state-error .pill__border-glow {
+    opacity: 0.8;
+    animation: none;
+    background: #f59e0b;
+}
+
+.state-error .pill__icon--mic {
+    display: none;
+}
+
+.state-error .pill__icon--error {
+    display: block;
+    width: 18px;
+    height: 18px;
+    color: #f59e0b;
+    opacity: 1;
+}
+
+.state-error .pill__pulse-dot {
+    opacity: 0;
+}
+
+.state-error .pill__status {
+    color: #f59e0b;
+    font-weight: 500;
+}
+
+.state-error .pill__visualizer {
+    opacity: 0;
+}
+
+.state-error .pill__timer {
+    opacity: 0;
+}
+
+.state-error .pill__spinner {
+    opacity: 0;
+}
+
+.state-error .pill__check {
+    opacity: 0;
+}
+
+.state-error.glass-pill {
+    box-shadow:
+        var(--shadow-pill),
+        0 0 40px rgba(245, 158, 11, 0.15),
+        inset 0 0 25px rgba(245, 158, 11, 0.08);
 }
 
 /* ═══════════════════════════════════════════════════════════

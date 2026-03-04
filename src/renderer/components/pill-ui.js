@@ -44,7 +44,7 @@ export class PillUI {
 
     /**
      * Set the pill state and update all visual elements.
-     * @param {'idle'|'recording'|'processing'|'done'} newState
+     * @param {'idle'|'recording'|'processing'|'done'|'error'} newState
      */
     setState(newState) {
         if (this.state === newState) return;
@@ -74,7 +74,30 @@ export class PillUI {
                 this.status.textContent = 'Pasted ✓';
                 this.stopTimer();
                 break;
+
+            case 'error':
+                // Error message is set by setError() before calling setState
+                this.stopTimer();
+                break;
         }
+    }
+
+    /**
+     * Show an error state with a user-friendly message, then auto-hide.
+     * @param {string} message - Short error description (e.g. "Network Error", "API Error")
+     */
+    setError(message) {
+        // Force state change even if already in error
+        this.pill.classList.remove(`state-${this.state}`);
+        this.state = 'error';
+        this.pill.classList.add('state-error');
+        this.status.textContent = message || 'Error';
+        this.stopTimer();
+
+        // Auto-hide after 3.5 seconds
+        setTimeout(() => {
+            this.animateOut();
+        }, 3500);
     }
 
     /** Start the recording duration timer */

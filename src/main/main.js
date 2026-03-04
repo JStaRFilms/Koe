@@ -48,10 +48,10 @@ function createWindow() {
         mainWindow.loadFile(path.join(__dirname, '../../dist/renderer/index.html'));
     }
 
-    // Show window when ready (critical for production)
-    mainWindow.once('ready-to-show', () => {
-        mainWindow.showInactive();
-    });
+    // Don't auto-show the pill on startup.
+    // The pill will be shown via showInactive() when the user triggers recording
+    // (via hotkey in shortcuts.js or tray menu in tray.js).
+    // This prevents the alwaysOnTop pill from blocking the settings window.
 
     // When window is shown, tell renderer to play entrance animation
     mainWindow.on('show', () => {
