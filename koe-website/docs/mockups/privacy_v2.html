@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRIVACY DIRECTIVE // KOE v2</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Righteous (Deco) & IBM Plex Mono (Terminal) & Noto Serif JP -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Righteous&family=IBM+Plex+Mono:wght@400;600;700&family=Noto+Serif+JP:wght@900&display=swap"
+        rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        void: 'var(--color-void)',
+                        bone: 'var(--color-bone)',
+                        amber: 'var(--color-amber)',
+                        crimson: 'var(--color-crimson)',
+                        muted: 'var(--color-muted)',
+                        zinc: 'var(--color-zinc)',
+                    },
+                    fontFamily: {
+                        deco: ['Righteous', 'cursive'],
+                        mono: ['"IBM Plex Mono"', 'monospace'],
+                        jp: ['"Noto Serif JP"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --color-void: #E2DFD2;
+            --color-bone: #050505;
+            --color-amber: #D9381E;
+            --color-crimson: #8A0303;
+            --color-muted: #666666;
+            --color-zinc: #B0ADA1;
+        }
+
+        .dark {
+            --color-void: #050505;
+            --color-bone: #E2DFD2;
+            --color-amber: #FFB000;
+            --color-crimson: #8A0303;
+            --color-muted: #888888;
+            --color-zinc: #1F1F1F;
+        }
+
+        body {
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Scanline Overlay */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 100;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.15;
+        }
+
+        .border-raw {
+            border: 1px solid var(--color-zinc);
+        }
+
+        .border-raw-b {
+            border-bottom: 1px solid var(--color-zinc);
+        }
+
+        .border-raw-r {
+            border-right: 1px solid var(--color-zinc);
+        }
+
+        .border-raw-t {
+            border-top: 1px solid var(--color-zinc);
+        }
+
+        /* Glitch Hover */
+        .glitch-hover:hover {
+            color: var(--color-amber);
+            text-shadow: 2px 0 var(--color-void), -2px 0 var(--color-bone);
+            background: var(--color-zinc);
+        }
+
+        /* Massive Background Kanji */
+        .giant-kanji {
+            position: absolute;
+            font-size: 100vw;
+            line-height: 0.8;
+            color: var(--color-zinc);
+            opacity: 0.2;
+            z-index: -1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+        }
+
+        /* Grid Background pattern */
+        .grid-bg {
+            background-size: 50px 50px;
+            background-image:
+                linear-gradient(to right, var(--color-zinc) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--color-zinc) 1px, transparent 1px);
+        }
+
+        .crt-flicker {
+            animation: flicker 0.2s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0% {
+                opacity: 0.98;
+            }
+
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
+            }
+        }
+
+        .btn-brutal {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--color-amber);
+            color: var(--color-void);
+            padding: 16px 32px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            border: 2px solid var(--color-amber);
+            transition: all 0s;
+            position: relative;
+        }
+
+        .btn-brutal::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: -8px;
+            bottom: -8px;
+            background: transparent;
+            border: 1px solid var(--color-amber);
+            z-index: -1;
+            transition: all 0.1s;
+        }
+
+        .btn-brutal:hover {
+            background: var(--color-bone);
+            border-color: var(--color-bone);
+            color: var(--color-void);
+        }
+
+        .btn-brutal:hover::after {
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-void text-bone font-mono uppercase selection:bg-amber selection:text-void min-h-screen flex flex-col grid-bg">
+
+    <div class="giant-kanji font-jp pointer-events-none fixed">秘</div>
+
+    <!-- Top Status Bar (Terminal Style) -->
+    <div
+        class="w-full flex justify-between px-4 py-2 border-raw-b text-xs text-muted bg-void/90 backdrop-blur top-0 z-50 sticky">
+        <div class="flex gap-4">
+            <span class="text-amber"><a href="home_v2.html" class="hover:text-bone">[ <i data-lucide="arrow-left"
+                        class="w-3 h-3 inline"></i> RETURN HOST ]</a></span>
+            <span class="hidden md:inline">PROTOCOL: SECURITY</span>
+        </div>
+        <div class="flex gap-4 group cursor-help items-center">
+            <button id="theme-toggle"
+                class="hover:text-amber transition-colors flex items-center gap-1 cursor-pointer group"
+                onclick="document.documentElement.classList.toggle('dark');">
+                <span
+                    class="hidden md:inline group-hover:block transition-all max-w-0 overflow-hidden group-hover:max-w-xl duration-300 whitespace-nowrap">TOGGLE.MODE()</span>
+                <i data-lucide="sun" class="w-3 h-3 hidden dark:block"></i>
+                <i data-lucide="moon" class="w-3 h-3 block dark:hidden"></i>
+            </button>
+            <span class="crt-flicker group-hover:text-amber ml-2">LAST_UPDATED: [MARCH 2026]</span>
+        </div>
+    </div>
+
+    <!-- Decostyle Header -->
+    <header class="w-full mt-12 mb-8 bg-void/80 backdrop-blur z-40">
+        <div class="max-w-4xl mx-auto flex flex-col border-x border-raw-t border-zinc p-8 md:p-16">
+            <h1 class="font-deco text-6xl md:text-8xl text-bone leading-none mb-4">PRIVACY<br><span
+                    class="text-amber">DIRECTIVE</span></h1>
+            <p class="font-mono text-muted border-t border-dashed border-muted pt-4">
+                > EXECUTING READ: LOCAL_DATA_PROTOCOL<br>
+                > STATUS: CLEAR. NO TELEMETRY FOUND.
+            </p>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col max-w-4xl mx-auto w-full border-x border-zinc bg-void shadow-2xl">
+
+        <article class="p-8 md:p-16 flex flex-col gap-16">
+
+            <!-- Sec 1 -->
+            <section class="border-l-4 border-amber pl-8 relative">
+                <span class="absolute -left-12 top-0 font-deco text-4xl text-zinc">01</span>
+                <h2 class="font-deco text-3xl mb-4 text-bone">NO DATA COLLECTION.</h2>
+                <div class="text-muted normal-case text-lg leading-relaxed space-y-4">
+                    <p>Koe operates completely locally. Voice Activity Detection (VAD) happens exclusively within your
+                        machine boundaries. We do not track you, we do not log your activity, and we actively maintain
+                        zero central databases containing your transcriptions.</p>
+                </div>
+            </section>
+
+            <!-- Sec 2 -->
+            <section class="border-l-4 border-zinc pl-8 relative hover:border-amber transition-colors group">
+                <span
+                    class="absolute -left-12 top-0 font-deco text-4xl text-zinc group-hover:text-amber transition-colors">02</span>
+                <h2 class="font-deco text-3xl mb-4 text-bone group-hover:text-amber transition-colors">CREDENTIAL
+                    STORAGE.</h2>
+                <div class="text-muted normal-case text-lg leading-relaxed space-y-4">
+                    <p>Your Groq API key is stored locally on your machine in an encrypted state, utilizing standard OS
+                        credential managers. It is fetched into memory strictly to authenticate immediate transcription
+                        requests to Groq servers.</p>
+                </div>
+            </section>
+
+            <!-- Sec 3 -->
+            <section class="border-l-4 border-zinc pl-8 relative hover:border-amber transition-colors group">
+                <span
+                    class="absolute -left-12 top-0 font-deco text-4xl text-zinc group-hover:text-amber transition-colors">03</span>
+                <h2 class="font-deco text-3xl mb-4 text-bone group-hover:text-amber transition-colors">AUDIO
+                    TRANSMISSION.</h2>
+                <div class="text-muted normal-case text-lg leading-relaxed space-y-4">
+                    <p>Audio is only ever transmitted to Groq when the dedicated global hotkey is engaged. For details
+                        regarding payload processing, <a href="https://groq.com/privacy-policy"
+                            class="text-bone uppercase border-b border-amber hover:bg-amber hover:text-void transition-all mix-blend-difference z-10 font-bold"
+                            target="_blank">[ACCESS GROQ PROTOCOL]</a>.</p>
+                </div>
+            </section>
+
+            <!-- Sec 4 -->
+            <section class="border-l-4 border-zinc pl-8 relative hover:border-amber transition-colors group">
+                <span
+                    class="absolute -left-12 top-0 font-deco text-4xl text-zinc group-hover:text-amber transition-colors">04</span>
+                <h2 class="font-deco text-3xl mb-4 text-bone group-hover:text-amber transition-colors">TRANSPARENCY //
+                    OPEN SOURCE.</h2>
+                <div class="text-muted normal-case text-lg leading-relaxed space-y-4">
+                    <p>Do not simply trust these systems; verify them. Koe's logic pipeline is constructed entirely in
+                        the open. You can verify every claim by traversing the source code directly.</p>
+                </div>
+            </section>
+
+            <!-- Final CTA -->
+            <div class="mt-8 p-12 border-raw bg-zinc text-center flex flex-col items-center">
+                <h3 class="font-deco text-3xl text-bone mb-8">INITIATE INQUIRY?</h3>
+                <p class="text-muted mb-8 normal-case max-w-md">Deploy all privacy, vulnerability, or logic questions
+                    directly to the issue tracker linked below.</p>
+
+                <a href="https://github.com/GIGAHAT1994/whisper_alt/issues" class="btn-brutal text-sm md:text-base">
+                    <i data-lucide="github" class="w-5 h-5"></i> CREATE GITHUB ISSUE
+                </a>
+            </div>
+
+        </article>
+    </main>
+
+    <!-- FOOTER NOIR -->
+    <footer class="w-full max-w-4xl mx-auto border-x border-raw-b border-zinc bg-void mb-8 relative">
+        <div class="flex flex-col items-center text-center">
+
+            <div class="w-full flex flex-col md:flex-row justify-between items-center p-8 text-sm text-muted gap-6">
+                <div class="flex items-center gap-4">
+                    <span class="font-deco text-2xl text-amber">KOE</span>
+                    <span>BUILD // 2026</span>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    CONSTRUCTED BY JSTAR <i data-lucide="zap" class="w-4 h-4 text-amber"></i>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- Initialize Icons -->
+    <script> lucide.createIcons(); </script>
+</body>
+
+</html>

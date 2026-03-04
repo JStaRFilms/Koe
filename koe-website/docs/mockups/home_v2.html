@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOE v2 // Terminal Noir</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Righteous (Deco) & IBM Plex Mono (Terminal) & Noto Serif JP -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Righteous&family=IBM+Plex+Mono:wght@400;600;700&family=Noto+Serif+JP:wght@900&display=swap"
+        rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        void: 'var(--color-void)',
+                        bone: 'var(--color-bone)',
+                        amber: 'var(--color-amber)',
+                        muted: 'var(--color-muted)',
+                        zinc: 'var(--color-zinc)',
+                        crimson: 'var(--color-crimson)',
+                    },
+                    fontFamily: {
+                        deco: ['Righteous', 'cursive'],
+                        mono: ['"IBM Plex Mono"', 'monospace'],
+                        jp: ['"Noto Serif JP"', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        :root {
+            --color-void: #E2DFD2;
+            --color-bone: #050505;
+            --color-amber: #D9381E;
+            --color-muted: #666666;
+            --color-zinc: #B0ADA1;
+            --color-crimson: #8A0303;
+        }
+
+        .dark {
+            --color-void: #050505;
+            --color-bone: #E2DFD2;
+            --color-amber: #FFB000;
+            --color-muted: #888888;
+            --color-zinc: #1F1F1F;
+            --color-crimson: #8A0303;
+        }
+
+        body {
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Scanline Overlay */
+        body::before {
+            content: " ";
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 100;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.15;
+        }
+
+        .border-raw {
+            border: 1px solid var(--color-zinc);
+        }
+
+        .border-raw-b {
+            border-bottom: 1px solid var(--color-zinc);
+        }
+
+        .border-raw-r {
+            border-right: 1px solid var(--color-zinc);
+        }
+
+        /* Deco Elements */
+        .deco-line {
+            height: 4px;
+            background: var(--color-amber);
+            width: 100%;
+            position: relative;
+        }
+
+        /* Terminal Glitch & Animations */
+        .glitch-hover:hover {
+            color: var(--color-amber);
+            text-shadow: 2px 0 var(--color-void), -2px 0 var(--color-bone);
+            background: var(--color-zinc);
+        }
+
+        .crt-flicker {
+            animation: flicker 0.2s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0% {
+                opacity: 0.98;
+            }
+
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
+            }
+        }
+
+        /* Grid Background pattern */
+        .grid-bg {
+            background-size: 50px 50px;
+            background-image:
+                linear-gradient(to right, var(--color-zinc) 1px, transparent 1px),
+                linear-gradient(to bottom, var(--color-zinc) 1px, transparent 1px);
+        }
+
+        /* Massive Background Kanji */
+        .giant-kanji {
+            position: absolute;
+            font-size: 100vw;
+            line-height: 0.8;
+            color: var(--color-zinc);
+            opacity: 0.2;
+            z-index: -1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            white-space: nowrap;
+            /* writing-mode: vertical-rl; */
+        }
+
+        /* Marquee */
+        .marquee {
+            width: 100%;
+            overflow: hidden;
+            white-space: nowrap;
+            border-top: 1px solid var(--color-amber);
+            border-bottom: 1px solid var(--color-amber);
+            color: var(--color-amber);
+            padding: 8px 0;
+            background: var(--color-void);
+        }
+
+        .marquee-content {
+            display: inline-block;
+            animation: marquee 20s linear infinite;
+        }
+
+        @keyframes marquee {
+            0% {
+                transform: translateX(0);
+            }
+
+            100% {
+                transform: translateX(-50%);
+            }
+        }
+
+        /* Brutalist Button */
+        .btn-brutal {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--color-amber);
+            color: var(--color-void);
+            padding: 16px 32px;
+            font-weight: 700;
+            font-size: 1.2rem;
+            border: 2px solid var(--color-amber);
+            transition: all 0s;
+            position: relative;
+        }
+
+        .btn-brutal::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: -8px;
+            bottom: -8px;
+            background: transparent;
+            border: 1px solid var(--color-amber);
+            z-index: -1;
+            transition: all 0.1s;
+        }
+
+        .btn-brutal:hover {
+            background: var(--color-bone);
+            border-color: var(--color-bone);
+            color: var(--color-void);
+        }
+
+        .btn-brutal:hover::after {
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+
+        details>summary {
+            list-style: none;
+        }
+
+        details>summary::-webkit-details-marker {
+            display: none;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-void text-bone font-mono uppercase selection:bg-amber selection:text-void min-h-screen flex flex-col grid-bg">
+
+    <div class="giant-kanji font-jp pointer-events-none fixed">声</div>
+
+    <!-- Top Status Bar (Terminal Style) -->
+    <div
+        class="w-full flex justify-between px-4 py-2 border-raw-b text-xs text-muted bg-void/90 backdrop-blur top-0 z-50 sticky">
+        <div class="flex gap-4">
+            <span class="crt-flicker text-amber">SYS.ONLINE</span>
+            <span class="hidden md:inline">VAD://LOCAL</span>
+        </div>
+        <div class="flex gap-4">
+            <button id="theme-toggle"
+                class="hover:text-amber transition-colors flex items-center gap-1 cursor-pointer group"
+                onclick="document.documentElement.classList.toggle('dark');">
+                <span
+                    class="hidden md:inline group-hover:block transition-all max-w-0 overflow-hidden group-hover:max-w-xl duration-300 whitespace-nowrap">TOGGLE.MODE()</span>
+                <i data-lucide="sun" class="w-3 h-3 hidden dark:block"></i>
+                <i data-lucide="moon" class="w-3 h-3 block dark:hidden"></i>
+            </button>
+            <span>MEM: <span id="mem">12</span>MB</span>
+            <span class="hidden md:inline">CPU: <span id="cpu">0.1</span>%</span>
+        </div>
+    </div>
+
+    <!-- Decostyle Header -->
+    <header class="w-full border-raw-b bg-void/80 backdrop-blur z-40">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row border-raw-r border-l border-zinc border-opacity-30">
+            <!-- Brand -->
+            <div class="p-6 border-raw-b md:border-b-0 md:border-raw-r flex items-center gap-4 bg-void">
+                <span class="font-deco text-4xl text-amber">KOE</span>
+                <span class="font-jp text-3xl opacity-50">声</span>
+            </div>
+
+            <!-- Navigation -->
+            <nav class="flex-grow flex text-sm font-bold">
+                <a href="#features"
+                    class="flex-1 p-6 border-raw-r flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors glitch-hover">SYS.FEATURES</a>
+                <a href="#specs"
+                    class="flex-1 p-6 border-raw-r flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors glitch-hover">SYS.SPECS</a>
+                <a href="#faq"
+                    class="flex-1 p-6 flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors glitch-hover">SYS.FAQ</a>
+            </nav>
+
+            <div class="p-6 border-t border-zinc md:border-t-0 md:border-l border-zinc flex justify-center bg-void">
+                <a href="https://github.com/GIGAHAT1994/whisper_alt" target="_blank"
+                    class="flex items-center gap-2 hover:text-amber">
+                    <i data-lucide="github" class="w-5 h-5"></i> [SOURCE]
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col">
+
+        <!-- HERO SECTION -->
+        <section
+            class="max-w-7xl mx-auto w-full flex flex-col md:flex-row border-x border-zinc min-h-[80vh] relative overflow-hidden bg-void/40">
+
+            <!-- Deco structural lines -->
+            <div class="absolute top-8 left-8 w-16 h-16 border-t-2 border-l-2 border-amber opacity-50"></div>
+            <div class="absolute bottom-8 right-8 w-16 h-16 border-b-2 border-r-2 border-amber opacity-50"></div>
+
+            <div
+                class="w-full md:w-3/5 p-8 md:p-16 flex flex-col justify-center border-raw-b md:border-b-0 md:border-raw-r z-10">
+
+                <div class="mb-8 font-mono text-sm text-amber space-y-1">
+                    <p>> INITIATING LOCAL VAD PROTOCOL...</p>
+                    <p>> BYOK DETECTED. ALL SYSTEMS FREE.</p>
+                </div>
+
+                <h1 class="font-deco text-6xl md:text-8xl leading-none mb-6">
+                    YOUR<br>
+                    <span class="text-amber">VOICE</span><br>
+                    EVERYWHERE.
+                </h1>
+
+                <p class="text-lg md:text-xl text-muted mb-12 max-w-lg normal-case font-mono tracking-wide">
+                    Lightning-fast voice dictation for Windows. Local VAD. Powered by Groq. Zero subscriptions.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
+                    <a href="#download" class="btn-brutal">
+                        <i data-lucide="terminal" class="w-6 h-6"></i>
+                        EXECUTE DOWNLOAD
+                    </a>
+                    <div class="text-xs text-muted flex flex-col group">
+                        <span>[WARN] REQUIRES WINDOWS 10/11</span>
+                        <span class="group-hover:text-amber transition-colors">[INFO] REQUIRES GROQ API KEY</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <div
+                class="w-full md:w-2/5 p-8 md:p-16 flex items-center justify-center relative bg-zinc/20 z-10 hidden md:flex">
+                <!-- Terminal block visual representation of voice UI -->
+                <div class="w-full aspect-square border-raw bg-void p-6 flex flex-col shadow-[12px_12px_0_0_#1F1F1F]">
+                    <div class="flex justify-between items-center border-raw-b pb-4 mb-4 text-sm text-amber">
+                        <span>// KOE_TERMINAL_UI \\</span>
+                        <span class="w-3 h-3 bg-red-500 rounded-none animate-pulse"></span>
+                    </div>
+                    <!-- Audio Equalizer Brutal style -->
+                    <div class="flex-grow flex items-end gap-2 pb-8">
+                        <div class="w-1/5 bg-bone h-1/4 animate-[flicker_0.5s_infinite]"></div>
+                        <div class="w-1/5 bg-amber h-full animate-[flicker_0.3s_infinite_alternate]"></div>
+                        <div class="w-1/5 bg-bone h-3/4 animate-[flicker_0.7s_infinite]"></div>
+                        <div class="w-1/5 bg-crimson h-1/2 animate-[flicker_0.4s_infinite_alternate]"></div>
+                        <div class="w-1/5 bg-bone h-1/3 animate-[flicker_0.6s_infinite]"></div>
+                    </div>
+                    <div class="text-xs text-muted font-mono normal-case">
+                        TRANSCRIBING AT 216X REALTIME...
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Marquee Bar -->
+        <div class="marquee">
+            <div class="marquee-content font-bold tracking-widest text-lg">
+                NO SUBSCRIPTIONS // LOCAL VAD // OPEN SOURCE // HIGH SPEED // PERFECT PRIVACY // NO SUBSCRIPTIONS //
+                LOCAL VAD // OPEN SOURCE // HIGH SPEED // PERFECT PRIVACY // NO SUBSCRIPTIONS // LOCAL VAD // OPEN
+                SOURCE // HIGH SPEED // PERFECT PRIVACY //
+            </div>
+        </div>
+
+        <!-- FEATURES TABLE (Brutalist List) -->
+        <section id="features" class="max-w-7xl mx-auto w-full border-x border-zinc bg-void">
+            <div class="w-full p-8 border-raw-b bg-zinc">
+                <h2 class="font-deco text-4xl text-amber">SYSTEM ADVANTAGES</h2>
+            </div>
+
+            <!-- Feature 1 -->
+            <div class="flex flex-col md:flex-row border-raw-b hover:bg-zinc/30 transition-colors group">
+                <div
+                    class="w-full md:w-1/4 p-8 border-raw-b md:border-b-0 md:border-raw-r flex items-center justify-center md:justify-start">
+                    <span class="font-deco text-8xl text-zinc group-hover:text-amber transition-colors">01</span>
+                </div>
+                <div class="w-full md:w-3/4 p-8 flex flex-col justify-center">
+                    <div class="flex items-center gap-4 mb-4">
+                        <i data-lucide="zap" class="w-8 h-8 text-amber"></i>
+                        <h3 class="font-deco text-3xl">LIGHTNING FAST</h3>
+                    </div>
+                    <p class="text-muted normal-case max-w-2xl text-lg">
+                        216x real-time transcription. It's basically instant. Powered by optimized Whisper models on
+                        Groq's LPU architecture.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="flex flex-col md:flex-row border-raw-b hover:bg-zinc/30 transition-colors group">
+                <div
+                    class="w-full md:w-1/4 p-8 border-raw-b md:border-b-0 md:border-raw-r flex items-center justify-center md:justify-start">
+                    <span class="font-deco text-8xl text-zinc group-hover:text-amber transition-colors">02</span>
+                </div>
+                <div class="w-full md:w-3/4 p-8 flex flex-col justify-center">
+                    <div class="flex items-center gap-4 mb-4">
+                        <i data-lucide="shield-alert" class="w-8 h-8 text-amber"></i>
+                        <h3 class="font-deco text-3xl">PRIVACY FIRST. ALWAYS.</h3>
+                    </div>
+                    <p class="text-muted normal-case max-w-2xl text-lg">
+                        Local Voice Activity Detection processing. Your microphone stays local. Your voice never leaves
+                        your boundary until you explicitly trigger dictation.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="flex flex-col md:flex-row border-raw-b hover:bg-zinc/30 transition-colors group">
+                <div
+                    class="w-full md:w-1/4 p-8 border-raw-b md:border-b-0 md:border-raw-r flex items-center justify-center md:justify-start">
+                    <span class="font-deco text-8xl text-zinc group-hover:text-amber transition-colors">03</span>
+                </div>
+                <div class="w-full md:w-3/4 p-8 flex flex-col justify-center">
+                    <div class="flex items-center gap-4 mb-4">
+                        <i data-lucide="unlock" class="w-8 h-8 text-amber"></i>
+                        <h3 class="font-deco text-3xl">COMPLETELY FREE</h3>
+                    </div>
+                    <p class="text-muted normal-case max-w-2xl text-lg">
+                        No walled gardens. No recurring billing. Bring your own API key and operate indefinitely without
+                        limits.
+                    </p>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- SPECS / HOW IT WORKS GRID -->
+        <section id="specs" class="max-w-7xl mx-auto w-full border-x border-zinc bg-void flex flex-col">
+            <div class="w-full flex">
+                <div class="w-1/2 p-12 border-raw-r border-raw-b hidden md:block relative overflow-hidden bg-zinc/10">
+                    <div class="absolute inset-0 opacity-10 font-jp leading-[0.8] tracking-tighter"
+                        style="font-size: 20rem; word-break: break-all;">
+                        声声声声声声声声声
+                    </div>
+                    <div class="relative z-10 w-full h-full border-2 border-bone/20 flex flex-col justify-between p-4">
+                        <div class="flex gap-2 text-amber text-xs">
+                            <i data-lucide="cpu" class="w-4 h-4"></i>
+                            <span>[PROCESS: KEY_HOOK]</span>
+                        </div>
+                        <div class="text-5xl font-mono opacity-80">> CTRL+SHIFT+SPACE</div>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 p-8 md:p-12 border-raw-b flex flex-col justify-center">
+                    <span class="text-amber font-bold mb-4">[GLOBAL HOTKEY]</span>
+                    <h2 class="font-deco text-4xl mb-6">THE SHORTCUT TO DOMINANCE.</h2>
+                    <p class="text-muted normal-case text-lg leading-relaxed">
+                        Configure any binding. Execute it anywhere—VS Code, Chrome, Notion. Focus drops, microphone
+                        captures, transcription inserts instantly at your cursor.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Comparison Table directly merged -->
+            <div class="w-full flex flex-col md:flex-row border-raw-b">
+                <div class="w-full md:w-1/3 bg-amber text-void p-8 flex flex-col justify-center">
+                    <h2 class="font-deco text-4xl mb-4">COMPARE.</h2>
+                    <p class="normal-case font-bold">THE CHOICES ARE CLEAR. UPGRADE YOUR WORKFLOW.</p>
+                </div>
+                <div class="w-full md:w-2/3 flex flex-col">
+                    <div class="flex w-full border-raw-b bg-zinc font-bold text-xs md:text-sm">
+                        <div class="w-2/5 p-4 border-raw-r text-bone">METRIC</div>
+                        <div class="w-2/5 p-4 border-raw-r text-amber">KOE [V1.0]</div>
+                        <div class="w-1/5 p-4 text-muted">A OS NATIVE</div>
+                    </div>
+                    <div class="flex w-full border-raw-b text-sm md:text-base">
+                        <div class="w-2/5 p-4 border-raw-r">COST STRUCTURE</div>
+                        <div class="w-2/5 p-4 border-raw-r font-bold text-amber bg-amber/10">$0 FOREVER</div>
+                        <div class="w-1/5 p-4 text-muted font-mono">$0</div>
+                    </div>
+                    <div class="flex w-full border-raw-b text-sm md:text-base">
+                        <div class="w-2/5 p-4 border-raw-r">ENGINE TYPE</div>
+                        <div class="w-2/5 p-4 border-raw-r font-bold text-bone">WHISPER (HIGH)</div>
+                        <div class="w-1/5 p-4 text-muted font-mono">NATIVE (LOW)</div>
+                    </div>
+                    <div class="flex w-full text-sm md:text-base">
+                        <div class="w-2/5 p-4 border-raw-r">SOURCE</div>
+                        <div class="w-2/5 p-4 border-raw-r font-bold text-bone">OPEN (GITHUB)</div>
+                        <div class="w-1/5 p-4 text-muted font-mono">CLOSED</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- FAQ BRUTAL STYLE -->
+        <section id="faq" class="max-w-7xl mx-auto w-full border-x border-raw-b border-zinc bg-void">
+            <div class="w-full p-8 border-raw-b">
+                <h2 class="font-deco text-4xl text-bone">SYS.FAQ</h2>
+            </div>
+            <div class="w-full flex flex-col">
+                <details class="w-full border-raw-b group cursor-pointer bg-void hover:bg-zinc transition-colors" open>
+                    <summary class="p-6 font-bold text-lg md:text-xl flex justify-between items-center outline-none">
+                        <span>[Q 01] IS KOE REALLY FREE?</span>
+                        <i data-lucide="plus" class="w-6 h-6 text-amber group-open:hidden"></i>
+                        <i data-lucide="minus" class="w-6 h-6 text-amber hidden group-open:block"></i>
+                    </summary>
+                    <div class="p-6 pt-0 text-muted normal-case text-lg border-t border-dashed border-zinc mt-2">
+                        <span class="text-amber uppercase font-mono mr-2">> RESPONSE:</span>
+                        Yes, completely free and open source. No hidden costs or subscriptions to be found in the core
+                        logic.
+                    </div>
+                </details>
+                <details class="w-full border-raw-b group cursor-pointer bg-void hover:bg-zinc transition-colors">
+                    <summary class="p-6 font-bold text-lg md:text-xl flex justify-between items-center outline-none">
+                        <span>[Q 02] DO I NEED AN API KEY?</span>
+                        <i data-lucide="plus" class="w-6 h-6 text-amber group-open:hidden"></i>
+                        <i data-lucide="minus" class="w-6 h-6 text-amber hidden group-open:block"></i>
+                    </summary>
+                    <div class="p-6 pt-0 text-muted normal-case text-lg border-t border-dashed border-zinc mt-2">
+                        <span class="text-amber uppercase font-mono mr-2">> RESPONSE:</span>
+                        Yes. Koe operates on a BYOK (Bring Your Own Key) model. Acquire a free hardware-accelerated key
+                        from Groq to activate full capabilities.
+                    </div>
+                </details>
+                <details class="w-full group cursor-pointer bg-void hover:bg-zinc transition-colors">
+                    <summary class="p-6 font-bold text-lg md:text-xl flex justify-between items-center outline-none">
+                        <span>[Q 03] IS MY AUDIO MINED FOR DATA?</span>
+                        <i data-lucide="plus" class="w-6 h-6 text-amber group-open:hidden"></i>
+                        <i data-lucide="minus" class="w-6 h-6 text-amber hidden group-open:block"></i>
+                    </summary>
+                    <div class="p-6 pt-0 text-muted normal-case text-lg border-t border-dashed border-zinc mt-2">
+                        <span class="text-amber uppercase font-mono mr-2">> RESPONSE:</span>
+                        Negative. VAD is processed 100% locally. Audio transmission only occurs explicitly on hotkey
+                        trigger directly to the AI provider. No telemetry.
+                    </div>
+                </details>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER NOIR -->
+    <footer class="w-full max-w-7xl mx-auto border-x border-raw-b border-zinc bg-void mt-16 mb-8 relative">
+        <div class="deco-line"></div>
+        <div class="p-12 md:p-24 flex flex-col items-center text-center">
+
+            <h2 class="font-deco text-5xl md:text-7xl mb-12 text-bone tracking-wider">
+                END OF THE LINE.<br>
+                <span class="text-crimson line-through decoration-[6px]">TYPING</span>.
+            </h2>
+
+            <a href="https://github.com/GIGAHAT1994/whisper_alt"
+                class="btn-brutal mb-16 shadow-[8px_8px_0_0_#FFF] hover:shadow-[4px_4px_0_0_#FFF] translate-x-0 hover:translate-x-1 hover:translate-y-1 transition-all">
+                <i data-lucide="github" class="w-6 h-6"></i>
+                ENGAGE GITHUB
+            </a>
+
+            <div
+                class="w-full flex flex-col md:flex-row justify-between items-center border-t border-zinc pt-8 text-sm text-muted gap-6">
+                <div class="flex items-center gap-4">
+                    <span class="font-deco text-2xl text-amber">KOE</span>
+                    <span>BUILD // 2026</span>
+                </div>
+
+                <div class="flex gap-8">
+                    <a href="https://github.com" class="hover:text-amber">[REPO]</a>
+                    <a href="privacy_v2.html" class="hover:text-amber">[PRIVACY DIRECTIVE]</a>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    CONSTRUCTED BY JSTAR <i data-lucide="zap" class="w-4 h-4 text-amber"></i>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- Initialize Icons -->
+    <script> lucide.createIcons(); </script>
+    <script>
+        // Simple faux terminal effect
+        setInterval(() => {
+            const cpu = (Math.random() * 5).toFixed(1);
+            const mem = Math.floor(12 + Math.random() * 10);
+            document.getElementById('cpu').innerText = cpu;
+            document.getElementById('mem').innerText = mem;
+        }, 2000);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koe - Design System</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+JP:wght@700&display=swap"
+        rel="stylesheet">
+
+    <!-- Heroicons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#fafaf9',
+                        foreground: '#0f172a',
+                        primary: '#f59e0b',
+                        secondary: '#f1f5f9',
+                        muted: '#64748b',
+                        success: '#10b981',
+                        border: '#e2e8f0',
+
+                        // Dark
+                        dark: {
+                            background: '#0a0a0f', // Deep Slate / Obsidian
+                            foreground: '#f8fafc',
+                            card: '#13131a',
+                            secondary: '#1e293b',
+                            muted: '#94a3b8',
+                            border: 'rgba(255, 255, 255, 0.08)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        geist: ['Geist', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        japanese: ['Noto Serif JP', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Base Styles */
+        body {
+            @apply bg-background text-foreground transition-colors duration-300 antialiased;
+        }
+
+        .dark body {
+            background-color: #0a0a0f;
+            color: #f8fafc;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-card {
+            @apply bg-white/60 dark:bg-dark-card/40 backdrop-blur-md border border-border dark:border-dark-border shadow-xl;
+        }
+
+        /* Utility for waveform animation */
+        @keyframes waveform {
+            0% {
+                transform: scaleY(0.7);
+                opacity: 0.5;
+            }
+
+            50% {
+                transform: scaleY(1.3);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scaleY(0.7);
+                opacity: 0.5;
+            }
+        }
+
+        .wave-bar {
+            @apply w-1 rounded-full bg-primary;
+            animation: waveform 1s infinite ease-in-out;
+        }
+    </style>
+</head>
+
+<body class="p-8 pb-32">
+
+    <div class="max-w-7xl mx-auto space-y-24">
+
+        <!-- Header -->
+        <header class="border-b border-border dark:border-dark-border pb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-4xl font-extrabold tracking-tight">Koe <span
+                        class="text-primary font-japanese ml-2">声</span></h1>
+                <p class="text-xl text-muted dark:text-dark-muted mt-2">Design System & Component Library</p>
+            </div>
+            <button onclick="document.documentElement.classList.toggle('dark');"
+                class="px-4 py-2 rounded-full border border-border dark:border-dark-border hover:bg-black/5 dark:hover:bg-white/5 transition-colors font-medium">
+                Toggle Theme
+            </button>
+        </header>
+
+        <!-- 1. Color Palette -->
+        <section class="space-y-6">
+            <h2 class="text-2xl font-bold tracking-tight border-b border-border dark:border-dark-border pb-2">1. Color
+                Palette</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+
+                <!-- Primary Accent -->
+                <div class="space-y-3">
+                    <div class="h-24 rounded-2xl bg-primary shadow-lg shadow-primary/20 flex items-end p-4">
+                        <span class="text-white font-mono text-sm font-bold opacity-80">var(--primary)</span>
+                    </div>
+                    <div>
+                        <p class="font-bold">Warm Amber</p>
+                        <p class="text-sm text-muted dark:text-dark-muted">#f59e0b - Action & Energy</p>
+                    </div>
+                </div>
+
+                <!-- Deep Slate (Dark Bg) -->
+                <div class="space-y-3">
+                    <div class="h-24 rounded-2xl bg-[#0a0a0f] border border-border flex items-end p-4">
+                        <span class="text-white font-mono text-sm font-bold opacity-80">var(--dark-background)</span>
+                    </div>
+                    <div>
+                        <p class="font-bold">Deep Slate</p>
+                        <p class="text-sm text-muted dark:text-dark-muted">#0a0a0f - Tech & Focus</p>
+                    </div>
+                </div>
+
+                <!-- Cream (Light Bg) -->
+                <div class="space-y-3">
+                    <div class="h-24 rounded-2xl bg-[#fafaf9] border border-border flex items-end p-4">
+                        <span class="text-black font-mono text-sm font-bold opacity-40">var(--background)</span>
+                    </div>
+                    <div>
+                        <p class="font-bold">Cream</p>
+                        <p class="text-sm text-muted dark:text-dark-muted">#fafaf9 - Soft & Clean</p>
+                    </div>
+                </div>
+
+                <!-- Success -->
+                <div class="space-y-3">
+                    <div class="h-24 rounded-2xl bg-success flex items-end p-4">
+                        <span class="text-white font-mono text-sm font-bold opacity-80">var(--success)</span>
+                    </div>
+                    <div>
+                        <p class="font-bold">Emerald</p>
+                        <p class="text-sm text-muted dark:text-dark-muted">#10b981 - Trust & Free</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 2. Typography -->
+        <section class="space-y-6">
+            <h2 class="text-2xl font-bold tracking-tight border-b border-border dark:border-dark-border pb-2">2.
+                Typography</h2>
+
+            <div class="space-y-8 glass-card p-8 rounded-3xl">
+                <div>
+                    <span class="text-xs uppercase tracking-widest font-mono text-primary mb-2 block">Hero H1 / Inter
+                        800</span>
+                    <h1 class="text-6xl md:text-7xl font-extrabold tracking-tight">Your voice,<br>Everywhere.</h1>
+                </div>
+                <div>
+                    <span class="text-xs uppercase tracking-widest font-mono text-primary mb-2 block">Section H2 / Inter
+                        700</span>
+                    <h2 class="text-4xl font-bold tracking-tight">Lightning-fast dictation.</h2>
+                </div>
+                <div>
+                    <span class="text-xs uppercase tracking-widest font-mono text-primary mb-2 block">Card Title H3 /
+                        Inter 600</span>
+                    <h3 class="text-2xl font-semibold">Privacy First</h3>
+                </div>
+                <div class="max-w-2xl">
+                    <span class="text-xs uppercase tracking-widest font-mono text-primary mb-2 block">Body Text / Inter
+                        400</span>
+                    <p class="text-lg leading-relaxed text-muted dark:text-dark-muted">Configure any hotkey combo. Press
+                        it anywhere, start dictating. Koe runs directly in the system tray, providing lightning fast
+                        transcription across your entire OS.</p>
+                </div>
+                <div>
+                    <span class="text-xs uppercase tracking-widest font-mono text-primary mb-2 block">Code & Accents /
+                        JetBrains Mono 500</span>
+                    <kbd
+                        class="px-3 py-1.5 rounded-md bg-secondary dark:bg-dark-secondary border border-border dark:border-white/10 font-mono text-sm shadow-sm">Ctrl
+                        + Shift + Space</kbd>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. Core Components -->
+        <section class="space-y-6">
+            <h2 class="text-2xl font-bold tracking-tight border-b border-border dark:border-dark-border pb-2">3.
+                Components</h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+                <!-- Buttons -->
+                <div class="space-y-8">
+                    <h3 class="text-lg font-semibold border-l-4 border-primary pl-3">Buttons</h3>
+
+                    <div class="flex flex-col gap-4 items-start">
+                        <button
+                            class="px-6 py-3 bg-primary text-white rounded-full font-bold shadow-[0_0_15px_rgba(245,158,11,0.4)] hover:scale-105 transition-all flex gap-2 items-center">
+                            <i data-lucide="download" class="w-5 h-5"></i>
+                            Download for Windows
+                        </button>
+
+                        <button
+                            class="px-6 py-3 border border-border dark:border-dark-border rounded-full font-medium hover:bg-black/5 dark:hover:bg-white/5 transition-all flex gap-2 items-center">
+                            <i data-lucide="github" class="w-5 h-5"></i>
+                            Star on GitHub
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Cards & Surface -->
+                <div class="space-y-8">
+                    <h3 class="text-lg font-semibold border-l-4 border-primary pl-3">Surfaces & Cards</h3>
+
+                    <div class="p-6 rounded-3xl glass-card relative overflow-hidden group">
+                        <!-- Glowing aura on hover -->
+                        <div
+                            class="absolute -inset-4 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500 rounded-3xl blur-xl">
+                        </div>
+
+                        <div class="relative z-10">
+                            <div
+                                class="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-4">
+                                <i data-lucide="shield" class="w-6 h-6"></i>
+                            </div>
+                            <h4 class="text-xl font-bold mb-2">Completely Free</h4>
+                            <p class="text-muted dark:text-dark-muted leading-relaxed">No subscriptions. No limits.
+                                Bring your own API key and enjoy unlimited transcriptions.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Badges & UI Elements -->
+                <div class="space-y-8">
+                    <h3 class="text-lg font-semibold border-l-4 border-primary pl-3">Badges & Elements</h3>
+
+                    <div class="flex flex-wrap gap-4">
+                        <!-- Status Badge -->
+                        <div
+                            class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border dark:border-dark-border font-mono text-sm">
+                            <span class="w-2 h-2 rounded-full bg-success"></span>
+                            v1.0.0
+                        </div>
+
+                        <!-- Mini Waveform -->
+                        <div class="flex items-center gap-1 h-6">
+                            <div class="wave-bar h-4" style="animation-delay: 0.1s"></div>
+                            <div class="wave-bar h-6" style="animation-delay: 0.2s"></div>
+                            <div class="wave-bar h-3" style="animation-delay: 0.3s"></div>
+                            <div class="wave-bar h-5" style="animation-delay: 0.4s"></div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- 4. Navigation Layout -->
+        <section class="space-y-6">
+            <h2 class="text-2xl font-bold tracking-tight border-b border-border dark:border-dark-border pb-2">4.
+                Navigation Pattern</h2>
+
+            <div class="p-8 pb-32 rounded-3xl bg-secondary dark:bg-dark-secondary relative">
+                <!-- Floating Nav Pill -->
+                <nav
+                    class="absolute top-8 left-1/2 -translate-x-1/2 w-[90%] md:w-[600px] flex items-center justify-between px-6 py-3 rounded-full glass-card z-50">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl font-bold font-japanese">声</span>
+                        <span class="text-lg font-bold tracking-tight">Koe</span>
+                    </div>
+                    <div class="hidden md:flex gap-6 text-sm font-medium text-muted dark:text-dark-muted">
+                        <a href="#" class="hover:text-primary transition-colors">Features</a>
+                        <a href="#" class="hover:text-primary transition-colors">FAQ</a>
+                    </div>
+                    <div>
+                        <button
+                            class="px-4 py-2 bg-primary text-white rounded-full text-sm font-bold shadow-md hover:scale-105 transition-transform">Get</button>
+                    </div>
+                </nav>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Initialize Lucide Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
