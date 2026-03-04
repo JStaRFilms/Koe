@@ -3,6 +3,8 @@ const path = require('path');
 const { setupTray } = require('./tray');
 const { registerShortcuts, unregisterShortcuts } = require('./shortcuts');
 const { setupIpcHandlers } = require('./ipc');
+const { createSettingsWindow } = require('./settings-window');
+const logger = require('./services/logger');
 
 let mainWindow = null;
 
@@ -46,6 +48,11 @@ function createWindow() {
         mainWindow.loadFile(path.join(__dirname, '../../dist/renderer/index.html'));
     }
 
+    // Don't auto-show the pill on startup.
+    // The pill will be shown via showInactive() when the user triggers recording
+    // (via hotkey in shortcuts.js or tray menu in tray.js).
+    // This prevents the alwaysOnTop pill from blocking the settings window.
+
     // When window is shown, tell renderer to play entrance animation
     mainWindow.on('show', () => {
         const { CHANNELS } = require('../shared/constants');
@@ -60,10 +67,29 @@ function getMainWindow() {
 }
 
 app.whenReady().then(() => {
-    createWindow();
-    setupTray(mainWindow);
-    registerShortcuts(mainWindow);
-    setupIpcHandlers(mainWindow);
+    try {
+        logger.info('[Main] App starting...');
+        logger.info('[Main] __dirname:', __dirname);
+        logger.info('[Main] app.getAppPath():', app.getAppPath());
+        logger.info('[Main] process.resourcesPath:', process.resourcesPath);
+        logger.info('[Main] isPackaged:', app.isPackaged);
+        logger.info('[Main] Log file location:', logger.getLogPath());
+
+        createWindow();
+
+        if (!mainWindow) {
+            logger.error('[Main] Failed to create main window');
+            return;
+        }
+
+        setupTray(mainWindow);
+        registerShortcuts(mainWindow);
+        setupIpcHandlers(mainWindow);
+
+        logger.info('[Main] App started successfully');
+    } catch (error) {
+        logger.error('[Main] Error during startup:', error);
+    }
 
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {
@@ -73,9 +99,8 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
+    // This is a tray app that runs in the background.
+    // Do not quit when the settings or pill window is closed.
 });
 
 app.on('before-quit', () => {
@@ -83,4 +108,7 @@ app.on('before-quit', () => {
     unregisterShortcuts();
 });
 
-module.exports = { getMainWindow };
+module.exports = {
+    getMainWindow,
+    createSettingsWindow
+};

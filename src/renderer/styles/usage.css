@@ -5,7 +5,7 @@
     left: 10px;
     right: 10px;
     padding: var(--sp-md);
-    background: rgba(20, 20, 25, 0.95);
+    background: var(--koe-surface-elevated);
     border: 1px solid var(--koe-border);
     border-radius: var(--radius-inner);
     box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
@@ -58,7 +58,7 @@
 
 .usage-bar-track {
     height: 4px;
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--koe-border-highlight);
     border-radius: var(--radius-round);
     overflow: hidden;
 }

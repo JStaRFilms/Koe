@@ -1,9 +1,10 @@
 const { getSetting } = require('./settings');
 const rateLimiter = require('./rate-limiter');
+const logger = require('./logger');
 
 const GROQ_WHISPER_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
-const MODEL = 'whisper-large-v3-turbo';
+const DEFAULT_MODEL = 'whisper-large-v3-turbo';
 const ENHANCE_MODEL = 'llama-3.3-70b-versatile';
 
 async function transcribeDirect(wavBuffer, language = 'auto') {
@@ -12,10 +13,13 @@ async function transcribeDirect(wavBuffer, language = 'auto') {
         throw new Error('Groq API Key is not configured. Please open settings and add your API Key.');
     }
 
+    // Get model from settings, fallback to default
+    const model = getSetting('model') || DEFAULT_MODEL;
+
     const formData = new FormData();
     const blob = new Blob([wavBuffer], { type: 'audio/wav' });
     formData.append('file', blob, 'audio.wav');
-    formData.append('model', MODEL);
+    formData.append('model', model);
 
     if (language && language !== 'auto') {
         formData.append('language', language);
@@ -55,7 +59,7 @@ async function transcribeDirect(wavBuffer, language = 'auto') {
             if (error.message.includes('Rate limit') || error.message.includes('Invalid API Key') || retries === 0) {
                 throw error;
             }
-            console.warn(`[Groq] Network error, retrying... (${error.message})`);
+            logger.warn(`[Groq] Network error, retrying... (${error.message})`);
             await new Promise(r => setTimeout(r, 1000));
             retries--;
         }
@@ -117,14 +121,14 @@ async function enhance(rawText, promptStyle = 'Clean') {
         });
 
         if (!response.ok) {
-            console.warn('[Enhance] API error', response.status);
+            logger.warn('[Enhance] API error', response.status);
             return rawText; // fallback
         }
 
         const data = await response.json();
         return data.choices[0].message.content.trim();
     } catch (error) {
-        console.warn('[Enhance] Network error', error.message);
+        logger.warn('[Enhance] Network error', error.message);
         return rawText; // fallback
     }
 }

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koe — Settings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles/main.css">
+    <link rel="stylesheet" href="./styles/settings.css">
+    <link rel="stylesheet" href="./styles/history.css">
+    <link rel="stylesheet" href="./styles/usage.css">
+    <style>
+        /* Settings Window Specific Styles */
+        :root {
+            --settings-width: 600px;
+            --settings-height: 500px;
+            --title-bar-height: 40px;
+            --tab-bar-height: 44px;
+            --content-height: calc(var(--settings-height) - var(--title-bar-height) - var(--tab-bar-height));
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        #settings-window-body {
+            display: block;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            background: var(--koe-void);
+            font-family: var(--font-family);
+            color: var(--koe-text);
+            overflow: hidden;
+            user-select: none;
+        }
+
+        /* Custom Title Bar */
+        .title-bar {
+            height: var(--title-bar-height);
+            background: var(--koe-surface-solid);
+            border-bottom: 1px solid var(--koe-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            -webkit-app-region: drag;
+            cursor: default;
+        }
+
+        .title-bar-text {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--koe-text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title-bar-icon {
+            width: 16px;
+            height: 16px;
+            color: var(--koe-accent);
+        }
+
+        .title-bar-controls {
+            display: flex;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+
+        .window-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            background: transparent;
+            color: var(--koe-text-muted);
+            cursor: pointer;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .window-btn:hover {
+            background: var(--koe-border-highlight);
+            color: var(--koe-text);
+        }
+
+        .window-btn.close:hover {
+            background: var(--koe-danger);
+            color: white;
+        }
+
+        /* Tab Bar */
+        .tab-bar {
+            height: var(--tab-bar-height);
+            background: var(--koe-surface-elevated);
+            border-bottom: 1px solid var(--koe-border);
+            display: flex;
+            padding: 0 8px;
+            gap: 4px;
+            -webkit-app-region: no-drag;
+        }
+
+        .tab-btn {
+            flex: 1;
+            height: 100%;
+            border: none;
+            background: transparent;
+            color: var(--koe-text-muted);
+            font-family: var(--font-family);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 0 16px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .tab-btn:hover {
+            color: var(--koe-text);
+            background: var(--koe-border);
+        }
+
+        .tab-btn.active {
+            color: var(--koe-accent);
+            border-bottom-color: var(--koe-accent);
+        }
+
+        .tab-btn svg {
+            width: 14px;
+            height: 14px;
+        }
+
+        /* Content Area */
+        .content-area {
+            height: var(--content-height);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .tab-panel {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow-y: auto;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s ease;
+            padding: 16px;
+        }
+
+        .tab-panel.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        /* Custom Scrollbar */
+        .tab-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .tab-panel::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .tab-panel::-webkit-scrollbar-thumb {
+            background: var(--koe-border-highlight);
+            border-radius: 3px;
+        }
+
+        /* Settings Panel Adaptation */
+        #settings-window-body .settings-panel {
+            position: static;
+            background: transparent;
+            backdrop-filter: none;
+            border-radius: 0;
+            height: auto;
+        }
+
+        #settings-window-body .settings-panel.hide {
+            opacity: 1;
+            transform: none;
+            pointer-events: all;
+        }
+
+        .settings-body {
+            padding: 0;
+        }
+
+        /* History Panel Adaptation */
+        #settings-window-body .history-panel {
+            position: static;
+            left: 0;
+            width: 100%;
+            height: auto;
+            background: transparent;
+            backdrop-filter: none;
+            border: none;
+            box-shadow: none;
+        }
+
+        #settings-window-body .history-panel.show {
+            left: 0;
+        }
+
+        #settings-window-body .history-panel.hide {
+            opacity: 1;
+            transform: none;
+            pointer-events: all;
+        }
+
+        .history-body {
+            padding: 0;
+        }
+
+        /* Usage Meter Adaptation — full-panel card */
+        #settings-window-body .usage-meter {
+            position: static;
+            bottom: auto;
+            left: auto;
+            right: auto;
+            background: var(--koe-input-bg);
+            box-shadow: none;
+            border: 1px solid var(--koe-border-highlight);
+            border-radius: var(--radius-inner);
+            padding: 16px;
+            gap: 16px;
+        }
+
+        .usage-meter .usage-header {
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--koe-border);
+        }
+
+        .usage-meter .usage-header h3 {
+            font-size: 13px;
+        }
+
+        .usage-meter .usage-labels {
+            font-size: 12px;
+        }
+
+        .usage-meter .usage-bar-track {
+            height: 6px;
+        }
+
+        #settings-window-body .usage-meter.hide {
+            opacity: 1;
+            transform: none;
+            pointer-events: all;
+        }
+
+        /* Section Headers */
+        .section-header {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--koe-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--koe-border);
+        }
+
+        /* Empty States */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            color: var(--koe-text-muted);
+            text-align: center;
+            gap: 12px;
+        }
+
+        .empty-state svg {
+            width: 48px;
+            height: 48px;
+            color: var(--koe-text-dim);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 60px;
+            left: 50%;
+            transform: translateX(-50%) translateY(20px);
+            background: var(--koe-surface-solid);
+            border: 1px solid var(--koe-border);
+            border-radius: var(--radius-inner);
+            padding: 10px 20px;
+            font-size: 13px;
+            color: var(--koe-text);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body id="settings-window-body">
+    <!-- Custom Title Bar -->
+    <div class="title-bar">
+        <div class="title-bar-text">
+            <svg class="title-bar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+            <span>Koe Settings</span>
+        </div>
+        <div class="title-bar-controls">
+            <button class="window-btn close" id="btn-close" title="Close">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                    stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Tab Bar -->
+    <div class="tab-bar">
+        <button class="tab-btn active" data-tab="settings" id="tab-settings">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path
+                    d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            Settings
+        </button>
+        <button class="tab-btn" data-tab="history" id="tab-history">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <line x1="16" y1="13" x2="8" y2="13" />
+                <line x1="16" y1="17" x2="8" y2="17" />
+                <polyline points="10 9 9 9 8 9" />
+            </svg>
+            History
+        </button>
+        <button class="tab-btn" data-tab="usage" id="tab-usage">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M12 20v-6M6 20V10M18 20V4" />
+            </svg>
+            Usage
+        </button>
+    </div>
+
+    <!-- Content Area -->
+    <div class="content-area">
+        <!-- Settings Tab -->
+        <div class="tab-panel active" id="panel-settings">
+            <!-- Hidden close button for SettingsPanel compatibility -->
+            <button id="btn-close-settings" style="display: none;"></button>
+            <div class="settings-panel" id="settings-panel">
+                <div class="settings-body">
+                    <div class="section-header">API Configuration</div>
+                    <div class="setting-group">
+                        <label>Groq API Key</label>
+                        <div class="input-with-button">
+                            <input type="password" id="api-key" placeholder="Enter your Groq API key">
+                            <button class="icon-btn" id="btn-toggle-key" title="Show/Hide">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                    <circle cx="12" cy="12" r="3" />
+                                </svg>
+                            </button>
+                            <button class="test-btn" id="btn-test-key" title="Test Connection">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                                    <polyline points="22 4 12 14.01 9 11.01" />
+                                </svg>
+                                Test Connection
+                            </button>
+                        </div>
+                        <div class="test-result" id="test-key-result"></div>
+                    </div>
+
+                    <div class="section-header">Transcription Settings</div>
+                    <div class="setting-group">
+                        <label>Language</label>
+                        <select id="language">
+                            <option value="auto">Auto-detect</option>
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                            <option value="it">Italian</option>
+                            <option value="pt">Portuguese</option>
+                            <option value="nl">Dutch</option>
+                            <option value="ja">Japanese</option>
+                            <option value="ko">Korean</option>
+                            <option value="zh">Chinese</option>
+                            <option value="ru">Russian</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group checkbox-group">
+                        <input type="checkbox" id="enhance-text" checked>
+                        <label for="enhance-text">Enhance transcription with AI</label>
+                    </div>
+
+                    <div class="setting-group" id="prompt-style-group">
+                        <label>Enhancement Style</label>
+                        <select id="prompt-style">
+                            <option value="Clean">Clean (Grammar & punctuation)</option>
+                            <option value="Professional">Professional (Formal tone)</option>
+                            <option value="Casual">Casual (Conversational)</option>
+                            <option value="Concise">Concise (Remove filler words)</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Transcription Model</label>
+                        <select id="transcription-model">
+                            <option value="whisper-large-v3-turbo">Fast (Turbo) — Lower accuracy, quicker</option>
+                            <option value="whisper-large-v3">Accurate (Large-v3) — Higher accuracy, slower</option>
+                        </select>
+                    </div>
+
+                    <div class="section-header">Appearance</div>
+                    <div class="setting-group">
+                        <label>Theme</label>
+                        <select id="theme">
+                            <option value="dark">Dark</option>
+                            <option value="light">Light</option>
+                            <option value="system">System (Auto)</option>
+                        </select>
+                    </div>
+
+                    <div class="section-header">Shortcuts</div>
+                    <div class="setting-group">
+                        <label>Global Hotkey</label>
+                        <input type="text" id="hotkey" placeholder="e.g., CommandOrControl+Shift+Space" readonly>
+                        <small class="input-help">Click the field and press your desired key combination</small>
+                        <div id="hotkey-error" class="hotkey-error"></div>
+                    </div>
+
+                    <div class="setting-group checkbox-group">
+                        <input type="checkbox" id="auto-paste" checked>
+                        <label for="auto-paste">Auto-paste after transcription</label>
+                    </div>
+
+                    <div class="section-header">Advanced</div>
+                    <div class="setting-group">
+                        <label>Debug & Support</label>
+                        <button class="secondary-btn" id="btn-open-logs">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor"
+                                stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                style="margin-right: 6px;">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                <polyline points="14 2 14 8 20 8" />
+                                <line x1="16" y1="13" x2="8" y2="13" />
+                                <line x1="16" y1="17" x2="8" y2="17" />
+                                <polyline points="10 9 9 9 8 9" />
+                            </svg>
+                            Open Logs Folder
+                        </button>
+                        <small class="input-help">View application logs for troubleshooting</small>
+                    </div>
+                </div>
+                <div class="settings-footer">
+                    <button class="primary-btn" id="btn-save-settings">Save Settings</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div class="tab-panel" id="panel-history">
+            <!-- Hidden close button for HistoryPanel compatibility -->
+            <button id="btn-close-history" style="display: none;"></button>
+            <div class="history-panel" id="history-panel">
+                <div class="history-body" id="history-content">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <polyline points="14 2 14 8 20 8" />
+                        </svg>
+                        <p>Loading history...</p>
+                    </div>
+                </div>
+                <div class="history-footer">
+                    <button class="secondary-btn" id="btn-export-history">Export</button>
+                    <button class="secondary-btn" id="btn-copy-history">Copy All</button>
+                    <button class="secondary-btn" id="btn-clear-history"
+                        style="color: var(--koe-danger);">Clear</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usage Tab -->
+        <div class="tab-panel" id="panel-usage">
+            <div class="usage-meter" id="usage-meter">
+                <div class="usage-header">
+                    <h3>Daily Usage</h3>
+                    <span class="usage-time-label" id="usage-time-label">Resets in --h --m</span>
+                </div>
+
+                <div class="usage-row">
+                    <div class="usage-labels">
+                        <span>Requests</span>
+                        <span id="text-rpd">-- / -- Reqs</span>
+                    </div>
+                    <div class="usage-bar-track">
+                        <div class="usage-bar-fill bar-green" id="bar-rpd"></div>
+                    </div>
+                </div>
+
+                <div class="usage-row">
+                    <div class="usage-labels">
+                        <span>Audio Duration</span>
+                        <span id="text-audio">-- / -- Secs</span>
+                    </div>
+                    <div class="usage-bar-track">
+                        <div class="usage-bar-fill bar-green" id="bar-audio"></div>
+                    </div>
+                </div>
+
+                <div class="usage-row">
+                    <div class="usage-labels">
+                        <span>Rate Limit (RPM)</span>
+                        <span id="text-rpm">-- / -- RPM</span>
+                    </div>
+                    <div class="usage-bar-track">
+                        <div class="usage-bar-fill bar-green" id="bar-rpm"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span class="toast-text"></span>
+    </div>
+
+    <script type="module" src="./settings-window.js"></script>
+</body>
+
+</html>

@@ -2,6 +2,9 @@ const { contextBridge, ipcRenderer } = require('electron');
 const { CHANNELS } = require('../shared/constants');
 
 contextBridge.exposeInMainWorld('api', {
+    // App info
+    isPackaged: () => ipcRenderer.invoke('app:is-packaged'),
+    getResourcesPath: () => ipcRenderer.invoke('app:resources-path'),
     // Recording toggle events from main process
     onRecordingToggle: (callback) => {
         ipcRenderer.removeAllListeners(CHANNELS.RECORDING_TOGGLED);
@@ -28,6 +31,10 @@ contextBridge.exposeInMainWorld('api', {
     // History
     getHistory: () => ipcRenderer.invoke(CHANNELS.GET_HISTORY),
     clearHistory: () => ipcRenderer.invoke(CHANNELS.CLEAR_HISTORY),
+    exportHistory: (format) => ipcRenderer.invoke('history:export', format),
+
+    // Logs
+    openLogsFolder: () => ipcRenderer.invoke('app:open-logs'),
 
     // Audio
     sendAudioChunk: (arrayBuffer) => ipcRenderer.send(CHANNELS.AUDIO_CHUNK, arrayBuffer),
@@ -54,5 +61,22 @@ contextBridge.exposeInMainWorld('api', {
     onUsageStats: (callback) => {
         ipcRenderer.removeAllListeners(CHANNELS.USAGE_STATS);
         ipcRenderer.on(CHANNELS.USAGE_STATS, (event, stats) => callback(stats));
+    },
+
+    // Settings Window APIs
+    closeSettingsWindow: () => ipcRenderer.send(CHANNELS.CLOSE_SETTINGS_WINDOW),
+
+    // Tab switch events from main process
+    onOpenSettingsTab: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.OPEN_SETTINGS_TAB);
+        ipcRenderer.on(CHANNELS.OPEN_SETTINGS_TAB, () => callback());
+    },
+    onOpenHistoryTab: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.OPEN_HISTORY_TAB);
+        ipcRenderer.on(CHANNELS.OPEN_HISTORY_TAB, () => callback());
+    },
+    onOpenUsageTab: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.OPEN_USAGE_TAB);
+        ipcRenderer.on(CHANNELS.OPEN_USAGE_TAB, () => callback());
     }
 });

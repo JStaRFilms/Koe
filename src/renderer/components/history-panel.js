@@ -5,6 +5,7 @@ export class HistoryPanel {
         this.btnClose = document.getElementById('btn-close-history');
         this.btnClear = document.getElementById('btn-clear-history');
         this.btnCopyAll = document.getElementById('btn-copy-history');
+        this.btnExport = document.getElementById('btn-export-history');
 
         if (this.btnClose) {
             this.btnClose.addEventListener('click', () => this.hide());
@@ -16,6 +17,10 @@ export class HistoryPanel {
 
         if (this.btnCopyAll) {
             this.btnCopyAll.addEventListener('click', () => this.copyAllToClipboard());
+        }
+
+        if (this.btnExport) {
+            this.btnExport.addEventListener('click', () => this.exportHistory());
         }
     }
 
@@ -46,7 +51,10 @@ export class HistoryPanel {
         this.content.innerHTML = ''; // Clear current content
 
         if (!historyEntries || historyEntries.length === 0) {
-            this.content.innerHTML = '<div class="history-empty">No transcription history yet.</div>';
+            const emptyDiv = document.createElement('div');
+            emptyDiv.className = 'history-empty';
+            emptyDiv.textContent = 'No transcription history yet.';
+            this.content.appendChild(emptyDiv);
             return;
         }
 
@@ -60,43 +68,78 @@ export class HistoryPanel {
             // Truncate text for preview
             const previewText = entry.text.length > 80 ? entry.text.substring(0, 80) + '...' : entry.text;
 
-            let badges = `<span class="badge lang-badge">${entry.language.toUpperCase()}</span>`;
+            // Create header
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'history-header';
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'history-time';
+            timeSpan.textContent = timeString;
+
+            const badgesDiv = document.createElement('div');
+            badgesDiv.className = 'history-badges';
+
+            const langBadge = document.createElement('span');
+            langBadge.className = 'badge lang-badge';
+            langBadge.textContent = entry.language.toUpperCase();
+            badgesDiv.appendChild(langBadge);
+
             if (entry.isLlamaEnhanced) {
-                badges += `<span class="badge enhance-badge">Enhanced</span>`;
+                const enhanceBadge = document.createElement('span');
+                enhanceBadge.className = 'badge enhance-badge';
+                enhanceBadge.textContent = 'Enhanced';
+                badgesDiv.appendChild(enhanceBadge);
             }
 
-            entryEl.innerHTML = `
-                <div class="history-header">
-                    <span class="history-time">${timeString}</span>
-                    <div class="history-badges">${badges}</div>
-                </div>
-                <div class="history-text-preview">${previewText}</div>
-                <div class="history-text-full hide">${entry.text}</div>
-                <div class="history-actions">
-                    <button class="icon-btn btn-history-expand" title="Expand">v</button>
-                    <button class="icon-btn btn-history-copy" title="Copy">📋</button>
-                </div>
-            `;
+            headerDiv.appendChild(timeSpan);
+            headerDiv.appendChild(badgesDiv);
+
+            // Create preview and full text elements (using textContent to prevent XSS)
+            const previewDiv = document.createElement('div');
+            previewDiv.className = 'history-text-preview';
+            previewDiv.textContent = previewText;
+
+            const fullTextDiv = document.createElement('div');
+            fullTextDiv.className = 'history-text-full hide';
+            fullTextDiv.textContent = entry.text;
+
+            // Create actions
+            const actionsDiv = document.createElement('div');
+            actionsDiv.className = 'history-actions';
+
+            const btnExpand = document.createElement('button');
+            btnExpand.className = 'icon-btn btn-history-expand';
+            btnExpand.title = 'Expand';
+            btnExpand.textContent = 'v';
+
+            const btnCopy = document.createElement('button');
+            btnCopy.className = 'icon-btn btn-history-copy';
+            btnCopy.title = 'Copy';
+            btnCopy.textContent = '📋';
+
+            actionsDiv.appendChild(btnExpand);
+            actionsDiv.appendChild(btnCopy);
+
+            // Assemble entry
+            entryEl.appendChild(headerDiv);
+            entryEl.appendChild(previewDiv);
+            entryEl.appendChild(fullTextDiv);
+            entryEl.appendChild(actionsDiv);
 
             // Expand/Collapse logic
-            const btnExpand = entryEl.querySelector('.btn-history-expand');
-            const preview = entryEl.querySelector('.history-text-preview');
-            const fullText = entryEl.querySelector('.history-text-full');
-
             btnExpand.addEventListener('click', () => {
-                if (fullText.classList.contains('hide')) {
-                    fullText.classList.remove('hide');
-                    preview.classList.add('hide');
+                if (fullTextDiv.classList.contains('hide')) {
+                    fullTextDiv.classList.remove('hide');
+                    previewDiv.classList.add('hide');
                     btnExpand.textContent = '^';
                 } else {
-                    fullText.classList.add('hide');
-                    preview.classList.remove('hide');
+                    fullTextDiv.classList.add('hide');
+                    previewDiv.classList.remove('hide');
                     btnExpand.textContent = 'v';
                 }
             });
 
             // Copy logic
-            const btnCopy = entryEl.querySelector('.btn-history-copy');
             btnCopy.addEventListener('click', () => {
                 navigator.clipboard.writeText(entry.text).then(() => {
                     this.showToast('Copied to clipboard');
@@ -133,6 +176,26 @@ export class HistoryPanel {
                 });
             }
         } catch (e) { }
+    }
+
+    async exportHistory() {
+        if (!window.api || !window.api.exportHistory) {
+            this.showToast('Export not available');
+            return;
+        }
+
+        try {
+            const result = await window.api.exportHistory('txt');
+            if (result.success) {
+                this.showToast(`Exported to ${result.filePath.split('/').pop().split('\\').pop()}`);
+            } else if (result.error) {
+                this.showToast(`Export failed: ${result.error}`);
+            }
+            // Cancelled - don't show anything
+        } catch (e) {
+            window.api.log(`Failed to export history: ${e.message}`);
+            this.showToast('Export failed');
+        }
     }
 
     showToast(message) {

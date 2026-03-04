@@ -1,10 +1,10 @@
 {
-  "name": "2026-02-28_whisper_alt-v2",
+  "name": "koe",
   "version": "1.0.0",
-  "description": "Voice Dictation Desktop App",
+  "description": "Koe — Voice Dictation Desktop App",
   "main": "src/main/main.js",
   "scripts": {
-    "dev": "concurrently -k \"vite\" \"electron .\"",
+    "dev": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
     "build": "vite build && electron-builder"
   },
   "repository": {
@@ -12,7 +12,7 @@
     "url": "git+https://github.com/JStaRFilms/Koe-------Voice-Dictation-Desktop-App.git"
   },
   "keywords": [],
-  "author": "",
+  "author": "J StaR Films Studios",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {

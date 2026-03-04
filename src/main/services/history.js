@@ -1,14 +1,21 @@
 const Store = require('electron-store').default || require('electron-store');
 const { v4: uuidv4 } = require('uuid');
 
-const historyStore = new Store({
-    name: 'transcription-history'
-});
+let historyStore = null;
+
+function getStore() {
+    if (!historyStore) {
+        historyStore = new Store({
+            name: 'transcription-history'
+        });
+    }
+    return historyStore;
+}
 
 const MAX_HISTORY_ENTRIES = 100;
 
 function getHistory() {
-    return historyStore.get('entries', []);
+    return getStore().get('entries', []);
 }
 
 function addHistoryEntry(text, language = 'auto', isLlamaEnhanced = false) {
@@ -27,12 +34,12 @@ function addHistoryEntry(text, language = 'auto', isLlamaEnhanced = false) {
         entries.length = MAX_HISTORY_ENTRIES; // Trim the end
     }
 
-    historyStore.set('entries', entries);
+    getStore().set('entries', entries);
     return entries;
 }
 
 function clearHistory() {
-    historyStore.set('entries', []);
+    getStore().set('entries', []);
     return [];
 }
 

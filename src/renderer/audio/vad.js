@@ -1,5 +1,14 @@
-import { MicVAD } from "@ricky0123/vad-web";
 import { encodeWAV } from "./wav-encoder.js";
+
+// Dynamic import for CommonJS module
+let MicVAD;
+async function loadVAD() {
+    if (!MicVAD) {
+        const vad = await import("@ricky0123/vad-web");
+        MicVAD = vad.MicVAD;
+    }
+    return MicVAD;
+}
 
 let vad;
 let isSpeaking = false;
@@ -11,15 +20,57 @@ let isSpeaking = false;
  */
 let speechFrames = [];
 
+/**
+ * Get the base path for VAD assets.
+ * - Dev: Vite serves them from /assets/vad/ via the custom plugin
+ * - Production: Files are asarUnpacked to resources/app.asar.unpacked/dist/renderer/assets/vad/
+ *   We must use an absolute file:// URL to avoid double-nesting and asar read failures.
+ */
+async function getVadBasePath() {
+    try {
+        const isPackaged = await window.api?.isPackaged?.() || false;
+        window.api?.log?.(`VAD: isPackaged = ${isPackaged}`);
+
+        if (isPackaged) {
+            // In production, get the resources path from main process
+            // The unpacked assets live at: resources/app.asar.unpacked/dist/renderer/assets/vad/
+            const resourcesPath = await window.api?.getResourcesPath?.();
+            if (resourcesPath) {
+                // Convert backslashes to forward slashes and encode for file:// URL
+                // encodeURI is used to handle spaces and special characters in paths
+                const normalizedPath = resourcesPath.replace(/\\/g, '/');
+                const encodedPath = encodeURI(normalizedPath);
+                const vadPath = `file:///${encodedPath}/app.asar.unpacked/dist/renderer/assets/vad/`;
+                window.api?.log?.(`VAD: Using unpacked path: ${vadPath}`);
+                return vadPath;
+            }
+            // Fallback: try relative path (may not work inside asar)
+            window.api?.log?.('VAD: resourcesPath not available, falling back to relative path');
+            return './assets/vad/';
+        } else {
+            // In dev, use absolute path served by the Vite VAD plugin
+            return '/assets/vad/';
+        }
+    } catch (e) {
+        window.api?.log?.(`VAD: Error checking isPackaged: ${e.message}, defaulting to dev path`);
+        return '/assets/vad/';
+    }
+}
+
 export async function initVAD() {
     if (vad) return;
+
+    const basePath = await getVadBasePath();
+    window.api?.log?.(`VAD: Initializing with basePath: ${basePath}`);
+
     try {
-        vad = await MicVAD.new({
+        const VADClass = await loadVAD();
+        vad = await VADClass.new({
             positiveSpeechThreshold: 0.5,
             minSpeechFrames: 3,
             startOnLoad: false,
-            baseAssetPath: '/vad/',
-            onnxWASMBasePath: '/vad/',
+            baseAssetPath: basePath,
+            onnxWASMBasePath: basePath,
 
             onFrameProcessed: (probabilities, frame) => {
                 // Collect frames while speaking so we can flush on manual stop
@@ -52,6 +103,7 @@ export async function initVAD() {
     } catch (error) {
         console.error('VAD init error:', error);
         window.api.log(`VAD init error: ${error.message}`);
+        throw error; // Re-throw so caller can detect the failure
     }
 }
 
@@ -65,6 +117,11 @@ export async function startListening() {
     speechFrames = [];
     await vad.start();
     window.api.log('VAD: Listening started.');
+}
+
+/** Check if VAD is initialized and ready */
+export function isVADReady() {
+    return !!vad;
 }
 
 /**

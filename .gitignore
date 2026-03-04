@@ -22,6 +22,7 @@ venv/
 # --- Node / Web ---
 node_modules/
 dist/
+release/
 build/
 .next/
 coverage/
