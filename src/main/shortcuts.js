@@ -80,15 +80,9 @@ function getCurrentHotkey() {
     return currentHotkey;
 }
 
-function validateHotkey(hotkey) {
-    // Check if the hotkey format is valid for Electron
-    return globalShortcut.isRegistered(hotkey) || globalShortcut.register(hotkey, () => { });
-}
-
 module.exports = {
     registerShortcuts,
     unregisterShortcuts,
     updateHotkey,
-    getCurrentHotkey,
-    validateHotkey
+    getCurrentHotkey
 };

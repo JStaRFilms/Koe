@@ -60,21 +60,21 @@ function setupIpcHandlers(mainWindow) {
     });
 
     ipcMain.on(CHANNELS.WINDOW_MINIMIZE, () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.minimize();
+        if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+            mainWindowRef.minimize();
         }
     });
 
     ipcMain.on(CHANNELS.WINDOW_CLOSE, () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.hide();
+        if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+            mainWindowRef.hide();
         }
     });
 
     // Hide the pill window (called by renderer after auto-hide delay)
     ipcMain.on(CHANNELS.WINDOW_HIDE, () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-            mainWindow.hide();
+        if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+            mainWindowRef.hide();
         }
     });
 
@@ -90,8 +90,8 @@ function setupIpcHandlers(mainWindow) {
             const settings = getSettings();
             logger.info(`[Pipeline] Received audio chunk: ${buffer?.byteLength || 'N/A'} bytes, ${audioSeconds?.toFixed(1)}s`);
 
-            if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, 'processing');
+            if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+                mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, 'processing');
             }
 
             logger.info('[Pipeline] Calling Groq transcribe...');
@@ -99,8 +99,8 @@ function setupIpcHandlers(mainWindow) {
             logger.info(`[Pipeline] Transcription result: "${text?.substring(0, 80) || 'null'}"`);
 
             if (text && settings.enhanceText) {
-                if (mainWindow && !mainWindow.isDestroyed()) {
-                    mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, 'enhancing');
+                if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+                    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, 'enhancing');
                 }
                 logger.info('[Pipeline] Enhancing text...');
                 text = await enhance(text, settings.promptStyle || 'Clean');
@@ -111,8 +111,8 @@ function setupIpcHandlers(mainWindow) {
             if (text) {
                 logger.info('[Pipeline] Hiding pill and preparing to paste...');
                 // Hide the pill before pasting so focus returns to the user's app
-                if (mainWindow && !mainWindow.isDestroyed()) {
-                    mainWindow.hide();
+                if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+                    mainWindowRef.hide();
                 }
 
                 // Small delay to let OS focus the previous window
@@ -123,19 +123,19 @@ function setupIpcHandlers(mainWindow) {
                 historyService.addHistoryEntry(text, settings.language || 'auto', settings.enhanceText && !!text);
             }
 
-            if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
+            if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+                mainWindowRef.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
                 if (text) {
-                    mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_RESULT, text);
-                    mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, text);
+                    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_RESULT, text);
+                    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, text);
                 }
             }
             logger.info('[Pipeline] Done.');
         } catch (error) {
             logger.error('[Pipeline] Transcription error:', error);
-            if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, `error: ${error.message}`);
-                mainWindow.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
+            if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+                mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, `error: ${error.message}`);
+                mainWindowRef.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
             }
         }
     });

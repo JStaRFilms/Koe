@@ -36,9 +36,11 @@ async function getVadBasePath() {
             // The unpacked assets live at: resources/app.asar.unpacked/dist/renderer/assets/vad/
             const resourcesPath = await window.api?.getResourcesPath?.();
             if (resourcesPath) {
-                // Convert backslashes to forward slashes for file:// URL
+                // Convert backslashes to forward slashes and encode for file:// URL
+                // encodeURI is used to handle spaces and special characters in paths
                 const normalizedPath = resourcesPath.replace(/\\/g, '/');
-                const vadPath = `file:///${normalizedPath}/app.asar.unpacked/dist/renderer/assets/vad/`;
+                const encodedPath = encodeURI(normalizedPath);
+                const vadPath = `file:///${encodedPath}/app.asar.unpacked/dist/renderer/assets/vad/`;
                 window.api?.log?.(`VAD: Using unpacked path: ${vadPath}`);
                 return vadPath;
             }

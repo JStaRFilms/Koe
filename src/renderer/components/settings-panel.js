@@ -226,8 +226,8 @@ export class SettingsPanel {
             return;
         }
 
-        const svgIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
-        this.btnTestKey.innerHTML = svgIcon + ' Testing...';
+        const testIconSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
+        this.btnTestKey.innerHTML = testIconSvg + ' Testing...';
         this.btnTestKey.disabled = true;
         this.testResult.style.display = 'none';
 
@@ -241,8 +241,7 @@ export class SettingsPanel {
         } catch (e) {
             this.showTestResult('Connection failed ✗', false);
         } finally {
-            const svgIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
-            this.btnTestKey.innerHTML = svgIcon + ' Test Connection';
+            this.btnTestKey.innerHTML = testIconSvg + ' Test Connection';
             this.btnTestKey.disabled = false;
         }
     }
