@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Righteous, Noto_Serif_JP } from "next/font/google";
+import { IBM_Plex_Mono, Righteous } from "next/font/google";
 import "./globals.css";
 
 const ibmPlexMono = IBM_Plex_Mono({
@@ -14,13 +14,8 @@ const righteous = Righteous({
   weight: ["400"],
 });
 
-const notoSerifJP = Noto_Serif_JP({
-  variable: "--font-serif",
-  subsets: ["latin"],
-  weight: ["900"],
-});
-
 export const metadata: Metadata = {
+  metadataBase: new URL("https://koe.jstarstudios.com"),
   title: "Koe — Free Voice Dictation for Windows",
   description: "Lightning-fast, free voice dictation app for Windows. Powered by AI, completely open source. No subscriptions, just your voice.",
   keywords: ["voice dictation", "speech to text", "Windows", "free", "open source", "Whisper", "Groq"],
@@ -66,7 +61,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${ibmPlexMono.variable} ${righteous.variable} ${notoSerifJP.variable} font-mono antialiased bg-void text-bone min-h-screen`}
+        className={`${ibmPlexMono.variable} ${righteous.variable} font-mono antialiased bg-void text-bone min-h-screen`}
       >
         <div className="grid-bg min-h-screen">
           {children}
