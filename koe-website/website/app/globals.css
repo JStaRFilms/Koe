@@ -1,0 +1,173 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* Terminal Noir Design System - Koe Website */
+@theme inline {
+  /* Core Colors */
+  --color-void: #050505;
+  --color-bone: #E2DFD2;
+  --color-amber: #FFB000;
+  --color-crimson: #8A0303;
+  --color-muted: #666666;
+  --color-zinc: #1F1F1F;
+
+  /* Semantic mappings */
+  --color-background: var(--color-void);
+  --color-foreground: var(--color-bone);
+  --color-accent: var(--color-amber);
+  --color-accent-foreground: var(--color-void);
+  --color-destructive: var(--color-crimson);
+  --color-border: var(--color-zinc);
+  --color-muted-foreground: var(--color-muted);
+
+  /* Typography */
+  --font-display: 'Righteous', cursive;
+  --font-mono: 'IBM Plex Mono', monospace;
+  --font-serif: 'Noto Serif JP', serif;
+  --font-sans: var(--font-mono);
+
+  /* Spacing */
+  --radius: 0;
+}
+
+:root {
+  /* Terminal Noir - Dark Mode (Default) */
+  --background: #050505;
+  --foreground: #E2DFD2;
+  --card: #0a0a0a;
+  --card-foreground: #E2DFD2;
+  --popover: #0a0a0a;
+  --popover-foreground: #E2DFD2;
+  --primary: #FFB000;
+  --primary-foreground: #050505;
+  --secondary: #1F1F1F;
+  --secondary-foreground: #E2DFD2;
+  --muted: #1F1F1F;
+  --muted-foreground: #666666;
+  --accent: #FFB000;
+  --accent-foreground: #050505;
+  --destructive: #8A0303;
+  --border: #1F1F1F;
+  --input: #1F1F1F;
+  --ring: #FFB000;
+}
+
+/* Scanline Overlay Effect */
+.scanlines::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 50;
+}
+
+/* CRT Flicker Animation */
+@keyframes flicker {
+  0% {
+    opacity: 0.97;
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0.98;
+  }
+}
+
+.crt-flicker {
+  animation: flicker 0.2s infinite alternate;
+}
+
+/* Grid Background */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(31, 31, 31, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(31, 31, 31, 0.5) 1px, transparent 1px);
+  background-size: 50px 50px;
+}
+
+/* Marquee Animation */
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  animation: marquee 20s linear infinite;
+}
+
+/* Selection Styling */
+::selection {
+  background: #FFB000;
+  color: #050505;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1F1F1F;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #FFB000;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-void text-bone font-mono antialiased;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: var(--font-display);
+    text-transform: uppercase;
+  }
+}
+
+/* Utility Classes */
+@layer utilities {
+  .text-glow {
+    text-shadow: 0 0 10px rgba(255, 176, 0, 0.5);
+  }
+
+  .border-raw {
+    border: 1px solid #1F1F1F;
+  }
+
+  .uppercase-tracking {
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+}
