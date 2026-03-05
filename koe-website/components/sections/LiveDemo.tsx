@@ -50,6 +50,7 @@ export function LiveDemo() {
   const stopTimeoutRef = useRef<number | null>(null);
 
   const [phase, setPhase] = useState<DemoPhase>("idle");
+  const [isClient, setIsClient] = useState(false);
   const [usageCount, setUsageCount] = useState(() => getUsageCount());
   const [transcript, setTranscript] = useState("");
   const [status, setStatus] = useState("Record speech, then stop to transcribe.");
@@ -58,6 +59,10 @@ export function LiveDemo() {
   const remaining = useMemo(() => Math.max(0, DAILY_LIMIT - usageCount), [usageCount]);
   const isRecording = phase === "recording";
   const isTranscribing = phase === "transcribing";
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const incrementUsage = () => {
     setUsageCount((prev) => {
@@ -257,7 +262,7 @@ export function LiveDemo() {
             type="button"
             onClick={isRecording ? stopRecording : () => void startRecording()}
             className={`btn-brutal justify-center ${isRecording ? "bg-crimson border-crimson" : ""}`}
-            disabled={!isSupported || isTranscribing || (!isRecording && remaining <= 0)}
+            disabled={isTranscribing || (!isRecording && remaining <= 0)}
           >
             {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
             {isRecording ? "STOP RECORDING" : isTranscribing ? "TRANSCRIBING..." : "START RECORDING"}
@@ -277,7 +282,10 @@ export function LiveDemo() {
 
       <div className="border-t border-zinc p-6 flex items-center gap-3 text-sm font-mono normal-case">
         <AlertTriangle className="w-4 h-4 text-amber shrink-0" />
-        <span className="text-muted">{status}</span>
+        <span className="text-muted">
+          {status}
+          {isClient && !isSupported ? " Browser recording is unavailable in this environment." : ""}
+        </span>
       </div>
     </section>
   );
