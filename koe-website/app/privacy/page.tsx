@@ -1,10 +1,14 @@
+import type { Metadata } from "next";
 import { StatusBar } from "@/components/StatusBar";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/sections/Footer";
 
-export const metadata = {
-    title: "Privacy Policy | Koe",
-    description: "Koe's privacy policy - we don't collect any of your data.",
+export const metadata: Metadata = {
+    title: "Privacy Policy",
+    description: "Koe privacy policy: no account tracking, no telemetry, and local-first usage.",
+    alternates: {
+        canonical: "/privacy/",
+    },
 };
 
 export default function PrivacyPage() {
@@ -100,3 +104,5 @@ export default function PrivacyPage() {
         </>
     );
 }
+
+

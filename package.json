@@ -11,7 +11,15 @@
     "type": "git",
     "url": "git+https://github.com/JStaRFilms/Koe-------Voice-Dictation-Desktop-App.git"
   },
-  "keywords": [],
+  "keywords": [
+    "voice dictation",
+    "speech to text",
+    "windows",
+    "open source",
+    "whisper",
+    "groq",
+    "electron"
+  ],
   "author": "J StaR Films Studios",
   "license": "ISC",
   "type": "commonjs",

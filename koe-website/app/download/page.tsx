@@ -3,10 +3,14 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/sections/Footer";
 import { DownloadButton } from "@/components/DownloadButton";
 import { Github, Monitor, Cpu, Wifi, Mic, ExternalLink, KeyRound, Settings, Keyboard, CheckCircle2 } from "lucide-react";
+import type { Metadata } from "next";
 
-export const metadata = {
-    title: "Download | Koe",
+export const metadata: Metadata = {
+    title: "Download",
     description: "Download Koe for Windows. Free voice dictation app with AI-powered transcription.",
+    alternates: {
+        canonical: "/download/",
+    },
 };
 
 export default function DownloadPage() {
@@ -238,3 +242,5 @@ export default function DownloadPage() {
         </>
     );
 }
+
+

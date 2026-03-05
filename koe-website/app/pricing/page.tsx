@@ -3,10 +3,14 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/sections/Footer";
 import { Check } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
 
-export const metadata = {
-    title: "Pricing | Koe",
+export const metadata: Metadata = {
+    title: "Pricing",
     description: "Koe is completely free and open source. No subscriptions, no limits.",
+    alternates: {
+        canonical: "/pricing/",
+    },
 };
 
 export default function PricingPage() {

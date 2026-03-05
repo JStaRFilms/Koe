@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/icons/icon.png" width="120" alt="Koe Logo">
+  <img src="src/assets/icons/logo.svg" width="120" alt="Koe Logo">
   <h1>Koe (声)</h1>
   <p><strong>Lightning-Fast, Privacy-First Voice Dictation for Windows</strong></p>
 

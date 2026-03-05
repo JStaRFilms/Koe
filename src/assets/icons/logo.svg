@@ -1,0 +1,6 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Koe logo">
+  <rect width="512" height="512" fill="#0a0a0a"/>
+  <rect x="36" y="36" width="440" height="440" fill="none" stroke="#f5f2e8" stroke-width="14"/>
+  <text x="64" y="284" fill="#f5f2e8" font-size="152" font-family="monospace" font-weight="700">KOE</text>
+  <text x="430" y="426" fill="#ffb22c" font-size="108" font-family="serif" text-anchor="end">&#22768;</text>
+</svg>

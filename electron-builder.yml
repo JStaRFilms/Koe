@@ -13,7 +13,7 @@ asarUnpack:
   - "dist/renderer/assets/vad/**/*"
 win:
   target: nsis
-  icon: src/assets/icons/app-icon.png
+  icon: src/assets/icons/logo.png
   legalTrademarks: "J StaR Films Studios"
 nsis:
   oneClick: false
