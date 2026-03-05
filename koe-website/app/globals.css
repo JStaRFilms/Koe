@@ -105,67 +105,29 @@ body::before {
   white-space: nowrap;
 }
 
-@keyframes voiceBounce {
-  0% {
-    transform: scaleY(0.35);
-  }
-
-  12% {
-    transform: scaleY(0.9);
-  }
-
-  28% {
-    transform: scaleY(0.45);
-  }
-
-  44% {
-    transform: scaleY(1);
-  }
-
-  65% {
-    transform: scaleY(0.5);
-  }
-
-  82% {
-    transform: scaleY(0.8);
-  }
-
-  100% {
-    transform: scaleY(0.4);
-  }
-}
-
 .voice-bar {
-  transform-origin: bottom center;
-  animation-name: voiceBounce;
-  animation-timing-function: ease-in-out;
-  animation-iteration-count: infinite;
-  will-change: transform;
+  transition: height 140ms cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: height;
 }
 
 .voice-bar-1 {
-  animation-duration: 1.05s;
-  animation-delay: -0.15s;
+  transition-duration: 130ms;
 }
 
 .voice-bar-2 {
-  animation-duration: 0.88s;
-  animation-delay: -0.35s;
+  transition-duration: 150ms;
 }
 
 .voice-bar-3 {
-  animation-duration: 1.2s;
-  animation-delay: -0.22s;
+  transition-duration: 120ms;
 }
 
 .voice-bar-4 {
-  animation-duration: 0.94s;
-  animation-delay: -0.48s;
+  transition-duration: 160ms;
 }
 
 .voice-bar-5 {
-  animation-duration: 1.12s;
-  animation-delay: -0.28s;
+  transition-duration: 145ms;
 }
 
 /* Marquee - Exact from Mockup */

@@ -57,10 +57,10 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
         return (
             <button
                 disabled
-                className={`flex items-center justify-center gap-2 px-6 py-3 bg-zinc text-muted cursor-not-allowed ${className}`}
+                className={`btn-brutal cursor-not-allowed opacity-50 ${className}`}
             >
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Loading...
+                LOADING...
             </button>
         );
     }
@@ -68,13 +68,13 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
     if (error || !release) {
         return (
             <a
-                    href="https://github.com/JStaRFilms/Koe/releases"
+                href="https://github.com/JStaRFilms/Koe/releases"
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex items-center justify-center gap-2 px-6 py-3 bg-amber text-void font-bold uppercase tracking-wider hover:bg-bone transition-colors ${className}`}
+                className={`btn-brutal ${className}`}
             >
                 <Download className="w-4 h-4" />
-                View Releases
+                VIEW RELEASES
             </a>
         );
     }
@@ -83,10 +83,10 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
         <div className="flex flex-col items-center gap-2">
             <a
                 href={release.downloadUrl}
-                className={`flex items-center justify-center gap-2 px-6 py-3 bg-amber text-void font-bold uppercase tracking-wider hover:bg-bone transition-colors ${className}`}
+                className={`btn-brutal ${className}`}
             >
                 <Download className="w-4 h-4" />
-                Download for Windows
+                DOWNLOAD FOR WINDOWS
             </a>
             {showVersion && (
                 <span className="text-xs text-muted">

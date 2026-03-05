@@ -1,9 +1,35 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Terminal } from "lucide-react";
 
 export function Hero() {
+    const [levels, setLevels] = useState([22, 78, 56, 42, 28]);
+
+    useEffect(() => {
+        const ranges = [
+            { min: 12, max: 42 },
+            { min: 45, max: 100 },
+            { min: 30, max: 82 },
+            { min: 20, max: 68 },
+            { min: 10, max: 50 },
+        ];
+
+        const interval = setInterval(() => {
+            setLevels((prev) =>
+                prev.map((value, index) => {
+                    const { min, max } = ranges[index];
+                    const target = min + Math.random() * (max - min);
+                    const eased = value + (target - value) * 0.6;
+                    return Math.max(min, Math.min(max, Math.round(eased)));
+                })
+            );
+        }, 140);
+
+        return () => clearInterval(interval);
+    }, []);
+
     return (
         <section className="max-w-7xl mx-auto w-full flex flex-col md:flex-row border-x border-zinc min-h-[80vh] relative overflow-hidden bg-void/40">
             {/* Deco structural lines */}
@@ -51,23 +77,23 @@ export function Hero() {
                     <div className="flex-grow flex items-end gap-2 pb-8">
                         <div
                             className="w-1/5 bg-bone voice-bar voice-bar-1"
-                            style={{ height: "25%" }}
+                            style={{ height: `${levels[0]}%` }}
                         ></div>
                         <div
                             className="w-1/5 bg-amber voice-bar voice-bar-2"
-                            style={{ height: "100%" }}
+                            style={{ height: `${levels[1]}%` }}
                         ></div>
                         <div
                             className="w-1/5 bg-bone voice-bar voice-bar-3"
-                            style={{ height: "75%" }}
+                            style={{ height: `${levels[2]}%` }}
                         ></div>
                         <div
                             className="w-1/5 bg-crimson voice-bar voice-bar-4"
-                            style={{ height: "50%" }}
+                            style={{ height: `${levels[3]}%` }}
                         ></div>
                         <div
                             className="w-1/5 bg-bone voice-bar voice-bar-5"
-                            style={{ height: "33%" }}
+                            style={{ height: `${levels[4]}%` }}
                         ></div>
                     </div>
                     <div className="text-xs text-muted font-mono normal-case">
