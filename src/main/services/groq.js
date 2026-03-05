@@ -5,7 +5,7 @@ const logger = require('./logger');
 const GROQ_WHISPER_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL = 'whisper-large-v3-turbo';
-const ENHANCE_MODEL = 'llama-3.3-70b-versatile';
+const ENHANCE_MODEL = 'moonshotai/kimi-k2-instruct-0905';
 
 async function transcribeDirect(wavBuffer, language = 'auto') {
     const apiKey = getSetting('groqApiKey');

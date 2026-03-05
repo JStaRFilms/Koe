@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://koe.jstarstudios.com/sitemap.xml

@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     url: "https://koe.jstarstudios.com",
     siteName: "Koe",
     images: [{
-      url: "/images/og-image.jpg",
+      url: "/og-image.svg",
       width: 1200,
       height: 630,
       alt: "Koe - Free Voice Dictation for Windows",
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Koe — Free Voice Dictation for Windows",
     description: "Lightning-fast, free voice dictation app for Windows. Powered by AI, completely open source.",
-    images: ["/images/og-image.jpg"],
+    images: ["/og-image.svg"],
   },
   icons: {
     icon: "/favicon.ico",
