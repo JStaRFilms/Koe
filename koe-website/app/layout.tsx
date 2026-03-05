@@ -1,19 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, Righteous } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ThemeProvider";
-
-const ibmPlexMono = IBM_Plex_Mono({
-  variable: "--font-mono",
-  subsets: ["latin"],
-  weight: ["400", "600", "700"],
-});
-
-const righteous = Righteous({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400"],
-});
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://koe.jstarstudios.com"),
@@ -60,20 +46,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${ibmPlexMono.variable} ${righteous.variable} font-mono antialiased bg-void text-bone min-h-screen`}
-      >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <div className="grid-bg min-h-screen">
-            {children}
-          </div>
-        </ThemeProvider>
+    <html lang="en" className="dark">
+      <head>
+        {/* Google Fonts: Righteous (Deco) & IBM Plex Mono (Terminal) & Noto Serif JP */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Righteous&family=IBM+Plex+Mono:wght@400;600;700&family=Noto+Serif+JP:wght@900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-void text-bone font-mono uppercase selection:bg-amber selection:text-void min-h-screen flex flex-col grid-bg">
+        {children}
       </body>
     </html>
   );

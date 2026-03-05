@@ -1,44 +1,43 @@
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { StatusBar } from "@/components/StatusBar";
+import { Header } from "@/components/Header";
 import { Hero } from "@/components/sections/Hero";
-import { Marquee } from "@/components/Marquee";
+import { Marquee } from "@/components/sections/Marquee";
 import { Features } from "@/components/sections/Features";
-import { HowItWorks } from "@/components/sections/HowItWorks";
-import { Comparison } from "@/components/sections/Comparison";
+import { Specs } from "@/components/sections/Specs";
 import { FAQ } from "@/components/sections/FAQ";
-import { GitHubCTA } from "@/components/sections/GitHubCTA";
+import { Footer } from "@/components/sections/Footer";
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen flex-col">
-      <div className="giant-kanji font-serif pointer-events-none fixed">声</div>
+    <>
+      {/* Giant Background Kanji */}
+      <div className="giant-kanji font-jp pointer-events-none fixed">声</div>
 
-      <Navbar />
+      {/* Top Status Bar (Terminal Style) */}
+      <StatusBar />
 
-      <main className="flex-1">
-        {/* FR-001: Hero Section */}
+      {/* Decostyle Header */}
+      <Header />
+
+      <main className="flex-grow flex flex-col">
+        {/* HERO SECTION */}
         <Hero />
 
-        {/* Marquee */}
+        {/* Marquee Bar */}
         <Marquee />
 
-        {/* FR-003: Features Section */}
+        {/* FEATURES TABLE (Brutalist List) */}
         <Features />
 
-        {/* FR-004: How It Works / Specs */}
-        <HowItWorks />
+        {/* SPECS / HOW IT WORKS GRID + COMPARISON */}
+        <Specs />
 
-        {/* FR-004: Comparison Table */}
-        <Comparison />
-
-        {/* FAQ Section */}
+        {/* FAQ BRUTAL STYLE */}
         <FAQ />
-
-        {/* FR-005: GitHub CTA */}
-        <GitHubCTA />
       </main>
 
+      {/* FOOTER NOIR */}
       <Footer />
-    </div>
+    </>
   );
 }

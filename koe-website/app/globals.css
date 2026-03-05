@@ -1,37 +1,8 @@
-@import "tailwindcss";
-@import "tw-animate-css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@custom-variant dark (&:is(.dark *));
-
-/* Terminal Noir Design System - Koe Website */
-@theme inline {
-  /* Core Colors */
-  --color-void: var(--color-void);
-  --color-bone: var(--color-bone);
-  --color-amber: var(--color-amber);
-  --color-crimson: var(--color-crimson);
-  --color-muted: var(--color-muted);
-  --color-zinc: var(--color-zinc);
-
-  /* Semantic mappings */
-  --color-background: var(--color-void);
-  --color-foreground: var(--color-bone);
-  --color-accent: var(--color-amber);
-  --color-accent-foreground: var(--color-void);
-  --color-destructive: var(--color-crimson);
-  --color-border: var(--color-zinc);
-  --color-muted-foreground: var(--color-muted);
-
-  /* Typography */
-  --font-display: 'Righteous', cursive;
-  --font-mono: 'IBM Plex Mono', monospace;
-  --font-serif: 'Noto Serif JP', 'MS Mincho', 'Yu Mincho', serif;
-  --font-sans: var(--font-mono);
-
-  /* Spacing */
-  --radius: 0;
-}
-
+/* Terminal Noir Design System - Exact from Mockup */
 :root {
   --color-void: #E2DFD2;
   --color-bone: #050505;
@@ -50,50 +21,109 @@
   --color-crimson: #8A0303;
 }
 
-/* Scanline Overlay Effect */
-.scanlines::before {
-  content: '';
+body {
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Scanline Overlay - Exact from Mockup */
+body::before {
+  content: " ";
+  display: block;
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(to bottom,
-      rgba(0, 0, 0, 0) 50%,
-      rgba(0, 0, 0, 0.25) 50%);
-  background-size: 100% 4px;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 100;
+  background-size: 100% 2px, 3px 100%;
   pointer-events: none;
-  z-index: 50;
+  opacity: 0.15;
 }
 
-/* CRT Flicker Animation */
-@keyframes flicker {
-  0% {
-    opacity: 0.97;
-  }
+/* Raw Border Classes - Exact from Mockup */
+.border-raw {
+  border: 1px solid var(--color-zinc);
+}
 
-  50% {
-    opacity: 1;
-  }
+.border-raw-b {
+  border-bottom: 1px solid var(--color-zinc);
+}
 
-  100% {
-    opacity: 0.98;
-  }
+.border-raw-r {
+  border-right: 1px solid var(--color-zinc);
+}
+
+/* Deco Elements - Exact from Mockup */
+.deco-line {
+  height: 4px;
+  background: var(--color-amber);
+  width: 100%;
+  position: relative;
+}
+
+/* Terminal Glitch & Animations - Exact from Mockup */
+.glitch-hover:hover {
+  color: var(--color-amber);
+  text-shadow: 2px 0 var(--color-void), -2px 0 var(--color-bone);
+  background: var(--color-zinc);
 }
 
 .crt-flicker {
   animation: flicker 0.2s infinite alternate;
 }
 
-/* Grid Background */
+@keyframes flicker {
+  0% {
+    opacity: 0.98;
+  }
+
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
+  }
+}
+
+/* Grid Background pattern - Exact from Mockup */
 .grid-bg {
+  background-size: 50px 50px;
   background-image:
     linear-gradient(to right, var(--color-zinc) 1px, transparent 1px),
     linear-gradient(to bottom, var(--color-zinc) 1px, transparent 1px);
-  background-size: 50px 50px;
 }
 
-/* Marquee Animation */
+/* Massive Background Kanji - Exact from Mockup */
+.giant-kanji {
+  position: absolute;
+  font-size: 100vw;
+  line-height: 0.8;
+  color: var(--color-zinc);
+  opacity: 0.2;
+  z-index: -1;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+/* Marquee - Exact from Mockup */
+.marquee {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  border-top: 1px solid var(--color-amber);
+  border-bottom: 1px solid var(--color-amber);
+  color: var(--color-amber);
+  padding: 8px 0;
+  background: var(--color-void);
+}
+
+.marquee-content {
+  display: inline-block;
+  animation: marquee 20s linear infinite;
+}
+
 @keyframes marquee {
   0% {
     transform: translateX(0);
@@ -104,25 +134,54 @@
   }
 }
 
-.animate-marquee {
-  animation: marquee 20s linear infinite;
+/* Brutalist Button - Exact from Mockup */
+.btn-brutal {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-amber);
+  color: var(--color-void);
+  padding: 16px 32px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border: 2px solid var(--color-amber);
+  transition: all 0s;
+  position: relative;
 }
 
-/* Waveform Animation */
-@keyframes waveform {
-
-  0%,
-  100% {
-    height: 25%;
-  }
-
-  50% {
-    height: 100%;
-  }
+.btn-brutal::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -8px;
+  bottom: -8px;
+  background: transparent;
+  border: 1px solid var(--color-amber);
+  z-index: -1;
+  transition: all 0.1s;
 }
 
-.animate-waveform {
-  animation: waveform 0.8s ease-in-out infinite;
+.btn-brutal:hover {
+  background: var(--color-bone);
+  border-color: var(--color-bone);
+  color: var(--color-void);
+}
+
+.btn-brutal:hover::after {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Details/Summary reset for FAQ */
+details>summary {
+  list-style: none;
+}
+
+details>summary::-webkit-details-marker {
+  display: none;
 }
 
 /* Selection Styling */
@@ -151,11 +210,12 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-[var(--color-zinc)];
   }
 
   body {
-    @apply bg-void text-bone font-mono antialiased;
+    @apply bg-[var(--color-void)] text-[var(--color-bone)] uppercase;
+    font-family: 'IBM Plex Mono', monospace;
   }
 
   h1,
@@ -164,36 +224,73 @@
   h4,
   h5,
   h6 {
-    font-family: var(--font-display);
+    font-family: 'Righteous', cursive;
     text-transform: uppercase;
   }
 }
 
-/* Utility Classes */
-@layer utilities {
-  .giant-kanji {
-    position: absolute;
-    font-size: 100vw;
-    line-height: 0.8;
-    color: var(--color-zinc);
-    opacity: 0.2;
-    z-index: -1;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    white-space: nowrap;
-  }
+/* Font Family Utilities */
+.font-deco {
+  font-family: 'Righteous', cursive;
+}
 
-  .text-glow {
-    text-shadow: 0 0 10px rgba(255, 176, 0, 0.5);
-  }
+.font-mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
 
-  .border-raw {
-    border: 1px solid #1F1F1F;
-  }
+.font-jp {
+  font-family: 'Noto Serif JP', serif;
+}
 
-  .uppercase-tracking {
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
+/* Color Utilities */
+.bg-void {
+  background-color: var(--color-void);
+}
+
+.bg-bone {
+  background-color: var(--color-bone);
+}
+
+.bg-amber {
+  background-color: var(--color-amber);
+}
+
+.bg-zinc {
+  background-color: var(--color-zinc);
+}
+
+.bg-crimson {
+  background-color: var(--color-crimson);
+}
+
+.text-void {
+  color: var(--color-void);
+}
+
+.text-bone {
+  color: var(--color-bone);
+}
+
+.text-amber {
+  color: var(--color-amber);
+}
+
+.text-muted {
+  color: var(--color-muted);
+}
+
+.text-zinc {
+  color: var(--color-zinc);
+}
+
+.text-crimson {
+  color: var(--color-crimson);
+}
+
+.border-zinc {
+  border-color: var(--color-zinc);
+}
+
+.border-amber {
+  border-color: var(--color-amber);
 }
