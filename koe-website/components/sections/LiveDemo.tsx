@@ -1,55 +1,13 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Mic, MicOff, Copy, Trash2, AlertTriangle } from "lucide-react";
-
-interface SpeechRecognitionAlternativeLike {
-  readonly transcript: string;
-}
-
-interface SpeechRecognitionResultLike {
-  readonly isFinal: boolean;
-  readonly length: number;
-  [index: number]: SpeechRecognitionAlternativeLike;
-}
-
-interface SpeechRecognitionResultListLike {
-  readonly length: number;
-  [index: number]: SpeechRecognitionResultLike;
-}
-
-interface SpeechRecognitionEventLike extends Event {
-  readonly resultIndex: number;
-  readonly results: SpeechRecognitionResultListLike;
-}
-
-interface SpeechRecognitionErrorEventLike extends Event {
-  readonly error: string;
-}
-
-interface SpeechRecognitionLike {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
-  onstart: (() => void) | null;
-  onend: (() => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
-  start(): void;
-  stop(): void;
-}
-
-type SpeechRecognitionCtor = new () => SpeechRecognitionLike;
-
-declare global {
-  interface Window {
-    SpeechRecognition?: SpeechRecognitionCtor;
-    webkitSpeechRecognition?: SpeechRecognitionCtor;
-  }
-}
 
 const DAILY_LIMIT = 10;
 const STORAGE_KEY = "koe_live_demo_usage_v1";
+const MAX_RECORDING_MS = 90_000;
+
+type DemoPhase = "idle" | "recording" | "transcribing" | "done" | "error";
 
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -86,19 +44,20 @@ function writeUsageCount(count: number) {
 }
 
 export function LiveDemo() {
-  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
-  const sessionHasFinalRef = useRef(false);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<BlobPart[]>([]);
+  const stopTimeoutRef = useRef<number | null>(null);
 
-  const [isListening, setIsListening] = useState(false);
+  const [phase, setPhase] = useState<DemoPhase>("idle");
   const [usageCount, setUsageCount] = useState(() => getUsageCount());
   const [transcript, setTranscript] = useState("");
-  const [interim, setInterim] = useState("");
-  const [status, setStatus] = useState("Press record to start a live browser transcription.");
-  const isSupported =
-    typeof window !== "undefined" &&
-    Boolean(window.SpeechRecognition || window.webkitSpeechRecognition);
+  const [status, setStatus] = useState("Record speech, then stop to transcribe.");
+  const isSupported = typeof window !== "undefined" && Boolean(window.MediaRecorder && navigator.mediaDevices?.getUserMedia);
 
   const remaining = useMemo(() => Math.max(0, DAILY_LIMIT - usageCount), [usageCount]);
+  const isRecording = phase === "recording";
+  const isTranscribing = phase === "transcribing";
 
   const incrementUsage = () => {
     setUsageCount((prev) => {
@@ -108,96 +67,158 @@ export function LiveDemo() {
     });
   };
 
-  const startRecording = () => {
+  const clearStopTimeout = () => {
+    if (stopTimeoutRef.current !== null) {
+      window.clearTimeout(stopTimeoutRef.current);
+      stopTimeoutRef.current = null;
+    }
+  };
+
+  const stopTracks = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearStopTimeout();
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+      stopTracks();
+    };
+  }, []);
+
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setPhase("transcribing");
+    setStatus("Transcribing...");
+    try {
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "demo.webm");
+      formData.append("language", "auto");
+
+      const response = await fetch("/api/transcribe", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = (await response.json().catch(() => ({}))) as { text?: string; error?: string };
+      if (!response.ok) {
+        throw new Error(data.error || `Transcription failed (${response.status}).`);
+      }
+
+      incrementUsage();
+      const finalText = (data.text || "").trim();
+      setTranscript(finalText);
+      setPhase("done");
+      setStatus(finalText ? "Transcription complete." : "Transcription complete (no speech detected).");
+    } catch (error) {
+      setPhase("error");
+      setStatus(error instanceof Error ? error.message : "Transcription failed.");
+    }
+  };
+
+  const startRecording = async () => {
     if (!isSupported) {
-      setStatus("This browser does not support live speech recognition. Try Chrome or Edge.");
+      setPhase("error");
+      setStatus("Recording is unsupported in this browser. Use recent Chrome or Edge.");
+      return;
+    }
+
+    if (isRecording || isTranscribing) {
       return;
     }
 
     if (remaining <= 0) {
+      setPhase("error");
       setStatus("Daily demo limit reached. Please try again tomorrow.");
       return;
     }
 
-    const ctor = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!ctor) {
-      setStatus("Speech recognition is unavailable in this browser.");
-      return;
-    }
+    try {
+      setTranscript("");
+      clearStopTimeout();
+      stopTracks();
 
-    if (recognitionRef.current) {
-      recognitionRef.current.onresult = null;
-      recognitionRef.current.onstart = null;
-      recognitionRef.current.onend = null;
-      recognitionRef.current.onerror = null;
-    }
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
 
-    const recognition = new ctor();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-    sessionHasFinalRef.current = false;
+      const preferredMimeTypes = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+      const mimeType = preferredMimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
+      const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+      audioChunksRef.current = [];
 
-    recognition.onstart = () => {
-      setIsListening(true);
-      setStatus("Listening...");
-    };
-
-    recognition.onresult = (resultEvent: SpeechRecognitionEventLike) => {
-      let finalText = "";
-      let interimText = "";
-
-      for (let i = 0; i < resultEvent.results.length; i += 1) {
-        const value = resultEvent.results[i][0]?.transcript ?? "";
-        if (resultEvent.results[i].isFinal) {
-          finalText += value;
-        } else {
-          interimText += value;
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
-      }
+      };
 
-      setTranscript(finalText.trim());
-      setInterim(interimText.trim());
-      if (finalText.trim()) {
-        sessionHasFinalRef.current = true;
-      }
-    };
+      recorder.onerror = () => {
+        setPhase("error");
+        setStatus("Recorder error. Please retry.");
+        clearStopTimeout();
+        stopTracks();
+      };
 
-    recognition.onerror = (speechEvent: SpeechRecognitionErrorEventLike) => {
-      setStatus(`Recognition error: ${speechEvent.error}`);
-    };
+      recorder.onstop = () => {
+        clearStopTimeout();
+        const audioBlob = new Blob(audioChunksRef.current, {
+          type: recorder.mimeType || "audio/webm",
+        });
+        stopTracks();
+        audioChunksRef.current = [];
+        if (audioBlob.size === 0) {
+          setPhase("error");
+          setStatus("No audio captured. Check mic permissions and try again.");
+          return;
+        }
+        void transcribeAudio(audioBlob);
+      };
 
-    recognition.onend = () => {
-      setIsListening(false);
-      setInterim("");
-      if (sessionHasFinalRef.current) {
-        incrementUsage();
-        setStatus("Transcription complete.");
-        sessionHasFinalRef.current = false;
-      } else {
-        setStatus("Recording stopped.");
-      }
-    };
+      mediaRecorderRef.current = recorder;
+      recorder.start(250);
+      setPhase("recording");
+      setStatus("Recording...");
 
-    recognitionRef.current = recognition;
-    recognition.start();
+      stopTimeoutRef.current = window.setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === "recording") {
+          mediaRecorderRef.current.stop();
+        }
+      }, MAX_RECORDING_MS);
+    } catch {
+      setPhase("error");
+      setStatus("Could not start recording. Check microphone permissions and retry.");
+      clearStopTimeout();
+      stopTracks();
+    }
   };
 
   const stopRecording = () => {
-    if (!recognitionRef.current) {
+    if (!mediaRecorderRef.current || mediaRecorderRef.current.state !== "recording") {
       return;
     }
-    recognitionRef.current.stop();
+
+    clearStopTimeout();
+    try {
+      mediaRecorderRef.current.stop();
+      setStatus("Processing audio...");
+    } catch {
+      setPhase("error");
+      setStatus("Stop request failed. Try again.");
+    }
   };
 
   const clearTranscript = () => {
     setTranscript("");
-    setInterim("");
-    setStatus("Transcript cleared.");
+    setPhase("idle");
+    setStatus("Record speech, then stop to transcribe.");
   };
 
   const copyTranscript = async () => {
-    const text = `${transcript}${interim ? ` ${interim}` : ""}`.trim();
+    const text = transcript.trim();
     if (!text) {
       setStatus("No transcript to copy.");
       return;
@@ -222,14 +243,11 @@ export function LiveDemo() {
 
       <div className="p-8 md:p-10 grid grid-cols-1 md:grid-cols-[1fr_auto] gap-8">
         <div className="border-raw bg-void min-h-[220px] p-6 font-mono text-base normal-case leading-relaxed">
-          {transcript || interim ? (
-            <>
-              <span>{transcript}</span>
-              {interim ? <span className="text-muted italic"> {interim}</span> : null}
-            </>
+          {transcript ? (
+            <span>{transcript}</span>
           ) : (
             <span className="text-muted">
-              Start recording to see real-time text appear here.
+              Press Start Recording, speak, then Stop Recording to transcribe.
             </span>
           )}
         </div>
@@ -237,15 +255,15 @@ export function LiveDemo() {
         <div className="flex flex-col gap-3 min-w-[220px]">
           <button
             type="button"
-            onClick={isListening ? stopRecording : startRecording}
-            className={`btn-brutal justify-center ${isListening ? "bg-crimson border-crimson" : ""}`}
-            disabled={!isSupported || (!isListening && remaining <= 0)}
+            onClick={isRecording ? stopRecording : () => void startRecording()}
+            className={`btn-brutal justify-center ${isRecording ? "bg-crimson border-crimson" : ""}`}
+            disabled={!isSupported || isTranscribing || (!isRecording && remaining <= 0)}
           >
-            {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-            {isListening ? "STOP RECORDING" : "START RECORDING"}
+            {isRecording ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+            {isRecording ? "STOP RECORDING" : isTranscribing ? "TRANSCRIBING..." : "START RECORDING"}
           </button>
 
-          <button type="button" onClick={copyTranscript} className="btn-brutal justify-center">
+          <button type="button" onClick={copyTranscript} className="btn-brutal justify-center" disabled={!transcript}>
             <Copy className="w-5 h-5" />
             COPY TEXT
           </button>
