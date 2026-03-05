@@ -1,4 +1,35 @@
-import { Zap, ShieldAlert, Unlock } from "lucide-react";
+import { Zap, ShieldAlert, Unlock, History } from "lucide-react";
+
+const features = [
+    {
+        index: "01",
+        icon: Zap,
+        title: "LIGHTNING FAST",
+        description:
+            "216x real-time transcription. It's basically instant. Powered by optimized Whisper models on Groq's LPU architecture.",
+    },
+    {
+        index: "02",
+        icon: ShieldAlert,
+        title: "PRIVACY FIRST. ALWAYS.",
+        description:
+            "Local Voice Activity Detection processing. Your microphone stays local. Your voice never leaves your boundary until you explicitly trigger dictation.",
+    },
+    {
+        index: "03",
+        icon: Unlock,
+        title: "COMPLETELY FREE",
+        description:
+            "No walled gardens. No recurring billing. Bring your own API key and operate indefinitely without limits.",
+    },
+    {
+        index: "04",
+        icon: History,
+        title: "NEVER LOSE A THOUGHT",
+        description:
+            "Automatic history saves every transcription. Copy, retry, or delete anytime. Your complete dictation log, locally stored.",
+    },
+];
 
 export function Features() {
     return (
@@ -7,62 +38,48 @@ export function Features() {
                 <h2 className="font-deco text-4xl text-amber">SYSTEM ADVANTAGES</h2>
             </div>
 
-            {/* Feature 1 */}
-            <div className="flex flex-col md:flex-row border-raw-b hover:bg-zinc/30 transition-colors group">
-                <div className="w-full md:w-1/4 p-8 border-raw-b md:border-b-0 md:border-raw-r flex items-center justify-center md:justify-start">
-                    <span className="font-deco text-8xl text-zinc group-hover:text-amber transition-colors">
-                        01
-                    </span>
-                </div>
-                <div className="w-full md:w-3/4 p-8 flex flex-col justify-center">
-                    <div className="flex items-center gap-4 mb-4">
-                        <Zap className="w-8 h-8 text-amber" />
-                        <h3 className="font-deco text-3xl">LIGHTNING FAST</h3>
-                    </div>
-                    <p className="text-muted normal-case max-w-2xl text-lg">
-                        216x real-time transcription. It's basically instant. Powered by optimized Whisper models on
-                        Groq's LPU architecture.
-                    </p>
-                </div>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="flex flex-col md:flex-row border-raw-b hover:bg-zinc/30 transition-colors group">
-                <div className="w-full md:w-1/4 p-8 border-raw-b md:border-b-0 md:border-raw-r flex items-center justify-center md:justify-start">
-                    <span className="font-deco text-8xl text-zinc group-hover:text-amber transition-colors">
-                        02
-                    </span>
-                </div>
-                <div className="w-full md:w-3/4 p-8 flex flex-col justify-center">
-                    <div className="flex items-center gap-4 mb-4">
-                        <ShieldAlert className="w-8 h-8 text-amber" />
-                        <h3 className="font-deco text-3xl">PRIVACY FIRST. ALWAYS.</h3>
-                    </div>
-                    <p className="text-muted normal-case max-w-2xl text-lg">
-                        Local Voice Activity Detection processing. Your microphone stays local. Your voice never leaves
-                        your boundary until you explicitly trigger dictation.
-                    </p>
-                </div>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="flex flex-col md:flex-row border-raw-b hover:bg-zinc/30 transition-colors group">
-                <div className="w-full md:w-1/4 p-8 border-raw-b md:border-b-0 md:border-raw-r flex items-center justify-center md:justify-start">
-                    <span className="font-deco text-8xl text-zinc group-hover:text-amber transition-colors">
-                        03
-                    </span>
-                </div>
-                <div className="w-full md:w-3/4 p-8 flex flex-col justify-center">
-                    <div className="flex items-center gap-4 mb-4">
-                        <Unlock className="w-8 h-8 text-amber" />
-                        <h3 className="font-deco text-3xl">COMPLETELY FREE</h3>
-                    </div>
-                    <p className="text-muted normal-case max-w-2xl text-lg">
-                        No walled gardens. No recurring billing. Bring your own API key and operate indefinitely without
-                        limits.
-                    </p>
-                </div>
+            {/* Feature rows */}
+            <div className="flex flex-col">
+                {features.map((feature, i) => (
+                    <FeatureRow
+                        key={feature.index}
+                        {...feature}
+                        isLast={i === features.length - 1}
+                    />
+                ))}
             </div>
         </section>
+    );
+}
+
+interface FeatureRowProps {
+    index: string;
+    icon: React.ComponentType<{ className?: string }>;
+    title: string;
+    description: string;
+    isLast: boolean;
+}
+
+function FeatureRow({ index, icon: Icon, title, description, isLast }: FeatureRowProps) {
+    return (
+        <div
+            className={`flex flex-col md:flex-row hover:bg-zinc/30 transition-colors ${!isLast ? "border-raw-b" : ""
+                }`}
+        >
+            <div className="w-full md:w-1/4 p-8 border-raw-b md:border-b-0 md:border-raw-r flex items-center justify-center md:justify-start">
+                <span className="font-deco text-8xl text-zinc group-hover:text-amber transition-colors">
+                    {index}
+                </span>
+            </div>
+            <div className="w-full md:w-3/4 p-8 flex flex-col justify-center">
+                <div className="flex items-center gap-4 mb-4">
+                    <Icon className="w-8 h-8 text-amber" />
+                    <h3 className="font-deco text-3xl">{title}</h3>
+                </div>
+                <p className="text-muted normal-case max-w-2xl text-lg">
+                    {description}
+                </p>
+            </div>
+        </div>
     );
 }

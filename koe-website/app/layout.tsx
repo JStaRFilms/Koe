@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://koe.jstarstudios.com"),
@@ -46,7 +47,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" suppressHydrationWarning>
       <head>
         {/* Google Fonts: Righteous (Deco) & IBM Plex Mono (Terminal) & Noto Serif JP */}
         <link
@@ -55,7 +56,9 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-void text-bone font-mono uppercase selection:bg-amber selection:text-void min-h-screen flex flex-col grid-bg">
-        {children}
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );
