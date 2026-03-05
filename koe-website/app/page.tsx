@@ -2,6 +2,7 @@ import { StatusBar } from "@/components/StatusBar";
 import { Header } from "@/components/Header";
 import { Hero } from "@/components/sections/Hero";
 import { Marquee } from "@/components/sections/Marquee";
+import { LiveDemo } from "@/components/sections/LiveDemo";
 import { Features } from "@/components/sections/Features";
 import { Specs } from "@/components/sections/Specs";
 import { FAQ } from "@/components/sections/FAQ";
@@ -28,6 +29,9 @@ export default function Home() {
 
           {/* Marquee Bar */}
           <Marquee />
+
+          {/* LIVE TRANSCRIPTION DEMO */}
+          <LiveDemo />
 
           {/* FEATURES TABLE (Brutalist List) */}
           <Features />
