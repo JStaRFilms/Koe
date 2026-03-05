@@ -1,0 +1,339 @@
+@import "tailwindcss";
+
+/* Terminal Noir Design System - Exact from Mockup */
+:root {
+  --color-void: #E2DFD2;
+  --color-bone: #050505;
+  --color-amber: #D9381E;
+  --color-muted: #666666;
+  --color-zinc: #B0ADA1;
+  --color-crimson: #8A0303;
+}
+
+.dark {
+  --color-void: #050505;
+  --color-bone: #E2DFD2;
+  --color-amber: #FFB000;
+  --color-muted: #888888;
+  --color-zinc: #1F1F1F;
+  --color-crimson: #8A0303;
+}
+
+body {
+  overflow-x: hidden;
+  position: relative;
+}
+
+/* Scanline Overlay - Exact from Mockup */
+body::before {
+  content: " ";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+  z-index: 100;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+/* Raw Border Classes - Exact from Mockup */
+.border-raw {
+  border: 1px solid var(--color-zinc);
+}
+
+.border-raw-b {
+  border-bottom: 1px solid var(--color-zinc);
+}
+
+.border-raw-r {
+  border-right: 1px solid var(--color-zinc);
+}
+
+/* Deco Elements - Exact from Mockup */
+.deco-line {
+  height: 4px;
+  background: var(--color-amber);
+  width: 100%;
+  position: relative;
+}
+
+/* Terminal Glitch & Animations - Exact from Mockup */
+.glitch-hover:hover {
+  color: var(--color-amber);
+  text-shadow: 2px 0 var(--color-void), -2px 0 var(--color-bone);
+  background: var(--color-zinc);
+}
+
+.crt-flicker {
+  animation: flicker 0.2s infinite alternate;
+}
+
+@keyframes flicker {
+  0% {
+    opacity: 0.98;
+  }
+
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 8px rgba(255, 176, 0, 0.4);
+  }
+}
+
+/* Grid Background pattern - Exact from Mockup */
+.grid-bg {
+  background-size: 50px 50px;
+  background-image:
+    linear-gradient(to right, var(--color-zinc) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-zinc) 1px, transparent 1px);
+}
+
+/* Massive Background Kanji - Exact from Mockup */
+.giant-kanji {
+  position: fixed;
+  font-size: 100vw;
+  line-height: 0.8;
+  color: var(--color-zinc);
+  opacity: 0.12;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+}
+
+.voice-bar {
+  transition: height 140ms cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: height;
+}
+
+.voice-bar-1 {
+  transition-duration: 130ms;
+}
+
+.voice-bar-2 {
+  transition-duration: 150ms;
+}
+
+.voice-bar-3 {
+  transition-duration: 120ms;
+}
+
+.voice-bar-4 {
+  transition-duration: 160ms;
+}
+
+.voice-bar-5 {
+  transition-duration: 145ms;
+}
+
+/* Marquee - Exact from Mockup */
+.marquee {
+  width: 100%;
+  overflow: hidden;
+  white-space: nowrap;
+  border-top: 1px solid var(--color-amber);
+  border-bottom: 1px solid var(--color-amber);
+  color: var(--color-amber);
+  padding: 8px 0;
+  background: var(--color-void);
+}
+
+.marquee-content {
+  display: inline-block;
+  animation: marquee 20s linear infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Brutalist Button - Exact from Mockup */
+.btn-brutal {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-amber);
+  color: var(--color-void);
+  padding: 16px 32px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  border: 2px solid var(--color-amber);
+  transition: all 0s;
+  position: relative;
+}
+
+.btn-brutal::after {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: -8px;
+  bottom: -8px;
+  background: transparent;
+  border: 1px solid var(--color-amber);
+  z-index: -1;
+  transition: all 0.1s;
+}
+
+.btn-brutal:hover {
+  background: var(--color-bone);
+  border-color: var(--color-bone);
+  color: var(--color-void);
+}
+
+.btn-brutal:hover::after {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+@media (max-width: 640px) {
+  .btn-brutal {
+    width: 100%;
+    justify-content: center;
+    font-size: 1rem;
+    padding: 14px 20px;
+  }
+
+  .btn-brutal::after {
+    top: 2px;
+    left: 2px;
+    right: -3px;
+    bottom: -3px;
+  }
+
+  .deco-line {
+    height: 3px;
+  }
+}
+
+/* Details/Summary reset for FAQ */
+details>summary {
+  list-style: none;
+}
+
+details>summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Selection Styling */
+::selection {
+  background: var(--color-amber);
+  color: var(--color-void);
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-void);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-zinc);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-amber);
+}
+
+@layer base {
+  * {
+    @apply border-[var(--color-zinc)];
+  }
+
+  body {
+    @apply bg-[var(--color-void)] text-[var(--color-bone)] uppercase;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    font-family: 'Righteous', cursive;
+    text-transform: uppercase;
+  }
+}
+
+/* Font Family Utilities */
+.font-deco {
+  font-family: 'Righteous', cursive;
+}
+
+.font-mono {
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.font-jp {
+  font-family: 'Noto Serif JP', serif;
+}
+
+/* Color Utilities */
+.bg-void {
+  background-color: var(--color-void);
+}
+
+.bg-bone {
+  background-color: var(--color-bone);
+}
+
+.bg-amber {
+  background-color: var(--color-amber);
+}
+
+.bg-zinc {
+  background-color: var(--color-zinc);
+}
+
+.bg-crimson {
+  background-color: var(--color-crimson);
+}
+
+.text-void {
+  color: var(--color-void);
+}
+
+.text-bone {
+  color: var(--color-bone);
+}
+
+.text-amber {
+  color: var(--color-amber);
+}
+
+.text-muted {
+  color: var(--color-muted);
+}
+
+.text-zinc {
+  color: var(--color-zinc);
+}
+
+.text-crimson {
+  color: var(--color-crimson);
+}
+
+.border-zinc {
+  border-color: var(--color-zinc);
+}
+
+.border-amber {
+  border-color: var(--color-amber);
+}

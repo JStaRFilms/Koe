@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Koe</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+JP:wght@700&display=swap"
+        rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#fafaf9',
+                        foreground: '#0f172a',
+                        primary: '#f59e0b',
+                        secondary: '#f1f5f9',
+                        muted: '#64748b',
+                        success: '#10b981',
+                        border: '#e2e8f0',
+                        dark: {
+                            background: '#0a0a0f',
+                            foreground: '#f8fafc',
+                            card: '#13131a',
+                            secondary: '#1e293b',
+                            muted: '#94a3b8',
+                            border: 'rgba(255, 255, 255, 0.08)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        geist: ['Geist', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        japanese: ['Noto Serif JP', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            @apply bg-background text-foreground transition-colors duration-300 antialiased;
+        }
+
+        .dark body {
+            background-color: #0a0a0f;
+            color: #f8fafc;
+        }
+
+        .glass-nav {
+            @apply bg-white/60 dark:bg-[#13131a]/60 backdrop-blur-md border border-border dark:border-dark-border shadow-md;
+        }
+    </style>
+</head>
+
+<body class="relative min-h-screen selection:bg-primary/30 selection:text-foreground">
+
+    <!-- Global Navigation Simplified -->
+    <header class="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 w-full">
+        <nav class="flex items-center justify-between w-full max-w-3xl px-6 py-3 rounded-full glass-nav transition-all">
+            <a href="home.html" class="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                <i data-lucide="arrow-left" class="w-4 h-4 text-muted dark:text-dark-muted"></i>
+                <span class="text-sm font-semibold tracking-tight text-muted dark:text-dark-muted">Back to Home</span>
+            </a>
+
+            <button onclick="document.documentElement.classList.toggle('dark');"
+                class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                aria-label="Toggle Theme">
+                <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
+                <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
+            </button>
+        </nav>
+    </header>
+
+    <main class="min-h-screen pt-40 pb-24 px-4 max-w-3xl mx-auto flex flex-col items-start text-left">
+        <article class="w-full prose prose-slate dark:prose-invert prose-lg max-w-none">
+
+            <h1 class="text-5xl md:text-6xl font-extrabold tracking-tight mb-4">Privacy Policy</h1>
+            <p
+                class="text-muted dark:text-dark-muted font-mono text-sm tracking-widest uppercase mb-16 border-b border-border dark:border-dark-border pb-8">
+                Last Updated: March 2026</p>
+
+            <div class="space-y-12 text-lg text-muted dark:text-dark-muted leading-relaxed">
+
+                <section>
+                    <h2 class="text-3xl font-bold text-foreground mb-6">1. We don't collect anything.</h2>
+                    <p>Koe is completely local. Voice Activity Detection (VAD) happens exclusively on your machine. We
+                        do not track you, we do not log your activity, and we have no central database containing your
+                        transcriptions.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-3xl font-bold text-foreground mb-6">2. API Key Storage</h2>
+                    <p>Your Groq API key is stored locally on your machine in encrypted state via the standard OS
+                        credential manager. It is only brought into memory precisely when needed to authenticate
+                        transcription requests to Groq servers.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-3xl font-bold text-foreground mb-6">3. Audio Processing</h2>
+                    <p>Your audio is only sent to Groq for transcription when you hold down your designated dictation
+                        shortcut. Please refer to <a href="https://groq.com/privacy-policy"
+                            class="text-primary hover:underline font-semibold" target="_blank">Groq's Privacy Policy</a>
+                        regarding how they handle uploaded audio chunks during transcription.</p>
+                </section>
+
+                <section>
+                    <h2 class="text-3xl font-bold text-foreground mb-6">4. Open Source Transparency</h2>
+                    <p>Don't take our word for it. Koe is built entirely in the open. You can verify all of these claims
+                        by reading the source code yourself on <a href="https://github.com"
+                            class="text-primary hover:underline font-semibold" target="_blank">GitHub</a>.</p>
+                </section>
+
+                <section
+                    class="p-8 mt-16 rounded-2xl bg-secondary dark:bg-[#13131a] border border-border dark:border-dark-border text-center flex flex-col items-center">
+                    <i data-lucide="github" class="w-8 h-8 mb-4 text-foreground"></i>
+                    <h3 class="text-xl font-bold text-foreground mb-2">Have questions?</h3>
+                    <p class="mb-4">The best place to reach us regarding privacy or security concerns is via GitHub
+                        Issues.</p>
+                    <a href="https://github.com"
+                        class="px-6 py-2 bg-foreground text-background dark:bg-dark-foreground dark:text-dark-background rounded-full font-bold shadow-md hover:opacity-90 transition-opacity inline-flex items-center gap-2">
+                        Open an Issue
+                    </a>
+                </section>
+
+            </div>
+
+        </article>
+    </main>
+
+    <!-- Global Footer Minimal -->
+    <footer class="border-t border-border dark:border-dark-border bg-background py-16">
+        <div
+            class="max-w-3xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-6 text-sm font-mono text-muted dark:text-dark-muted">
+            <div class="flex items-center gap-3">
+                <span class="font-japanese text-xl text-primary">声</span>
+                <span>Koe © 2026</span>
+            </div>
+            <div class="flex items-center gap-8">
+                <a href="https://github.com" class="hover:text-foreground transition-colors">GitHub Repository</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Initialize Icons -->
+    <script> lucide.createIcons(); </script>
+</body>
+
+</html>

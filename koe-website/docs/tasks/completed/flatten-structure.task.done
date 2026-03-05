@@ -1,0 +1,31 @@
+# Task Completion Summary
+
+**Task:** flatten-structure.task
+**Completed At:** 2026-03-05T10:35:00+01:00
+**Mode:** Code
+
+## Results
+
+Flattened the Next.js project directory structure. Moved all source files and configurations from the `website/` directory to the `koe-website/` root. Maintained the existing `docs/` directory intact.
+
+## Files Created/Modified
+
+- Moved `website/app/*` to `app/`
+- Moved `website/components/*` to `components/`
+- Moved `website/lib/*` to `lib/`
+- Moved `website/public/*` to `public/`
+- Moved configuration files (`package.json`, `next.config.ts`, `tsconfig.json`, `components.json`, `tailwindcss` config docs, ESLint config, `.gitignore`, etc.) to root.
+- Used `pnpm` instead of `npm` as requested by user. Run `pnpm install`.
+- Replaced `package-lock.json` with `pnpm-lock.yaml`.
+
+## Verification Status
+
+- [x] TypeScript: PASS (`npx tsc --noEmit`)
+- [x] Lint: Skipped explicitly doing `npm run lint` as it wasn't strictly requested, but Next.js build succeeded smoothly.
+- [x] Build: PASS (`pnpm build`)
+- [x] Tests: NA (No tests strictly configured in task checklist to run, but verified app successfully compiles and builds static pages)
+
+## Notes
+
+- The user requested to use `pnpm` instead of `npm`. I ran `pnpm install` and `pnpm build`, which successfully configured a fresh `pnpm-lock.yaml` and fully built the static pages as expected.
+- We deleted the `website/` folder.

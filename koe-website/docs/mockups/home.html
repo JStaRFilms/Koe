@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koe - Your Voice, Everywhere</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+JP:wght@700&display=swap"
+        rel="stylesheet">
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#fafaf9',
+                        foreground: '#0f172a',
+                        primary: '#f59e0b',
+                        secondary: '#f1f5f9',
+                        muted: '#64748b',
+                        success: '#10b981',
+                        border: '#e2e8f0',
+                        dark: {
+                            background: '#0a0a0f',
+                            foreground: '#f8fafc',
+                            card: '#13131a',
+                            secondary: '#1e293b',
+                            muted: '#94a3b8',
+                            border: 'rgba(255, 255, 255, 0.08)'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        geist: ['Geist', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                        japanese: ['Noto Serif JP', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            @apply bg-background text-foreground transition-colors duration-300 antialiased;
+        }
+
+        .dark body {
+            background-color: #0a0a0f;
+            color: #f8fafc;
+        }
+
+        /* Glassmorphism Classes */
+        .glass-nav {
+            @apply bg-white/60 dark:bg-[#13131a]/60 backdrop-blur-md border border-border dark:border-dark-border shadow-md;
+        }
+
+        .glass-card {
+            @apply bg-white dark:bg-dark-card border border-border dark:border-dark-border shadow-sm;
+        }
+
+        /* Animations */
+        @keyframes waveform {
+            0% {
+                transform: scaleY(0.6);
+                opacity: 0.6;
+            }
+
+            50% {
+                transform: scaleY(1.4);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scaleY(0.6);
+                opacity: 0.6;
+            }
+        }
+
+        .wave-bar {
+            @apply w-1.5 rounded-full bg-primary;
+            animation: waveform 1.2s infinite ease-in-out;
+        }
+
+        /* Ambient Glow */
+        .ambient-glow {
+            @apply absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vw] h-[60vh] bg-primary/20 blur-[120px] rounded-full pointer-events-none;
+        }
+    </style>
+</head>
+
+<body class="relative min-h-screen selection:bg-primary/30 selection:text-foreground">
+
+    <!-- Global Navigation -->
+    <header class="fixed top-4 left-0 right-0 z-50 flex justify-center px-4 w-full">
+        <nav class="flex items-center justify-between w-full max-w-5xl px-6 py-3 rounded-full glass-nav transition-all">
+            <!-- Brand -->
+            <div class="flex items-center gap-2 cursor-pointer">
+                <span class="text-xl font-bold font-japanese text-primary">声</span>
+                <span class="text-lg font-bold tracking-tight">Koe</span>
+            </div>
+
+            <!-- Desktop Links -->
+            <div class="hidden md:flex items-center gap-8 text-sm font-medium text-muted dark:text-dark-muted">
+                <a href="#features" class="hover:text-foreground transition-colors">Features</a>
+                <a href="#how-it-works" class="hover:text-foreground transition-colors">How it works</a>
+                <a href="#faq" class="hover:text-foreground transition-colors">FAQ</a>
+            </div>
+
+            <!-- CTAs -->
+            <div class="flex items-center gap-3">
+                <button onclick="document.documentElement.classList.toggle('dark');"
+                    class="p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    aria-label="Toggle Theme">
+                    <i data-lucide="moon" class="w-4 h-4 hidden dark:block"></i>
+                    <i data-lucide="sun" class="w-4 h-4 block dark:hidden"></i>
+                </button>
+                <a href="#"
+                    class="hidden sm:flex p-2 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                    aria-label="GitHub">
+                    <i data-lucide="github" class="w-4 h-4 text-foreground"></i>
+                </a>
+                <a href="#download"
+                    class="px-5 py-2 bg-primary text-white rounded-full text-sm font-bold shadow-[0_4px_14px_0_rgba(245,158,11,0.39)] hover:scale-105 transition-transform flex items-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i> Download
+                </a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="relative">
+        <!-- FR-001: Hero Section -->
+        <section
+            class="relative min-h-[95vh] flex flex-col items-center justify-center pt-32 pb-16 px-4 overflow-hidden">
+            <div class="ambient-glow"></div>
+
+            <div class="relative z-10 max-w-4xl mx-auto text-center space-y-8 flex flex-col items-center">
+
+                <!-- Open Source Badge -->
+                <div
+                    class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-border dark:border-dark-border bg-white/50 dark:bg-[#13131a]/50 backdrop-blur-sm text-sm font-mono text-muted dark:text-dark-muted hover:border-primary/50 transition-colors cursor-pointer">
+                    <span class="w-2 h-2 rounded-full bg-success"></span>
+                    Open Source • v1.0.0 released
+                </div>
+
+                <!-- Typography -->
+                <h1 class="text-6xl md:text-8xl font-extrabold tracking-tight leading-[1.1]">
+                    Your voice,<br>
+                    <span class="text-primary relative inline-block">
+                        everywhere.
+                        <!-- Decorative Waveform Overlay -->
+                        <div class="absolute -right-16 bottom-2 flex items-center gap-1.5 opacity-80 h-10 w-12">
+                            <div class="wave-bar h-6" style="animation-delay: 0.1s"></div>
+                            <div class="wave-bar h-10" style="animation-delay: 0.2s"></div>
+                            <div class="wave-bar h-4" style="animation-delay: 0.3s"></div>
+                        </div>
+                    </span>
+                </h1>
+
+                <p
+                    class="text-xl md:text-2xl text-muted dark:text-dark-muted font-light max-w-2xl mx-auto leading-relaxed">
+                    Lightning-fast voice dictation for Windows. Local VAD. Powered by Groq. <strong>Free
+                        forever.</strong>
+                </p>
+
+                <!-- CTAs -->
+                <div class="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4 w-full sm:w-auto">
+                    <button
+                        class="w-full sm:w-auto px-8 py-4 bg-primary text-white rounded-full font-bold text-lg shadow-[0_0_25px_rgba(245,158,11,0.3)] hover:scale-[1.02] hover:bg-amber-600 transition-all flex items-center justify-center gap-3">
+                        <i data-lucide="monitor" class="w-5 h-5"></i>
+                        Download for Windows
+                    </button>
+                    <button
+                        class="w-full sm:w-auto px-8 py-4 bg-white/50 dark:bg-dark-card/50 backdrop-blur-sm border border-border dark:border-dark-border text-foreground hover:bg-black/5 dark:hover:bg-white/5 rounded-full font-medium text-lg transition-all flex items-center justify-center gap-3">
+                        <i data-lucide="github" class="w-5 h-5"></i>
+                        Star on GitHub
+                    </button>
+                </div>
+
+                <!-- Requirement Note -->
+                <p class="text-sm font-mono text-muted dark:text-dark-muted mt-8 opacity-80">
+                    <i data-lucide="info" class="w-4 h-4 inline mr-1"></i> Requires Windows 10/11 & a free Groq API key
+                </p>
+            </div>
+        </section>
+
+        <!-- FR-003: Features Grid -->
+        <section id="features"
+            class="py-24 px-4 bg-secondary/50 dark:bg-dark-secondary/50 relative border-y border-border dark:border-dark-border">
+            <div class="max-w-6xl mx-auto">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <!-- Feature 1 -->
+                    <div
+                        class="p-8 rounded-3xl glass-card relative group hover:-translate-y-1 transition-transform duration-300">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6 ring-1 ring-primary/20">
+                            <i data-lucide="zap" class="w-7 h-7"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3 tracking-tight">Lightning Fast</h3>
+                        <p class="text-muted dark:text-dark-muted leading-relaxed text-lg">216x real-time transcription.
+                            It's basically instant. Powered by optimized Whisper models on Groq.</p>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div
+                        class="p-8 rounded-3xl glass-card relative group hover:-translate-y-1 transition-transform duration-300">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6 ring-1 ring-primary/20">
+                            <i data-lucide="shield-check" class="w-7 h-7"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3 tracking-tight">Privacy First</h3>
+                        <p class="text-muted dark:text-dark-muted leading-relaxed text-lg">Local VAD processing. Your
+                            microphone stays local. Your voice never leaves until you explicitly dictate.</p>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div
+                        class="p-8 rounded-3xl glass-card relative group hover:-translate-y-1 transition-transform duration-300">
+                        <div
+                            class="w-14 h-14 rounded-2xl bg-success/10 text-success flex items-center justify-center mb-6 ring-1 ring-success/20">
+                            <i data-lucide="gift" class="w-7 h-7"></i>
+                        </div>
+                        <h3 class="text-2xl font-bold mb-3 tracking-tight">Completely Free</h3>
+                        <p class="text-muted dark:text-dark-muted leading-relaxed text-lg">No subscriptions. No limits.
+                            Just bring your own API key and start talking in seconds.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FR-004: Feature Showcase -->
+        <section id="how-it-works" class="py-32 px-4 max-w-6xl mx-auto space-y-32">
+
+            <!-- Showcase 1: Global Hotkey -->
+            <div class="flex flex-col md:flex-row items-center gap-16">
+                <div class="w-full md:w-1/2 space-y-8">
+                    <div
+                        class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border dark:border-dark-border text-sm font-semibold uppercase tracking-widest text-primary">
+                        Workflow
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-bold tracking-tight leading-tight">Your Shortcut to
+                        Productivity</h2>
+                    <p class="text-xl text-muted dark:text-dark-muted leading-relaxed">Configure any hotkey combo. Press
+                        it anywhere—VS Code, Chrome, Notion—and start dictating directly at your cursor.</p>
+
+                    <div class="flex items-center gap-2 font-mono mt-6">
+                        <kbd
+                            class="px-3 py-2 rounded border border-b-[3px] border-border dark:border-white/10 bg-secondary dark:bg-[#13131a] text-sm shadow-sm">Ctrl</kbd>
+                        <span class="text-muted dark:text-dark-muted">+</span>
+                        <kbd
+                            class="px-3 py-2 rounded border border-b-[3px] border-border dark:border-white/10 bg-secondary dark:bg-[#13131a] text-sm shadow-sm">Shift</kbd>
+                        <span class="text-muted dark:text-dark-muted">+</span>
+                        <kbd
+                            class="px-3 py-2 rounded border border-b-[3px] border-border dark:border-white/10 bg-secondary dark:bg-[#13131a] text-sm shadow-sm">Space</kbd>
+                    </div>
+                </div>
+                <div class="w-full md:w-1/2 relative group">
+                    <div
+                        class="absolute inset-0 bg-primary/20 blur-3xl rounded-full transition-all group-hover:bg-primary/30">
+                    </div>
+                    <!-- Placeholder for App Screenshot -->
+                    <div
+                        class="relative z-10 aspect-[4/3] rounded-2xl bg-white dark:bg-dark-card border border-border dark:border-dark-border shadow-2xl flex items-center justify-center transform focus:rotate-0 hover:-rotate-1 transition-transform">
+                        <p class="text-muted dark:text-dark-muted font-mono">[Screenshot: App Settings]</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Showcase 2: AI Transcription (Reversed) -->
+            <div class="flex flex-col md:flex-row-reverse items-center gap-16">
+                <div class="w-full md:w-1/2 space-y-8">
+                    <div
+                        class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-border dark:border-dark-border text-sm font-semibold uppercase tracking-widest text-primary">
+                        Engine
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-bold tracking-tight leading-tight">Powered by Groq AI</h2>
+                    <p class="text-xl text-muted dark:text-dark-muted leading-relaxed">By leveraging the Groq API and
+                        Whisper models, Koe achieves blazing fast transcription speeds that native OS tools can't touch.
+                    </p>
+                </div>
+                <div class="w-full md:w-1/2 relative group">
+                    <div
+                        class="absolute inset-0 bg-emerald-500/10 blur-3xl rounded-full transition-all group-hover:bg-emerald-500/20">
+                    </div>
+                    <!-- Placeholder for Floating Pill UI -->
+                    <div
+                        class="relative z-10 w-2/3 mx-auto aspect-video rounded-full bg-white dark:bg-dark-card border border-border dark:border-dark-border shadow-2xl flex items-center justify-center rotate-3 hover:rotate-0 transition-transform">
+                        <!-- Simulated recording UI state -->
+                        <div class="flex items-center gap-4 px-8 py-4">
+                            <div class="w-3 h-3 rounded-full bg-red-500 animate-pulse"></div>
+                            <span class="font-mono text-sm opacity-50">Listening...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- FR-005: Comparison Table -->
+        <section
+            class="py-24 px-4 bg-secondary/30 dark:bg-dark-secondary/30 border-y border-border dark:border-dark-border">
+            <div class="max-w-4xl mx-auto">
+                <div class="text-center mb-16 space-y-4">
+                    <h2 class="text-4xl font-bold tracking-tight">The Clear Choice</h2>
+                    <p class="text-xl text-muted dark:text-dark-muted">See how Koe compares to the alternatives.</p>
+                </div>
+
+                <div class="glass-card rounded-3xl overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="text-sm tracking-widest font-mono uppercase border-b border-border dark:border-dark-border">
+                                    <th class="p-6 text-muted dark:text-dark-muted font-medium w-1/3">Feature</th>
+                                    <th
+                                        class="p-6 bg-primary/10 text-primary font-bold w-1/3 border-x border-primary/20">
+                                        Koe</th>
+                                    <th class="p-6 text-muted dark:text-dark-muted font-medium w-1/3">Built-in OS</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-border dark:divide-dark-border text-base md:text-lg">
+                                <tr>
+                                    <td class="p-6 font-medium">Cost</td>
+                                    <td
+                                        class="p-6 bg-primary/5 text-success font-bold flex items-center gap-2 border-x border-primary/10">
+                                        Free Forever</td>
+                                    <td class="p-6 text-muted dark:text-dark-muted">Free</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-6 font-medium">Accuracy</td>
+                                    <td class="p-6 bg-primary/5 font-semibold border-x border-primary/10">High (Whisper)
+                                    </td>
+                                    <td class="p-6 text-muted dark:text-dark-muted">Low-Medium</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-6 font-medium">Universal App Support</td>
+                                    <td class="p-6 bg-primary/5 font-semibold text-primary border-x border-primary/10">
+                                        <i data-lucide="check" class="w-5 h-5"></i></td>
+                                    <td class="p-6 text-muted dark:text-dark-muted">Limited</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-6 font-medium">Open Source</td>
+                                    <td class="p-6 bg-primary/5 font-semibold text-primary border-x border-primary/10">
+                                        <i data-lucide="check" class="w-5 h-5"></i></td>
+                                    <td class="p-6 text-muted dark:text-dark-muted">Closed</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FR-010: FAQ -->
+        <section id="faq" class="py-32 px-4 max-w-3xl mx-auto">
+            <h2 class="text-4xl font-bold mb-12 text-center tracking-tight">Frequently Asked Questions</h2>
+
+            <div class="divide-y divide-border dark:divide-dark-border border-y border-border dark:border-dark-border">
+                <!-- FAQ Item 1 -->
+                <div class="py-6">
+                    <button
+                        class="flex w-full items-center justify-between text-left font-semibold text-xl hover:text-primary transition-colors group">
+                        Is Koe really free?
+                        <i data-lucide="chevron-down"
+                            class="w-5 h-5 text-muted dark:text-dark-muted group-hover:text-primary transition-transform"></i>
+                    </button>
+                    <!-- Displayed expanded for mockup context -->
+                    <div class="mt-4 text-muted dark:text-dark-muted leading-relaxed text-lg pb-2">
+                        Yes, completely free and open source. No hidden costs, no subscriptions.
+                    </div>
+                </div>
+
+                <!-- FAQ Item 2 -->
+                <div class="py-6">
+                    <button
+                        class="flex w-full items-center justify-between text-left font-semibold text-xl hover:text-primary transition-colors group">
+                        Do I need an API key?
+                        <i data-lucide="chevron-down"
+                            class="w-5 h-5 text-muted dark:text-dark-muted transition-transform"></i>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Global Footer -->
+    <footer class="border-t border-border dark:border-dark-border bg-secondary/50 dark:bg-[#13131a] overflow-hidden">
+        <div class="max-w-6xl mx-auto px-4 py-24 pb-12">
+
+            <!-- Large CTA -->
+            <div
+                class="flex flex-col md:flex-row items-center justify-between gap-8 mb-24 pb-24 border-b border-border dark:border-dark-border">
+                <h2 class="text-5xl md:text-7xl font-extrabold tracking-tight">Built in the open.</h2>
+                <a href="#"
+                    class="group flex items-center bg-white dark:bg-dark-card hover:bg-black/5 dark:hover:bg-white/5 shadow-sm border border-border dark:border-dark-border rounded-full pr-1.5 transition-all overflow-hidden scale-100 hover:scale-105">
+                    <span class="flex items-center gap-2 px-5 py-4 font-bold text-lg">
+                        <i data-lucide="github" class="w-5 h-5"></i> Star Us
+                    </span>
+                    <span
+                        class="px-4 py-2 bg-secondary dark:bg-[#0a0a0f] rounded-full text-sm font-mono border border-border dark:border-dark-border text-muted dark:text-dark-muted group-hover:text-foreground transition-colors">1,204</span>
+                </a>
+            </div>
+
+            <!-- Links -->
+            <div
+                class="flex flex-col md:flex-row items-center justify-between gap-6 text-sm font-mono text-muted dark:text-dark-muted">
+                <div class="flex items-center gap-3">
+                    <span class="font-japanese text-xl text-primary">声</span>
+                    <span>Koe © 2026</span>
+                </div>
+                <div class="flex items-center gap-8">
+                    <a href="https://github.com" class="hover:text-foreground transition-colors">GitHub Repository</a>
+                    <a href="privacy.html" class="hover:text-foreground transition-colors">Privacy Policy</a>
+                </div>
+                <div>
+                    <span class="flex items-center gap-2">Built with <i data-lucide="heart"
+                            class="w-3 h-3 text-red-500"></i> by JStar</span>
+                </div>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- Initialize Icons -->
+    <script> lucide.createIcons(); </script>
+</body>
+
+</html>
