@@ -14,8 +14,8 @@ export interface GitHubRepo {
     html_url: string;
 }
 
-const GITHUB_OWNER = "GIGAHAT1994";
-const GITHUB_REPO = "whisper_alt";
+const GITHUB_OWNER = "JStaRFilms";
+const GITHUB_REPO = "Koe";
 
 /**
  * Fetches the latest release from GitHub API

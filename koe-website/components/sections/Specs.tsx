@@ -6,12 +6,6 @@ export function Specs() {
             {/* Hotkey Row */}
             <div className="w-full flex">
                 <div className="w-1/2 p-12 border-raw-r border-raw-b hidden md:block relative overflow-hidden bg-zinc/10">
-                    <div
-                        className="absolute inset-0 opacity-10 font-jp leading-[0.8] tracking-tighter"
-                        style={{ fontSize: "20rem", wordBreak: "break-all" }}
-                    >
-                        声声声声声声声声声
-                    </div>
                     <div className="relative z-10 w-full h-full border-2 border-bone/20 flex flex-col justify-between p-4">
                         <div className="flex gap-2 text-amber text-xs">
                             <Cpu className="w-4 h-4" />

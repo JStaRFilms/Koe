@@ -6,7 +6,7 @@ import { Menu, X, Download, Github, Star, Terminal } from "lucide-react";
 
 import { ThemeToggle } from "./ThemeToggle";
 
-const GITHUB_REPO_URL = "https://github.com/GIGAHAT1994/whisper_alt";
+const GITHUB_REPO_URL = "https://github.com/JStaRFilms/Koe";
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -21,7 +21,7 @@ export function Navbar() {
         async function fetchStars() {
             try {
                 const response = await fetch(
-                    "https://api.github.com/repos/GIGAHAT1994/whisper_alt",
+                    "https://api.github.com/repos/JStaRFilms/Koe",
                     { next: { revalidate: 3600 } } as RequestInit
                 );
                 if (response.ok) {

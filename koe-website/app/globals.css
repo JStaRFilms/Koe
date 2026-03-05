@@ -93,16 +93,79 @@ body::before {
 
 /* Massive Background Kanji - Exact from Mockup */
 .giant-kanji {
-  position: absolute;
+  position: fixed;
   font-size: 100vw;
   line-height: 0.8;
   color: var(--color-zinc);
-  opacity: 0.2;
-  z-index: -1;
+  opacity: 0.12;
+  z-index: 0;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   white-space: nowrap;
+}
+
+@keyframes voiceBounce {
+  0% {
+    transform: scaleY(0.35);
+  }
+
+  12% {
+    transform: scaleY(0.9);
+  }
+
+  28% {
+    transform: scaleY(0.45);
+  }
+
+  44% {
+    transform: scaleY(1);
+  }
+
+  65% {
+    transform: scaleY(0.5);
+  }
+
+  82% {
+    transform: scaleY(0.8);
+  }
+
+  100% {
+    transform: scaleY(0.4);
+  }
+}
+
+.voice-bar {
+  transform-origin: bottom center;
+  animation-name: voiceBounce;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+
+.voice-bar-1 {
+  animation-duration: 1.05s;
+  animation-delay: -0.15s;
+}
+
+.voice-bar-2 {
+  animation-duration: 0.88s;
+  animation-delay: -0.35s;
+}
+
+.voice-bar-3 {
+  animation-duration: 1.2s;
+  animation-delay: -0.22s;
+}
+
+.voice-bar-4 {
+  animation-duration: 0.94s;
+  animation-delay: -0.48s;
+}
+
+.voice-bar-5 {
+  animation-duration: 1.12s;
+  animation-delay: -0.28s;
 }
 
 /* Marquee - Exact from Mockup */

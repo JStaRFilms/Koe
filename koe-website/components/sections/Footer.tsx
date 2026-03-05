@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Github, Twitter, Zap } from "lucide-react";
 
-const GITHUB_REPO_URL = "https://github.com/GIGAHAT1994/whisper_alt";
+const GITHUB_REPO_URL = "https://github.com/JStaRFilms/Koe";
 
 export function Footer() {
     const currentYear = new Date().getFullYear();
@@ -62,7 +62,7 @@ export function Footer() {
                                     <Github className="w-5 h-5" />
                                 </a>
                                 <a
-                                    href="https://twitter.com"
+                                    href="https://x.com/OlulekeJOke"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-muted hover:text-amber transition-colors"

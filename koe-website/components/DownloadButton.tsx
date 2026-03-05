@@ -23,7 +23,7 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
         async function fetchRelease() {
             try {
                 const response = await fetch(
-                    "https://api.github.com/repos/GIGAHAT1994/whisper_alt/releases/latest"
+                    "https://api.github.com/repos/JStaRFilms/Koe/releases/latest"
                 );
 
                 if (!response.ok) {
@@ -68,7 +68,7 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
     if (error || !release) {
         return (
             <a
-                href="https://github.com/GIGAHAT1994/whisper_alt/releases"
+                    href="https://github.com/JStaRFilms/Koe/releases"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`flex items-center justify-center gap-2 px-6 py-3 bg-amber text-void font-bold uppercase tracking-wider hover:bg-bone transition-colors ${className}`}

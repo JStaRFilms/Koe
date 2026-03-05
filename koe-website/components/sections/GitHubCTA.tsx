@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Github, Star } from "lucide-react";
 
-const GITHUB_REPO_URL = "https://github.com/GIGAHAT1994/whisper_alt";
+const GITHUB_REPO_URL = "https://github.com/JStaRFilms/Koe";
 
 export function GitHubCTA() {
     const [starCount, setStarCount] = useState<number | null>(null);
@@ -12,7 +12,7 @@ export function GitHubCTA() {
         async function fetchStars() {
             try {
                 const response = await fetch(
-                    "https://api.github.com/repos/GIGAHAT1994/whisper_alt",
+                    "https://api.github.com/repos/JStaRFilms/Koe",
                     { next: { revalidate: 3600 } } as RequestInit
                 );
                 if (response.ok) {

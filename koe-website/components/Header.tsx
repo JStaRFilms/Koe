@@ -4,10 +4,10 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Menu, X, Download, Github, Star } from "lucide-react";
 
-const GITHUB_REPO_URL = "https://github.com/GIGAHAT1994/whisper_alt";
+const GITHUB_REPO_URL = "https://github.com/JStaRFilms/Koe";
 
 const navLinks = [
-    { href: "/", label: "SYS.HOME" },
+    { href: "/#top", label: "SYS.HOME" },
     { href: "/#features", label: "SYS.FEATURES" },
     { href: "/#specs", label: "SYS.SPECS" },
     { href: "/#faq", label: "SYS.FAQ" },
@@ -22,7 +22,7 @@ export function Header() {
         async function fetchStars() {
             try {
                 const response = await fetch(
-                    "https://api.github.com/repos/GIGAHAT1994/whisper_alt",
+                    "https://api.github.com/repos/JStaRFilms/Koe",
                     { next: { revalidate: 3600 } } as RequestInit
                 );
                 if (response.ok) {
@@ -41,7 +41,7 @@ export function Header() {
             <div className="max-w-7xl mx-auto flex flex-col md:flex-row border-raw-r border-l border-zinc border-opacity-30">
                 {/* Brand */}
                 <div className="p-6 border-raw-b md:border-b-0 md:border-raw-r flex items-center gap-4 bg-void">
-                    <Link href="/" className="flex items-center gap-2">
+                    <Link href="/#top" className="flex items-center gap-2">
                         <span className="font-deco text-4xl text-amber">KOE</span>
                         <span className="font-jp text-3xl opacity-50">声</span>
                     </Link>

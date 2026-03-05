@@ -10,34 +10,38 @@ import { Footer } from "@/components/sections/Footer";
 export default function Home() {
   return (
     <>
+      <div id="top" />
+
       {/* Giant Background Kanji */}
-      <div className="giant-kanji font-jp pointer-events-none fixed">声</div>
+      <div className="giant-kanji font-jp pointer-events-none">声</div>
 
-      {/* Top Status Bar (Terminal Style) */}
-      <StatusBar />
+      <div className="relative z-10">
+        {/* Top Status Bar (Terminal Style) */}
+        <StatusBar />
 
-      {/* Decostyle Header */}
-      <Header />
+        {/* Decostyle Header */}
+        <Header />
 
-      <main className="flex-grow flex flex-col">
-        {/* HERO SECTION */}
-        <Hero />
+        <main className="flex-grow flex flex-col">
+          {/* HERO SECTION */}
+          <Hero />
 
-        {/* Marquee Bar */}
-        <Marquee />
+          {/* Marquee Bar */}
+          <Marquee />
 
-        {/* FEATURES TABLE (Brutalist List) */}
-        <Features />
+          {/* FEATURES TABLE (Brutalist List) */}
+          <Features />
 
-        {/* SPECS / HOW IT WORKS GRID + COMPARISON */}
-        <Specs />
+          {/* SPECS / HOW IT WORKS GRID + COMPARISON */}
+          <Specs />
 
-        {/* FAQ BRUTAL STYLE */}
-        <FAQ />
-      </main>
+          {/* FAQ BRUTAL STYLE */}
+          <FAQ />
+        </main>
 
-      {/* FOOTER NOIR */}
-      <Footer />
+        {/* FOOTER NOIR */}
+        <Footer />
+      </div>
     </>
   );
 }
