@@ -36,13 +36,13 @@ export function Hero() {
             <div className="absolute top-8 left-8 w-16 h-16 border-t-2 border-l-2 border-amber opacity-50"></div>
             <div className="absolute bottom-8 right-8 w-16 h-16 border-b-2 border-r-2 border-amber opacity-50"></div>
 
-            <div className="w-full md:w-3/5 p-8 md:p-16 flex flex-col justify-center border-raw-b md:border-b-0 md:border-raw-r z-10">
-                <div className="mb-8 font-mono text-sm text-amber space-y-1">
+            <div className="w-full md:w-3/5 p-6 sm:p-8 md:p-16 flex flex-col justify-center border-raw-b md:border-b-0 md:border-raw-r z-10">
+                <div className="mb-6 md:mb-8 font-mono text-xs sm:text-sm text-amber space-y-1">
                     <p>{`> INITIATING LOCAL VAD PROTOCOL...`}</p>
                     <p>{`> BYOK DETECTED. ALL SYSTEMS FREE.`}</p>
                 </div>
 
-                <h1 className="font-deco text-6xl md:text-8xl leading-none mb-6">
+                <h1 className="font-deco text-5xl sm:text-6xl md:text-8xl leading-[0.9] mb-5 md:mb-6 break-words">
                     YOUR
                     <br />
                     <span className="text-amber">VOICE</span>
@@ -50,12 +50,12 @@ export function Hero() {
                     EVERYWHERE.
                 </h1>
 
-                <p className="text-lg md:text-xl text-muted mb-12 max-w-lg normal-case font-mono tracking-wide">
+                <p className="text-base sm:text-lg md:text-xl text-muted mb-8 md:mb-12 max-w-lg normal-case font-mono tracking-wide leading-relaxed">
                     Lightning-fast voice dictation for Windows. Local VAD. Powered by Groq. Zero subscriptions.
                 </p>
 
-                <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-                    <Link href="/download/" className="btn-brutal">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center w-full">
+                    <Link href="/download/" className="btn-brutal w-full sm:w-auto justify-center sm:justify-start">
                         <Terminal className="w-6 h-6" />
                         EXECUTE DOWNLOAD
                     </Link>

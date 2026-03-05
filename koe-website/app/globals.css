@@ -198,6 +198,26 @@ body::before {
   bottom: 0;
 }
 
+@media (max-width: 640px) {
+  .btn-brutal {
+    width: 100%;
+    justify-content: center;
+    font-size: 1rem;
+    padding: 14px 20px;
+  }
+
+  .btn-brutal::after {
+    top: 2px;
+    left: 2px;
+    right: -3px;
+    bottom: -3px;
+  }
+
+  .deco-line {
+    height: 3px;
+  }
+}
+
 /* Details/Summary reset for FAQ */
 details>summary {
   list-style: none;

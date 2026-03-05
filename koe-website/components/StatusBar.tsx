@@ -19,12 +19,12 @@ export function StatusBar() {
     }, []);
 
     return (
-        <div className="w-full flex justify-between px-4 py-2 border-raw-b text-xs text-muted bg-void/90 backdrop-blur top-0 z-50 sticky">
-            <div className="flex gap-4">
+        <div className="w-full flex justify-between px-3 md:px-4 py-1.5 md:py-2 border-raw-b text-xs text-muted bg-void/90 backdrop-blur top-0 z-50 sticky">
+            <div className="flex gap-2 md:gap-4 items-center min-w-0">
                 <span className="crt-flicker text-amber">SYS.ONLINE</span>
                 <span className="hidden md:inline">VAD://LOCAL</span>
             </div>
-            <div className="flex gap-4 items-center">
+            <div className="flex gap-2 md:gap-4 items-center min-w-0">
                 <ThemeToggle />
                 <span>
                     MEM: <span>{mem}</span>MB
