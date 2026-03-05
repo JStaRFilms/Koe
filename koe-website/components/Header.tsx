@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Menu, X, Download, Github, Star } from "lucide-react";
-import { ThemeToggle } from "./ThemeToggle";
 
 const GITHUB_REPO_URL = "https://github.com/GIGAHAT1994/whisper_alt";
 
@@ -50,33 +49,24 @@ export function Header() {
 
                 {/* Navigation */}
                 <nav className="hidden md:flex flex-grow text-sm font-bold">
-                    <a
-                        href="#features"
-                        className="flex-1 p-6 border-raw-r flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors glitch-hover"
-                    >
-                        SYS.FEATURES
-                    </a>
-                    <a
-                        href="#specs"
-                        className="flex-1 p-6 border-raw-r flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors glitch-hover"
-                    >
-                        SYS.SPECS
-                    </a>
-                    <a
-                        href="#faq"
-                        className="flex-1 p-6 flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors glitch-hover"
-                    >
-                        SYS.FAQ
-                    </a>
+                    {navLinks.map((link, index) => (
+                        <Link
+                            key={link.href}
+                            href={link.href}
+                            className={`flex-1 p-6 flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors glitch-hover ${index < navLinks.length - 1 ? "border-raw-r" : ""}`}
+                        >
+                            {link.label}
+                        </Link>
+                    ))}
                 </nav>
 
-                {/* Right side - GitHub with star count */}
-                <div className="hidden md:flex p-6 border-t border-zinc md:border-t-0 md:border-l border-zinc justify-center bg-void items-center">
+                {/* Right side - GitHub with star count + download */}
+                <div className="hidden md:flex border-t border-zinc md:border-t-0 md:border-l border-zinc justify-center bg-void items-center">
                     <a
                         href={GITHUB_REPO_URL}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-2 hover:text-amber transition-colors"
+                        className="flex items-center gap-2 hover:text-amber transition-colors px-6 py-6 border-raw-r"
                     >
                         <Github className="w-5 h-5" />
                         <span className="text-sm">[SOURCE]</span>
@@ -87,6 +77,12 @@ export function Header() {
                             </span>
                         )}
                     </a>
+                    <Link
+                        href="/download/"
+                        className="px-6 py-6 bg-amber text-void font-bold text-sm uppercase tracking-wider hover:bg-bone transition-colors"
+                    >
+                        <span>DOWNLOAD</span>
+                    </Link>
                 </div>
 
                 {/* Mobile menu button */}

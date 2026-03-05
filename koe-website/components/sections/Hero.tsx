@@ -1,15 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Terminal } from "lucide-react";
 
 export function Hero() {
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
-
     return (
         <section className="max-w-7xl mx-auto w-full flex flex-col md:flex-row border-x border-zinc min-h-[80vh] relative overflow-hidden bg-void/40">
             {/* Deco structural lines */}
@@ -35,10 +29,10 @@ export function Hero() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-6 items-start sm:items-center">
-                    <a href="#download" className="btn-brutal">
+                    <Link href="/download/" className="btn-brutal">
                         <Terminal className="w-6 h-6" />
                         EXECUTE DOWNLOAD
-                    </a>
+                    </Link>
                     <div className="text-xs text-muted flex flex-col group">
                         <span>[WARN] REQUIRES WINDOWS 10/11</span>
                         <span className="group-hover:text-amber transition-colors">[INFO] REQUIRES GROQ API KEY</span>
@@ -50,34 +44,32 @@ export function Hero() {
                 {/* Terminal block visual representation of voice UI */}
                 <div className="w-full aspect-square border-raw bg-void p-6 flex flex-col shadow-[12px_12px_0_0_#1F1F1F]">
                     <div className="flex justify-between items-center border-raw-b pb-4 mb-4 text-sm text-amber">
-                        <span>// KOE_TERMINAL_UI \\</span>
+                        <span>{`// KOE_TERMINAL_UI \\\\`}</span>
                         <span className="w-3 h-3 bg-red-500 rounded-none animate-pulse"></span>
                     </div>
                     {/* Audio Equalizer Brutal style */}
-                    {mounted && (
-                        <div className="flex-grow flex items-end gap-2 pb-8">
-                            <div
-                                className="w-1/5 bg-bone animate-[flicker_0.5s_infinite]"
-                                style={{ height: "25%" }}
-                            ></div>
-                            <div
-                                className="w-1/5 bg-amber animate-[flicker_0.3s_infinite_alternate]"
-                                style={{ height: "100%" }}
-                            ></div>
-                            <div
-                                className="w-1/5 bg-bone animate-[flicker_0.7s_infinite]"
-                                style={{ height: "75%" }}
-                            ></div>
-                            <div
-                                className="w-1/5 bg-crimson animate-[flicker_0.4s_infinite_alternate]"
-                                style={{ height: "50%" }}
-                            ></div>
-                            <div
-                                className="w-1/5 bg-bone animate-[flicker_0.6s_infinite]"
-                                style={{ height: "33%" }}
-                            ></div>
-                        </div>
-                    )}
+                    <div className="flex-grow flex items-end gap-2 pb-8">
+                        <div
+                            className="w-1/5 bg-bone animate-[flicker_0.5s_infinite]"
+                            style={{ height: "25%" }}
+                        ></div>
+                        <div
+                            className="w-1/5 bg-amber animate-[flicker_0.3s_infinite_alternate]"
+                            style={{ height: "100%" }}
+                        ></div>
+                        <div
+                            className="w-1/5 bg-bone animate-[flicker_0.7s_infinite]"
+                            style={{ height: "75%" }}
+                        ></div>
+                        <div
+                            className="w-1/5 bg-crimson animate-[flicker_0.4s_infinite_alternate]"
+                            style={{ height: "50%" }}
+                        ></div>
+                        <div
+                            className="w-1/5 bg-bone animate-[flicker_0.6s_infinite]"
+                            style={{ height: "33%" }}
+                        ></div>
+                    </div>
                     <div className="text-xs text-muted font-mono normal-case">
                         TRANSCRIBING AT 216X REALTIME...
                     </div>

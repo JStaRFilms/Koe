@@ -56,7 +56,7 @@ export default function RootLayout({
         />
       </head>
       <body className="bg-void text-bone font-mono uppercase selection:bg-amber selection:text-void min-h-screen flex flex-col grid-bg">
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           {children}
         </ThemeProvider>
       </body>
