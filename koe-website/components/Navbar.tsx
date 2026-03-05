@@ -4,13 +4,20 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Menu, X, Download, Github, Star, Terminal } from "lucide-react";
 
+import { ThemeToggle } from "./ThemeToggle";
+
 const GITHUB_REPO_URL = "https://github.com/GIGAHAT1994/whisper_alt";
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
     const [starCount, setStarCount] = useState<number | null>(null);
 
+    // Faux terminal stats state
+    const [cpu, setCpu] = useState("0.1");
+    const [mem, setMem] = useState("12");
+
     useEffect(() => {
+        // Star fetcher
         async function fetchStars() {
             try {
                 const response = await fetch(
@@ -25,8 +32,17 @@ export function Navbar() {
                 console.error("Failed to fetch star count:", error);
             }
         }
-
         fetchStars();
+
+        // Terminal stats effect
+        const interval = setInterval(() => {
+            const newCpu = (Math.random() * 5).toFixed(1);
+            const newMem = Math.floor(12 + Math.random() * 10);
+            setCpu(newCpu);
+            setMem(newMem.toString());
+        }, 2000);
+
+        return () => clearInterval(interval);
     }, []);
 
     const navLinks = [
@@ -39,14 +55,15 @@ export function Navbar() {
     return (
         <>
             {/* Top status bar */}
-            <div className="w-full flex justify-between px-4 py-2 border-b border-zinc text-xs text-muted bg-void/95 backdrop-blur sticky top-0 z-50">
-                <div className="flex gap-4">
+            <div className="w-full flex justify-between px-4 py-2 border-b border-zinc text-xs text-muted bg-void/90 backdrop-blur sticky top-0 z-50">
+                <div className="flex gap-4 text-xs font-mono">
                     <span className="crt-flicker text-amber">SYS.ONLINE</span>
                     <span className="hidden md:inline">VAD://LOCAL</span>
                 </div>
-                <div className="flex gap-4">
-                    <span className="hidden sm:inline">MEM: 12MB</span>
-                    <span className="hidden md:inline">CPU: 0.1%</span>
+                <div className="flex gap-4 text-xs font-mono items-center">
+                    <ThemeToggle />
+                    <span>MEM: <span>{mem}</span>MB</span>
+                    <span className="hidden md:inline">CPU: <span>{cpu}</span>%</span>
                 </div>
             </div>
 

@@ -6,12 +6,12 @@
 /* Terminal Noir Design System - Koe Website */
 @theme inline {
   /* Core Colors */
-  --color-void: #050505;
-  --color-bone: #E2DFD2;
-  --color-amber: #FFB000;
-  --color-crimson: #8A0303;
-  --color-muted: #666666;
-  --color-zinc: #1F1F1F;
+  --color-void: var(--color-void);
+  --color-bone: var(--color-bone);
+  --color-amber: var(--color-amber);
+  --color-crimson: var(--color-crimson);
+  --color-muted: var(--color-muted);
+  --color-zinc: var(--color-zinc);
 
   /* Semantic mappings */
   --color-background: var(--color-void);
@@ -33,25 +33,21 @@
 }
 
 :root {
-  /* Terminal Noir - Dark Mode (Default) */
-  --background: #050505;
-  --foreground: #E2DFD2;
-  --card: #0a0a0a;
-  --card-foreground: #E2DFD2;
-  --popover: #0a0a0a;
-  --popover-foreground: #E2DFD2;
-  --primary: #FFB000;
-  --primary-foreground: #050505;
-  --secondary: #1F1F1F;
-  --secondary-foreground: #E2DFD2;
-  --muted: #1F1F1F;
-  --muted-foreground: #666666;
-  --accent: #FFB000;
-  --accent-foreground: #050505;
-  --destructive: #8A0303;
-  --border: #1F1F1F;
-  --input: #1F1F1F;
-  --ring: #FFB000;
+  --color-void: #E2DFD2;
+  --color-bone: #050505;
+  --color-amber: #D9381E;
+  --color-muted: #666666;
+  --color-zinc: #B0ADA1;
+  --color-crimson: #8A0303;
+}
+
+.dark {
+  --color-void: #050505;
+  --color-bone: #E2DFD2;
+  --color-amber: #FFB000;
+  --color-muted: #888888;
+  --color-zinc: #1F1F1F;
+  --color-crimson: #8A0303;
 }
 
 /* Scanline Overlay Effect */
@@ -92,8 +88,8 @@
 /* Grid Background */
 .grid-bg {
   background-image:
-    linear-gradient(rgba(31, 31, 31, 0.5) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(31, 31, 31, 0.5) 1px, transparent 1px);
+    linear-gradient(to right, var(--color-zinc) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--color-zinc) 1px, transparent 1px);
   background-size: 50px 50px;
 }
 
@@ -131,8 +127,8 @@
 
 /* Selection Styling */
 ::selection {
-  background: #FFB000;
-  color: #050505;
+  background: var(--color-amber);
+  color: var(--color-void);
 }
 
 /* Scrollbar Styling */
@@ -142,15 +138,15 @@
 }
 
 ::-webkit-scrollbar-track {
-  background: #050505;
+  background: var(--color-void);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1F1F1F;
+  background: var(--color-zinc);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #FFB000;
+  background: var(--color-amber);
 }
 
 @layer base {
