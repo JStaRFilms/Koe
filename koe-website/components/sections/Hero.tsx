@@ -12,7 +12,7 @@ export function Hero() {
     }, []);
 
     return (
-        <section className="relative flex min-h-[85vh] flex-col md:flex-row border-b border-zinc overflow-hidden">
+        <section className="max-w-7xl mx-auto w-full flex flex-col md:flex-row border-x border-zinc min-h-[80vh] relative overflow-hidden bg-void/40">
             {/* Decorative corners */}
             <div className="absolute top-8 left-8 w-16 h-16 border-t-2 border-l-2 border-amber opacity-50 z-10 pointer-events-none" />
             <div className="absolute bottom-8 right-8 w-16 h-16 border-b-2 border-r-2 border-amber opacity-50 z-10 pointer-events-none" />
@@ -26,7 +26,7 @@ export function Hero() {
                 </div>
 
                 {/* Main headline */}
-                <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl leading-[0.9] mb-6">
+                <h1 className="font-display text-6xl md:text-8xl leading-none mb-6">
                     YOUR
                     <br />
                     <span className="text-amber">VOICE</span>
@@ -45,52 +45,37 @@ export function Hero() {
                         href="/download/"
                         className="group relative inline-flex items-center gap-3 bg-amber text-void px-8 py-4 font-bold text-lg uppercase tracking-wider border-2 border-amber hover:bg-bone hover:border-bone transition-all duration-150"
                     >
-                        <span className="absolute top-1.5 left-1.5 right-[-12px] bottom-[-12px] border border-amber -z-10 group-hover:top-0 group-hover:left-0 group-hover:right-0 group-hover:bottom-0 transition-all duration-150" />
-                        <Terminal className="w-5 h-5" />
+                        <span className="absolute top-1 left-1 right-[-8px] bottom-[-8px] border border-amber -z-10 group-hover:top-0 group-hover:left-0 group-hover:right-0 group-hover:bottom-0 transition-all duration-150" />
+                        <Terminal className="w-6 h-6" />
                         EXECUTE DOWNLOAD
                     </Link>
 
-                    <div className="text-xs text-muted flex flex-col gap-1">
+                    <div className="text-xs text-muted flex flex-col group mt-4 sm:mt-0">
                         <span>[WARN] REQUIRES WINDOWS 10/11</span>
-                        <span className="hover:text-amber transition-colors cursor-help">[INFO] REQUIRES GROQ API KEY</span>
+                        <span className="group-hover:text-amber transition-colors">[INFO] REQUIRES GROQ API KEY</span>
                     </div>
                 </div>
 
-                {/* Trust badges */}
-                <div className="flex flex-wrap gap-6 mt-12 text-xs text-muted uppercase tracking-wider">
-                    <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-amber rounded-full animate-pulse" />
-                        Free Forever
-                    </span>
-                    <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-amber rounded-full animate-pulse" />
-                        Privacy-First
-                    </span>
-                    <span className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-amber rounded-full animate-pulse" />
-                        Open Source
-                    </span>
-                </div>
             </div>
 
             {/* Right visual - Terminal block with waveform */}
-            <div className="w-full md:w-2/5 p-8 md:p-16 flex items-center justify-center relative bg-zinc/10 min-h-[300px] md:min-h-auto">
-                <div className="w-full max-w-sm aspect-square border border-zinc bg-void p-6 flex flex-col shadow-[12px_12px_0_0_#1F1F1F]">
+            <div className="w-full md:w-2/5 p-8 md:p-16 flex items-center justify-center relative bg-zinc/20 z-10 hidden md:flex">
+                <div className="w-full aspect-square border border-zinc bg-void p-6 flex flex-col shadow-[12px_12px_0_0_#1F1F1F]">
                     {/* Terminal header */}
                     <div className="flex justify-between items-center border-b border-zinc pb-4 mb-4 text-sm text-amber">
                         <span>// KOE_TERMINAL_UI \\</span>
-                        <span className="w-3 h-3 bg-crimson animate-pulse" />
+                        <span className="w-3 h-3 bg-red-500 rounded-none animate-pulse" />
                     </div>
 
                     {/* Animated waveform */}
                     <div className="flex-grow flex items-end gap-2 pb-8 px-2">
                         {mounted && (
                             <>
-                                <WaveformBar delay="0s" height="25%" />
+                                <WaveformBar delay="0s" height="25%" color="bone" />
                                 <WaveformBar delay="0.1s" height="100%" color="amber" />
-                                <WaveformBar delay="0.2s" height="75%" />
+                                <WaveformBar delay="0.2s" height="75%" color="bone" />
                                 <WaveformBar delay="0.3s" height="50%" color="crimson" />
-                                <WaveformBar delay="0.4s" height="33%" />
+                                <WaveformBar delay="0.4s" height="33%" color="bone" />
                             </>
                         )}
                     </div>

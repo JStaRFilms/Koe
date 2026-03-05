@@ -11,6 +11,8 @@ import { GitHubCTA } from "@/components/sections/GitHubCTA";
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
+      <div className="giant-kanji font-serif pointer-events-none fixed">声</div>
+
       <Navbar />
 
       <main className="flex-1">

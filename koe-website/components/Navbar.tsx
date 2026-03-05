@@ -72,33 +72,42 @@ export function Navbar() {
                 <div className="container mx-auto">
                     <div className="flex flex-col md:flex-row">
                         {/* Logo */}
-                        <div className="p-4 md:p-6 border-b md:border-b-0 md:border-r border-zinc flex items-center gap-3">
+                        <div className="p-6 border-b md:border-b-0 md:border-r border-zinc flex items-center gap-4 bg-void">
                             <Link href="/" className="flex items-center gap-2">
-                                <span className="font-display text-2xl md:text-3xl text-amber">KOE</span>
-                                <span className="text-muted text-lg" style={{ fontFamily: 'var(--font-serif)' }}>声</span>
+                                <span className="font-display text-4xl text-amber">KOE</span>
+                                <span className="font-serif text-3xl opacity-50" style={{ fontFamily: 'var(--font-serif)' }}>声</span>
                             </Link>
                         </div>
 
                         {/* Navigation */}
                         <nav className="hidden md:flex flex-grow text-sm font-bold">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className="flex-1 px-6 border-r border-zinc flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors uppercase tracking-wider text-bone"
-                                >
-                                    {link.label}
-                                </Link>
-                            ))}
+                            <Link
+                                href="/#features"
+                                className="flex-1 p-6 border-r border-zinc flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors uppercase tracking-wider text-bone"
+                            >
+                                SYS.FEATURES
+                            </Link>
+                            <Link
+                                href="/#specs"
+                                className="flex-1 p-6 border-r border-zinc flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors uppercase tracking-wider text-bone"
+                            >
+                                SYS.SPECS
+                            </Link>
+                            <Link
+                                href="/#faq"
+                                className="flex-1 p-6 flex items-center justify-center hover:bg-zinc hover:text-amber transition-colors uppercase tracking-wider text-bone"
+                            >
+                                SYS.FAQ
+                            </Link>
                         </nav>
 
-                        {/* Right side - GitHub + Download */}
-                        <div className="hidden md:flex items-center">
+                        {/* Right side - GitHub */}
+                        <div className="hidden md:flex p-6 border-l border-zinc justify-center bg-void">
                             <a
                                 href={GITHUB_REPO_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="px-6 border-r border-zinc h-full flex items-center gap-2 hover:text-amber transition-colors text-bone"
+                                className="flex items-center gap-2 hover:text-amber transition-colors text-bone"
                             >
                                 <Github className="w-5 h-5" />
                                 <span className="text-sm">[SOURCE]</span>
@@ -109,13 +118,6 @@ export function Navbar() {
                                     </span>
                                 )}
                             </a>
-                            <Link
-                                href="/download/"
-                                className="px-6 bg-amber text-void h-full flex items-center gap-2 font-bold uppercase tracking-wider hover:bg-bone transition-colors"
-                            >
-                                <Download className="w-4 h-4" />
-                                <span className="hidden lg:inline">DOWNLOAD</span>
-                            </Link>
                         </div>
 
                         {/* Mobile menu button */}
