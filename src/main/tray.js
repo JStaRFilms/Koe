@@ -2,6 +2,7 @@ const { Tray, Menu, app, nativeImage } = require('electron');
 const path = require('path');
 const { CHANNELS } = require('../shared/constants');
 const { createSettingsWindow } = require('./settings-window');
+const { toggleRecording } = require('./services/recording-state');
 const fs = require('fs');
 
 let tray = null;
@@ -58,14 +59,16 @@ function updateContextMenu(mainWindow) {
         {
             label: isRecording ? 'Stop Recording' : 'Start Recording',
             click: () => {
-                isRecording = !isRecording;
+                const recordingState = toggleRecording();
+                isRecording = recordingState.isRecording;
                 updateContextMenu(mainWindow);
                 tray.setToolTip(isRecording ? 'Koe - Recording' : 'Koe - Ready');
+
                 if (mainWindow && !mainWindow.isDestroyed()) {
                     if (isRecording) {
                         mainWindow.showInactive();
                     }
-                    mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, isRecording);
+                    mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, recordingState);
                 }
             }
         },

@@ -2,30 +2,30 @@ const { globalShortcut } = require('electron');
 const { CHANNELS, DEFAULT_SETTINGS } = require('../shared/constants');
 const { getSetting } = require('./services/settings');
 const { setRecordingState } = require('./tray');
+const { toggleRecording } = require('./services/recording-state');
 
-let isRecording = false;
 let currentHotkey = null;
 
+function handleRecordingToggle(mainWindow) {
+    const recordingState = toggleRecording();
+    console.log(`Global hotkey triggered. Recording state: ${recordingState.isRecording} (session ${recordingState.sessionId})`);
+
+    setRecordingState(recordingState.isRecording, mainWindow);
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        if (recordingState.isRecording) {
+            mainWindow.showInactive();
+        }
+        mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, recordingState);
+    }
+}
+
 function registerShortcuts(mainWindow) {
-    // Get hotkey from settings, fallback to default
     const hotkey = getSetting('hotkey') || DEFAULT_SETTINGS.hotkey;
     currentHotkey = hotkey;
 
     const registered = globalShortcut.register(hotkey, () => {
-        isRecording = !isRecording;
-        console.log(`Global hotkey triggered. Recording state: ${isRecording}`);
-
-        // Update tray UI
-        setRecordingState(isRecording, mainWindow);
-
-        if (mainWindow && !mainWindow.isDestroyed()) {
-            if (isRecording) {
-                // Starting recording → show pill WITHOUT stealing focus
-                mainWindow.showInactive();
-            }
-            // Always notify renderer of the toggle
-            mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, isRecording);
-        }
+        handleRecordingToggle(mainWindow);
     });
 
     if (!registered) {
@@ -43,37 +43,21 @@ function unregisterShortcuts() {
 }
 
 function updateHotkey(mainWindow, newHotkey) {
-    // Unregister current hotkey
     unregisterShortcuts();
 
-    // Register new hotkey
     const registered = globalShortcut.register(newHotkey, () => {
-        isRecording = !isRecording;
-        console.log(`Global hotkey triggered. Recording state: ${isRecording}`);
-
-        // Update tray UI
-        setRecordingState(isRecording, mainWindow);
-
-        if (mainWindow && !mainWindow.isDestroyed()) {
-            if (isRecording) {
-                // Starting recording → show pill WITHOUT stealing focus
-                mainWindow.showInactive();
-            }
-            // Always notify renderer of the toggle
-            mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, isRecording);
-        }
+        handleRecordingToggle(mainWindow);
     });
 
     if (registered) {
         currentHotkey = newHotkey;
         console.log(`Global shortcut updated to ${newHotkey}.`);
         return true;
-    } else {
-        console.error(`Failed to register new hotkey ${newHotkey}.`);
-        // Try to re-register the old hotkey as fallback
-        registerShortcuts(mainWindow);
-        return false;
     }
+
+    console.error(`Failed to register new hotkey ${newHotkey}.`);
+    registerShortcuts(mainWindow);
+    return false;
 }
 
 function getCurrentHotkey() {

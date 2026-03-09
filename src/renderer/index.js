@@ -2,12 +2,10 @@ import { initVAD, startListening, stopListening, isVADReady } from './audio/vad.
 import { PillUI } from './components/pill-ui.js';
 
 let isRecording = false;
+let activeSessionId = 0;
 let pill;
 let vadInitFailed = false;
 
-/**
- * Parse an error message into a short, user-friendly label.
- */
 function getErrorLabel(errorMsg) {
     const msg = (errorMsg || '').toLowerCase();
     if (msg.includes('fetch') || msg.includes('network') || msg.includes('enotfound') || msg.includes('timeout')) {
@@ -28,6 +26,31 @@ function getErrorLabel(errorMsg) {
     return 'Transcription Error';
 }
 
+function normalizeRecordingPayload(payload) {
+    if (typeof payload === 'boolean') {
+        return { isRecording: payload, sessionId: activeSessionId };
+    }
+
+    return {
+        isRecording: !!payload?.isRecording,
+        sessionId: payload?.sessionId ?? activeSessionId
+    };
+}
+
+function normalizeStatusPayload(payload) {
+    if (typeof payload === 'string') {
+        return { stage: payload, sessionId: activeSessionId };
+    }
+
+    return {
+        stage: payload?.stage,
+        label: payload?.label,
+        progress: payload?.progress,
+        sessionId: payload?.sessionId ?? activeSessionId,
+        error: payload?.error
+    };
+}
+
 async function init() {
     pill = new PillUI();
 
@@ -36,9 +59,8 @@ async function init() {
         return;
     }
 
-    window.api.log('Renderer initialized — pill mode.');
+    window.api.log('Renderer initialized in pill mode.');
 
-    // Initialize VAD in the background
     try {
         await initVAD();
     } catch (e) {
@@ -46,81 +68,110 @@ async function init() {
         window.api.log(`VAD init error: ${e.message}`);
     }
 
-    // ─── Animate-in event from main process ───
     window.api.onAnimateIn(() => {
         pill.animateIn();
     });
 
-    // ─── Recording toggle from hotkey / tray ───
-    window.api.onRecordingToggle(async (recordingState) => {
-        if (recordingState) {
-            // Check if VAD is ready before recording
+    window.api.onRecordingToggle(async (payload) => {
+        const recordingPayload = normalizeRecordingPayload(payload);
+
+        if (recordingPayload.isRecording) {
             if (vadInitFailed || !isVADReady()) {
                 isRecording = false;
-                pill.setError('Audio Not Ready');
-                window.api.log('Recording attempted but VAD not initialized.');
+                pill.setError('Audio Not Ready', recordingPayload.sessionId);
+                window.api.log('Recording attempted but VAD was not ready.');
                 return;
             }
+
+            activeSessionId = recordingPayload.sessionId;
             isRecording = true;
+            pill.beginSession(activeSessionId);
             pill.setState('recording');
-        } else {
-            // If we weren't actually recording (e.g. VAD rejected the start),
-            // don't enter processing state — just ignore.
-            if (!isRecording) {
-                window.api.log('Stop toggle received but was not recording. Ignoring.');
+
+            try {
+                await startListening(activeSessionId);
+            } catch (err) {
+                isRecording = false;
+                pill.setError(getErrorLabel(err.message), activeSessionId);
+                window.api.log(`Start recording error: ${err.message}`);
                 return;
             }
-            isRecording = false;
-            // Stop recording → show processing state while waiting for transcription
-            pill.setState('processing');
-        }
-
-        try {
-            if (isRecording) {
-                await startListening();
-            } else {
-                stopListening();
+        } else {
+            if (!isRecording) {
+                window.api.log('Stop toggle received while not recording. Ignoring.');
+                return;
             }
-        } catch (err) {
+
             isRecording = false;
-            pill.setError(getErrorLabel(err.message));
-            window.api.log(`Toggle recording error: ${err.message}`);
+            pill.setProcessingStatus('Transcribing', 12, recordingPayload.sessionId);
+
+            try {
+                const didCaptureAudio = stopListening(recordingPayload.sessionId);
+                if (!didCaptureAudio) {
+                    pill.hideWithMessage('Nothing captured', recordingPayload.sessionId);
+                }
+            } catch (err) {
+                pill.setError(getErrorLabel(err.message), recordingPayload.sessionId);
+                window.api.log(`Stop recording error: ${err.message}`);
+            }
         }
 
-        window.api.log(`Recording toggled: ${isRecording}`);
+        window.api.log(`Recording toggled: ${recordingPayload.isRecording} (session ${recordingPayload.sessionId})`);
     });
 
-    // ─── Transcription status updates ───
     if (window.api.onTranscriptionStatus) {
-        window.api.onTranscriptionStatus((status) => {
-            if (status === 'processing' || status === 'enhancing') {
-                pill.setState('processing');
-            } else if (status && typeof status === 'string' && status.startsWith('error:')) {
-                // Parse the error and show a user-friendly label
-                const errorDetail = status.replace('error:', '').trim();
-                pill.setError(getErrorLabel(errorDetail));
+        window.api.onTranscriptionStatus((payload) => {
+            const status = normalizeStatusPayload(payload);
+
+            if (typeof payload === 'string' && payload.startsWith('error:')) {
+                const errorDetail = payload.replace('error:', '').trim();
+                pill.setError(getErrorLabel(errorDetail), status.sessionId);
                 window.api.log(`Transcription error surfaced to UI: ${errorDetail}`);
+                return;
+            }
+
+            if (status.sessionId !== activeSessionId) {
+                return;
+            }
+
+            if (status.stage === 'transcribing' || status.stage === 'processing') {
+                pill.setProcessingStatus(status.label || 'Transcribing', status.progress ?? 20, status.sessionId);
+            } else if (status.stage === 'enhancing') {
+                pill.setProcessingStatus(status.label || 'Refining', status.progress ?? 72, status.sessionId);
+            } else if (status.stage === 'pasting') {
+                pill.setProcessingStatus(status.label || 'Pasting', status.progress ?? 92, status.sessionId);
+            } else if (status.stage === 'empty') {
+                pill.hideWithMessage(status.label || 'No speech detected', status.sessionId);
+            } else if (status.stage === 'error' || status.error) {
+                pill.setError(getErrorLabel(status.error || ''), status.sessionId);
             }
         });
     }
 
-    // ─── Transcription complete: auto-paste happened, show done & hide ───
     if (window.api.onTranscriptionComplete) {
-        window.api.onTranscriptionComplete((text) => {
-            if (text) {
-                pill.showDoneAndHide();
+        window.api.onTranscriptionComplete((payload) => {
+            const completion = typeof payload === 'string'
+                ? { text: payload, sessionId: activeSessionId }
+                : { text: payload?.text, sessionId: payload?.sessionId ?? activeSessionId };
+
+            if (completion.sessionId !== activeSessionId) {
+                return;
+            }
+
+            if (completion.text) {
+                pill.showDoneAndHide(completion.sessionId);
+            } else {
+                pill.hideWithMessage('Done', completion.sessionId);
             }
         });
     }
 
-    // ─── First-launch: check for API key ───
     const settings = await window.api.getSettings();
     window.api.log(`Loaded settings. Hotkey: ${settings.hotkey}`);
 
     if (!settings.groqApiKey) {
-        window.api.log('No API key found. User should configure via system tray → Settings.');
+        window.api.log('No API key found. User should configure it via the tray settings window.');
     }
 }
 
 document.addEventListener('DOMContentLoaded', init);
-

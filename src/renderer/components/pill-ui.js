@@ -1,55 +1,77 @@
-/**
- * PillUI — The minimal HUD-style status indicator for Koe.
- *
- * States: idle → recording → processing → done → (hidden)
- * No text display — purely a visual feedback element.
- */
 export class PillUI {
     constructor() {
         this.state = 'idle';
+        this.sessionId = 0;
         this.timerInterval = null;
         this.timerSeconds = 0;
+        this.hideTimeout = null;
+        this.animateOutTimeout = null;
 
-        // DOM
         this.pill = document.getElementById('pill');
         this.status = document.getElementById('pill-status');
         this.timer = document.getElementById('pill-timer');
-        this.spinner = document.getElementById('pill-spinner');
-        this.check = document.getElementById('pill-check');
+        this.progressBar = document.getElementById('pill-progress-bar');
     }
 
-    /** Trigger CSS entrance animation */
+    clearPendingTransitions() {
+        if (this.hideTimeout) {
+            clearTimeout(this.hideTimeout);
+            this.hideTimeout = null;
+        }
+        if (this.animateOutTimeout) {
+            clearTimeout(this.animateOutTimeout);
+            this.animateOutTimeout = null;
+        }
+    }
+
+    isCurrentSession(sessionId) {
+        return sessionId == null || sessionId === this.sessionId;
+    }
+
+    beginSession(sessionId) {
+        this.sessionId = sessionId ?? this.sessionId;
+        this.clearPendingTransitions();
+        this.setProgress(0);
+        this.pill.classList.remove('animate-out');
+        this.pill.classList.add('animate-in');
+    }
+
     animateIn() {
-        // Force reflow to reset animation
+        this.clearPendingTransitions();
         this.pill.classList.remove('animate-in', 'animate-out');
         void this.pill.offsetWidth;
         this.pill.classList.add('animate-in');
     }
 
-    /** Trigger CSS exit animation, then hide window */
-    animateOut() {
+    animateOut(sessionId = this.sessionId) {
+        if (!this.isCurrentSession(sessionId)) {
+            return;
+        }
+
+        this.clearPendingTransitions();
         this.pill.classList.remove('animate-in');
         this.pill.classList.add('animate-out');
 
-        // After animation completes, tell main to hide the window
-        setTimeout(() => {
+        this.animateOutTimeout = setTimeout(() => {
+            if (!this.isCurrentSession(sessionId)) {
+                return;
+            }
+
             if (window.api && window.api.hideWindow) {
                 window.api.hideWindow();
             }
-            // Reset for next appearance
+
             this.pill.classList.remove('animate-out');
+            this.setProgress(0);
             this.setState('idle');
-        }, 300); // matches CSS exit duration
+        }, 300);
     }
 
-    /**
-     * Set the pill state and update all visual elements.
-     * @param {'idle'|'recording'|'processing'|'done'|'error'} newState
-     */
     setState(newState) {
-        if (this.state === newState) return;
+        if (this.state === newState) {
+            return;
+        }
 
-        // Remove old state class
         this.pill.classList.remove(`state-${this.state}`);
         this.state = newState;
         this.pill.classList.add(`state-${this.state}`);
@@ -59,59 +81,79 @@ export class PillUI {
                 this.status.textContent = 'Ready';
                 this.stopTimer();
                 break;
-
             case 'recording':
                 this.status.textContent = 'Listening...';
                 this.startTimer();
                 break;
-
             case 'processing':
                 this.status.textContent = 'Transcribing';
                 this.stopTimer();
                 break;
-
             case 'done':
-                this.status.textContent = 'Pasted ✓';
+                this.status.textContent = 'Pasted';
                 this.stopTimer();
                 break;
-
             case 'error':
-                // Error message is set by setError() before calling setState
                 this.stopTimer();
                 break;
         }
     }
 
-    /**
-     * Show an error state with a user-friendly message, then auto-hide.
-     * @param {string} message - Short error description (e.g. "Network Error", "API Error")
-     */
-    setError(message) {
-        // Force state change even if already in error
+    setProcessingStatus(label, progress = 0, sessionId = this.sessionId) {
+        if (!this.isCurrentSession(sessionId)) {
+            return;
+        }
+
+        this.clearPendingTransitions();
+        this.setState('processing');
+        this.status.textContent = label || 'Transcribing';
+        this.setProgress(progress);
+    }
+
+    setError(message, sessionId = this.sessionId) {
+        if (!this.isCurrentSession(sessionId)) {
+            return;
+        }
+
+        this.clearPendingTransitions();
         this.pill.classList.remove(`state-${this.state}`);
         this.state = 'error';
         this.pill.classList.add('state-error');
         this.status.textContent = message || 'Error';
         this.stopTimer();
+        this.setProgress(0);
 
-        // Auto-hide after 3.5 seconds
-        setTimeout(() => {
-            this.animateOut();
+        this.hideTimeout = setTimeout(() => {
+            this.animateOut(sessionId);
         }, 3500);
     }
 
-    /** Start the recording duration timer */
+    hideWithMessage(message, sessionId = this.sessionId) {
+        if (!this.isCurrentSession(sessionId)) {
+            return;
+        }
+
+        this.clearPendingTransitions();
+        this.setState('idle');
+        this.status.textContent = message || 'Ready';
+        this.setProgress(0);
+
+        this.hideTimeout = setTimeout(() => {
+            this.animateOut(sessionId);
+        }, 900);
+    }
+
     startTimer() {
+        this.stopTimer();
         this.timerSeconds = 0;
         this.updateTimerDisplay();
 
         this.timerInterval = setInterval(() => {
-            this.timerSeconds++;
+            this.timerSeconds += 1;
             this.updateTimerDisplay();
         }, 1000);
     }
 
-    /** Stop the timer */
     stopTimer() {
         if (this.timerInterval) {
             clearInterval(this.timerInterval);
@@ -119,23 +161,30 @@ export class PillUI {
         }
     }
 
-    /** Render MM:SS in the timer element */
     updateTimerDisplay() {
         const mins = Math.floor(this.timerSeconds / 60);
         const secs = this.timerSeconds % 60;
         this.timer.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
     }
 
-    /**
-     * Show the "done" state briefly, then animate out.
-     * Called after transcription + paste completes.
-     */
-    showDoneAndHide() {
+    setProgress(progress = 0) {
+        const clamped = Math.max(0, Math.min(100, progress));
+        if (this.progressBar) {
+            this.progressBar.style.width = `${clamped}%`;
+        }
+    }
+
+    showDoneAndHide(sessionId = this.sessionId) {
+        if (!this.isCurrentSession(sessionId)) {
+            return;
+        }
+
+        this.clearPendingTransitions();
+        this.setProgress(100);
         this.setState('done');
 
-        // Show "Pasted ✓" for 1.2s, then slide out
-        setTimeout(() => {
-            this.animateOut();
+        this.hideTimeout = setTimeout(() => {
+            this.animateOut(sessionId);
         }, 1200);
     }
 }

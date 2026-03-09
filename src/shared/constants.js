@@ -36,11 +36,13 @@ const DEFAULT_SETTINGS = {
     hotkey: 'CommandOrControl+Shift+Space',
     language: 'auto',
     enhanceText: true,
-    autoPaste: true, // Now default true — pill auto-pastes
+    autoPaste: true,
+    launchOnStartup: true,
+    autoUpdate: true,
     theme: 'dark',
     promptStyle: 'Clean',
     customPrompt: DEFAULT_CUSTOM_PROMPT,
-    model: 'whisper-large-v3-turbo' // 'whisper-large-v3-turbo' (fast) or 'whisper-large-v3' (accurate)
+    model: 'whisper-large-v3-turbo'
 };
 
 module.exports = {

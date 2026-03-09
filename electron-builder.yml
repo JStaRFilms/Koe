@@ -1,8 +1,13 @@
 appId: com.jstarfilmsstudios.koe
 productName: Koe
+artifactName: ${productName}-Setup-${version}.${ext}
 copyright: "Copyright © 2026 J StaR Films Studios"
 directories:
   output: release
+publish:
+  provider: github
+  owner: JStaRFilms
+  repo: Koe
 files:
   - dist/renderer/**/*
   - src/main/**/*

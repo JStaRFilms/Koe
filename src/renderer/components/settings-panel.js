@@ -12,6 +12,8 @@ export class SettingsPanel {
         this.selPromptStyle = document.getElementById('prompt-style');
         this.inputCustomPrompt = document.getElementById('custom-prompt');
         this.chkAutoPaste = document.getElementById('auto-paste');
+        this.chkLaunchOnStartup = document.getElementById('launch-on-startup');
+        this.chkAutoUpdate = document.getElementById('auto-update');
         this.testResult = document.getElementById('test-key-result');
         this.promptStyleGroup = document.getElementById('prompt-style-group');
         this.customPromptGroup = document.getElementById('custom-prompt-group');
@@ -180,6 +182,12 @@ export class SettingsPanel {
                     this.inputCustomPrompt.value = settings.customPrompt || '';
                 }
                 this.chkAutoPaste.checked = settings.autoPaste || false;
+                if (this.chkLaunchOnStartup) {
+                    this.chkLaunchOnStartup.checked = settings.launchOnStartup !== false;
+                }
+                if (this.chkAutoUpdate) {
+                    this.chkAutoUpdate.checked = settings.autoUpdate !== false;
+                }
 
                 // Load new settings
                 if (this.selModel) {
@@ -210,6 +218,8 @@ export class SettingsPanel {
             promptStyle: this.selPromptStyle.value,
             customPrompt: this.inputCustomPrompt ? this.inputCustomPrompt.value.trim() : '',
             autoPaste: this.chkAutoPaste.checked,
+            launchOnStartup: this.chkLaunchOnStartup ? this.chkLaunchOnStartup.checked : true,
+            autoUpdate: this.chkAutoUpdate ? this.chkAutoUpdate.checked : true,
             model: this.selModel ? this.selModel.value : 'whisper-large-v3-turbo',
             theme: this.selTheme ? this.selTheme.value : 'dark',
             hotkey: this.pendingHotkey || (this.inputHotkey ? this.parseHotkeyFromDisplay(this.inputHotkey.value) : 'CommandOrControl+Shift+Space')

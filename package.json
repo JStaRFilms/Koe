@@ -1,6 +1,6 @@
 {
   "name": "koe",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "Koe — Voice Dictation Desktop App",
   "main": "src/main/main.js",
   "scripts": {
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JStaRFilms/Koe-------Voice-Dictation-Desktop-App.git"
+    "url": "git+https://github.com/JStaRFilms/Koe.git"
   },
   "keywords": [
     "voice dictation",
@@ -24,9 +24,9 @@
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/JStaRFilms/Koe-------Voice-Dictation-Desktop-App/issues"
+    "url": "https://github.com/JStaRFilms/Koe/issues"
   },
-  "homepage": "https://github.com/JStaRFilms/Koe-------Voice-Dictation-Desktop-App#readme",
+  "homepage": "https://github.com/JStaRFilms/Koe#readme",
   "devDependencies": {
     "concurrently": "^9.2.1",
     "electron": "^40.6.1",
@@ -37,6 +37,7 @@
   "dependencies": {
     "@ricky0123/vad-web": "^0.0.30",
     "electron-store": "^11.0.2",
+    "electron-updater": "^6.8.3",
     "onnxruntime-web": "^1.24.2",
     "uuid": "^13.0.0"
   }
