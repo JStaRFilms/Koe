@@ -1,4 +1,5 @@
-const { getSetting } = require('./settings');
+const { getSetting, getSettings } = require('./settings');
+const { DEFAULT_CUSTOM_PROMPT } = require('../../shared/constants');
 const rateLimiter = require('./rate-limiter');
 const logger = require('./logger');
 
@@ -89,18 +90,33 @@ async function validateApiKey(apiKey) {
     }
 }
 
+function resolveEnhancementPrompt(promptStyle = 'Clean', customPrompt = '') {
+    const trimmedPrompt = customPrompt.trim();
+    if (trimmedPrompt) {
+        return trimmedPrompt;
+    }
+
+    if (promptStyle === 'Professional' || promptStyle === 'Formal') {
+        return 'Refine this dictated text with a formal, professional tone. Keep the meaning intact, fix punctuation and grammar, and do not use em dashes. Return only the refined text.';
+    }
+
+    if (promptStyle === 'Casual') {
+        return 'Refine this dictated text so it stays casual and conversational. Keep the meaning intact, fix punctuation and grammar, and do not use em dashes. Return only the refined text.';
+    }
+
+    if (promptStyle === 'Concise' || promptStyle === 'Bullets') {
+        return 'Refine this dictated text into a tighter version with less filler while keeping the original meaning. Do not use em dashes. Return only the refined text.';
+    }
+
+    return DEFAULT_CUSTOM_PROMPT;
+}
+
 async function enhance(rawText, promptStyle = 'Clean') {
-    const apiKey = getSetting('groqApiKey');
+    const settings = getSettings();
+    const apiKey = settings.groqApiKey;
     if (!apiKey) return rawText;
 
-    let systemPrompt = "Clean this dictated text. Remove filler words, fix punctuation and grammar. Keep original meaning and tone. Return only the cleaned text.";
-    if (promptStyle === 'Formal') {
-        systemPrompt = "Rewrite this dictated text in a formal, professional tone. Fix punctuation and grammar. Return only the cleaned text.";
-    } else if (promptStyle === 'Casual') {
-        systemPrompt = "Clean this up, keep it casual and conversational. Fix punctuation and grammar. Return only the cleaned text.";
-    } else if (promptStyle === 'Bullets') {
-        systemPrompt = "Convert this dictated text into concise bullet points. Return only the bullet points.";
-    }
+    const systemPrompt = resolveEnhancementPrompt(promptStyle, settings.customPrompt || '');
 
     try {
         const response = await fetch(GROQ_CHAT_URL, {

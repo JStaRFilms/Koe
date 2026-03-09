@@ -10,9 +10,11 @@ export class SettingsPanel {
         this.selLanguage = document.getElementById('language');
         this.chkEnhance = document.getElementById('enhance-text');
         this.selPromptStyle = document.getElementById('prompt-style');
+        this.inputCustomPrompt = document.getElementById('custom-prompt');
         this.chkAutoPaste = document.getElementById('auto-paste');
         this.testResult = document.getElementById('test-key-result');
         this.promptStyleGroup = document.getElementById('prompt-style-group');
+        this.customPromptGroup = document.getElementById('custom-prompt-group');
 
         // New UI elements
         this.selModel = document.getElementById('transcription-model');
@@ -54,8 +56,7 @@ export class SettingsPanel {
         this.btnTestKey.addEventListener('click', () => this.testApiKey());
 
         this.chkEnhance.addEventListener('change', () => {
-            this.promptStyleGroup.style.opacity = this.chkEnhance.checked ? '1' : '0.5';
-            this.selPromptStyle.disabled = !this.chkEnhance.checked;
+            this.updateEnhancementControls();
         });
 
         // Theme change listener - apply immediately for preview
@@ -149,6 +150,23 @@ export class SettingsPanel {
         document.documentElement.setAttribute('data-theme', theme === 'system' ? 'dark' : theme);
     }
 
+    updateEnhancementControls() {
+        const isEnabled = this.chkEnhance.checked;
+
+        if (this.promptStyleGroup) {
+            this.promptStyleGroup.style.opacity = isEnabled ? '1' : '0.5';
+        }
+        if (this.customPromptGroup) {
+            this.customPromptGroup.style.opacity = isEnabled ? '1' : '0.5';
+        }
+        if (this.selPromptStyle) {
+            this.selPromptStyle.disabled = !isEnabled;
+        }
+        if (this.inputCustomPrompt) {
+            this.inputCustomPrompt.disabled = !isEnabled;
+        }
+    }
+
     async loadSettings() {
         if (!window.api) return;
         try {
@@ -158,6 +176,9 @@ export class SettingsPanel {
                 this.selLanguage.value = settings.language || 'auto';
                 this.chkEnhance.checked = settings.enhanceText !== false; // default true
                 this.selPromptStyle.value = settings.promptStyle || 'Clean';
+                if (this.inputCustomPrompt) {
+                    this.inputCustomPrompt.value = settings.customPrompt || '';
+                }
                 this.chkAutoPaste.checked = settings.autoPaste || false;
 
                 // Load new settings
@@ -172,7 +193,7 @@ export class SettingsPanel {
                 }
 
                 // Trigger change to update style group opacity
-                this.chkEnhance.dispatchEvent(new Event('change'));
+                this.updateEnhancementControls();
             }
         } catch (e) {
             console.error('Failed to load settings', e);
@@ -187,6 +208,7 @@ export class SettingsPanel {
             language: this.selLanguage.value,
             enhanceText: this.chkEnhance.checked,
             promptStyle: this.selPromptStyle.value,
+            customPrompt: this.inputCustomPrompt ? this.inputCustomPrompt.value.trim() : '',
             autoPaste: this.chkAutoPaste.checked,
             model: this.selModel ? this.selModel.value : 'whisper-large-v3-turbo',
             theme: this.selTheme ? this.selTheme.value : 'dark',

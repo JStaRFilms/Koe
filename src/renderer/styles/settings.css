@@ -94,7 +94,8 @@
 
 input[type="text"],
 input[type="password"],
-select {
+select,
+textarea {
     background: var(--koe-input-bg);
     border: 1px solid var(--koe-border-highlight);
     color: var(--koe-text);
@@ -108,9 +109,16 @@ select {
 
 input[type="text"]:focus,
 input[type="password"]:focus,
-select:focus {
+select:focus,
+textarea:focus {
     border-color: var(--koe-accent);
     box-shadow: 0 0 0 2px var(--koe-accent-glow);
+}
+
+textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.5;
 }
 
 select option {
