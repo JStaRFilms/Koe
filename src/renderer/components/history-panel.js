@@ -37,6 +37,7 @@ export class HistoryPanel {
 
     async loadHistory() {
         if (!window.api || !window.api.getHistory) return;
+
         try {
             const history = await window.api.getHistory();
             this.renderHistory(history);
@@ -45,10 +46,37 @@ export class HistoryPanel {
         }
     }
 
+    createTextSection(label, text, modifierClass = '') {
+        const section = document.createElement('div');
+        section.className = `history-text-section ${modifierClass}`.trim();
+
+        const labelEl = document.createElement('div');
+        labelEl.className = 'history-text-label';
+        labelEl.textContent = label;
+
+        const bodyEl = document.createElement('div');
+        bodyEl.className = 'history-text-body';
+        bodyEl.textContent = text;
+
+        section.appendChild(labelEl);
+        section.appendChild(bodyEl);
+        return section;
+    }
+
+    async copyText(text, successMessage, fallbackMessage = 'Copy failed') {
+        try {
+            await navigator.clipboard.writeText(text);
+            this.showToast(successMessage);
+        } catch (error) {
+            window.api?.log(`Failed to copy text: ${error.message}`);
+            this.showToast(fallbackMessage);
+        }
+    }
+
     renderHistory(historyEntries) {
         if (!this.content) return;
 
-        this.content.innerHTML = ''; // Clear current content
+        this.content.innerHTML = '';
 
         if (!historyEntries || historyEntries.length === 0) {
             const emptyDiv = document.createElement('div');
@@ -58,94 +86,115 @@ export class HistoryPanel {
             return;
         }
 
-        historyEntries.forEach(entry => {
+        historyEntries.forEach((entry) => {
+            const refinedText = entry.refinedText || entry.text || '';
+            const rawText = entry.rawText || entry.text || '';
+            const previewText = refinedText.length > 100 ? `${refinedText.substring(0, 100)}...` : refinedText;
+            const hasDistinctRawText = rawText && rawText !== refinedText;
+
             const entryEl = document.createElement('div');
             entryEl.className = 'history-entry';
 
-            const date = new Date(entry.timestamp);
-            const timeString = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            // Truncate text for preview
-            const previewText = entry.text.length > 80 ? entry.text.substring(0, 80) + '...' : entry.text;
-
-            // Create header
             const headerDiv = document.createElement('div');
             headerDiv.className = 'history-header';
 
             const timeSpan = document.createElement('span');
             timeSpan.className = 'history-time';
-            timeSpan.textContent = timeString;
+            timeSpan.textContent = new Date(entry.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const badgesDiv = document.createElement('div');
             badgesDiv.className = 'history-badges';
 
             const langBadge = document.createElement('span');
             langBadge.className = 'badge lang-badge';
-            langBadge.textContent = entry.language.toUpperCase();
+            langBadge.textContent = (entry.language || 'auto').toUpperCase();
             badgesDiv.appendChild(langBadge);
 
             if (entry.isLlamaEnhanced) {
                 const enhanceBadge = document.createElement('span');
                 enhanceBadge.className = 'badge enhance-badge';
-                enhanceBadge.textContent = 'Enhanced';
+                enhanceBadge.textContent = 'Refined';
                 badgesDiv.appendChild(enhanceBadge);
+            }
+
+            if (entry.source === 'retry') {
+                const retryBadge = document.createElement('span');
+                retryBadge.className = 'badge retry-badge';
+                retryBadge.textContent = 'Retry';
+                badgesDiv.appendChild(retryBadge);
             }
 
             headerDiv.appendChild(timeSpan);
             headerDiv.appendChild(badgesDiv);
 
-            // Create preview and full text elements (using textContent to prevent XSS)
             const previewDiv = document.createElement('div');
             previewDiv.className = 'history-text-preview';
             previewDiv.textContent = previewText;
 
             const fullTextDiv = document.createElement('div');
-            fullTextDiv.className = 'history-text-full hide';
-            fullTextDiv.textContent = entry.text;
+            fullTextDiv.className = 'history-text-full';
+            if (entry.isLlamaEnhanced || hasDistinctRawText) {
+                fullTextDiv.appendChild(this.createTextSection('Refined', refinedText));
+            }
+            fullTextDiv.appendChild(this.createTextSection('Raw', rawText, 'history-text-section-raw'));
 
-            // Create actions
             const actionsDiv = document.createElement('div');
             actionsDiv.className = 'history-actions';
 
             const btnExpand = document.createElement('button');
-            btnExpand.className = 'icon-btn btn-history-expand';
+            btnExpand.className = 'secondary-btn btn-history-expand';
             btnExpand.title = 'Expand';
-            btnExpand.textContent = 'v';
+            btnExpand.textContent = 'Expand';
 
-            const btnCopy = document.createElement('button');
-            btnCopy.className = 'icon-btn btn-history-copy';
-            btnCopy.title = 'Copy';
-            btnCopy.textContent = '📋';
+            const btnRetry = document.createElement('button');
+            btnRetry.className = 'secondary-btn btn-history-retry';
+            btnRetry.title = 'Retry raw transcript';
+            btnRetry.textContent = 'Retry';
+
+            const btnCopyRaw = document.createElement('button');
+            btnCopyRaw.className = 'secondary-btn btn-history-copy-raw';
+            btnCopyRaw.title = 'Copy raw transcript';
+            btnCopyRaw.textContent = 'Copy Raw';
 
             actionsDiv.appendChild(btnExpand);
-            actionsDiv.appendChild(btnCopy);
+            actionsDiv.appendChild(btnRetry);
+            actionsDiv.appendChild(btnCopyRaw);
 
-            // Assemble entry
             entryEl.appendChild(headerDiv);
             entryEl.appendChild(previewDiv);
             entryEl.appendChild(fullTextDiv);
             entryEl.appendChild(actionsDiv);
 
-            // Expand/Collapse logic
             btnExpand.addEventListener('click', () => {
-                if (fullTextDiv.classList.contains('hide')) {
-                    fullTextDiv.classList.remove('hide');
-                    previewDiv.classList.add('hide');
-                    btnExpand.textContent = '^';
-                } else {
-                    fullTextDiv.classList.add('hide');
-                    previewDiv.classList.remove('hide');
-                    btnExpand.textContent = 'v';
+                const isExpanded = entryEl.classList.toggle('is-expanded');
+                btnExpand.textContent = isExpanded ? 'Compact' : 'Expand';
+                btnExpand.title = isExpanded ? 'Compact' : 'Expand';
+            });
+
+            btnRetry.addEventListener('click', async () => {
+                if (!window.api?.retryHistoryEntry) {
+                    this.showToast('Retry is not available');
+                    return;
+                }
+
+                btnRetry.disabled = true;
+                btnRetry.textContent = 'Retrying...';
+
+                try {
+                    await window.api.retryHistoryEntry(entry.id);
+                    this.showToast('Retried raw transcript');
+                    await this.loadHistory();
+                } catch (error) {
+                    window.api.log(`Failed to retry history entry: ${error.message}`);
+                    this.showToast('Retry failed');
+                } finally {
+                    btnRetry.disabled = false;
+                    btnRetry.textContent = 'Retry';
                 }
             });
 
-            // Copy logic
-            btnCopy.addEventListener('click', () => {
-                navigator.clipboard.writeText(entry.text).then(() => {
-                    this.showToast('Copied to clipboard');
-                }).catch(err => {
-                    window.api.log('Failed to copy text: ' + err);
-                });
+            btnCopyRaw.addEventListener('click', () => {
+                this.copyText(rawText, 'Copied raw text');
             });
 
             this.content.appendChild(entryEl);
@@ -153,33 +202,37 @@ export class HistoryPanel {
     }
 
     async clearHistory() {
-        if (confirm("Are you sure you want to clear your transcription history? This cannot be undone.")) {
-            try {
-                if (window.api && window.api.clearHistory) {
-                    await window.api.clearHistory();
-                    this.renderHistory([]);
-                }
-            } catch (err) {
-                window.api.log(`Failed to clear history: ${err.message}`);
+        if (!confirm('Are you sure you want to clear your transcription history? This cannot be undone.')) {
+            return;
+        }
+
+        try {
+            if (window.api?.clearHistory) {
+                await window.api.clearHistory();
+                this.renderHistory([]);
             }
+        } catch (error) {
+            window.api.log(`Failed to clear history: ${error.message}`);
         }
     }
 
     async copyAllToClipboard() {
-        if (!window.api || !window.api.getHistory) return;
+        if (!window.api?.getHistory) return;
+
         try {
             const history = await window.api.getHistory();
             if (history && history.length > 0) {
-                const allText = history.map(h => h.text).join('\n\n');
-                navigator.clipboard.writeText(allText).then(() => {
-                    this.showToast('Copied all to clipboard');
-                });
+                const allText = history.map((entry) => entry.refinedText || entry.text || '').join('\n\n');
+                await navigator.clipboard.writeText(allText);
+                this.showToast('Copied all to clipboard');
             }
-        } catch (e) { }
+        } catch (error) {
+            window.api.log(`Failed to copy history: ${error.message}`);
+        }
     }
 
     async exportHistory() {
-        if (!window.api || !window.api.exportHistory) {
+        if (!window.api?.exportHistory) {
             this.showToast('Export not available');
             return;
         }
@@ -191,9 +244,8 @@ export class HistoryPanel {
             } else if (result.error) {
                 this.showToast(`Export failed: ${result.error}`);
             }
-            // Cancelled - don't show anything
-        } catch (e) {
-            window.api.log(`Failed to export history: ${e.message}`);
+        } catch (error) {
+            window.api.log(`Failed to export history: ${error.message}`);
             this.showToast('Export failed');
         }
     }

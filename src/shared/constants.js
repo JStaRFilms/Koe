@@ -20,6 +20,8 @@ const CHANNELS = {
     OPEN_SETTINGS: 'window:open-settings',
     GET_HISTORY: 'history:get',
     CLEAR_HISTORY: 'history:clear',
+    RETRY_HISTORY_ENTRY: 'history:retry-entry',
+    RETRY_LAST_TRANSCRIPT: 'history:retry-last',
 
     // Settings Window
     OPEN_SETTINGS_WINDOW: 'window:open-settings-window',
@@ -29,7 +31,7 @@ const CHANNELS = {
     OPEN_USAGE_TAB: 'tab:open-usage'
 };
 
-const DEFAULT_CUSTOM_PROMPT = "You are a refinement layer, not the author. Refine the user's text using the text and context so the message lands as clearly and smoothly as possible while keeping the original tone. Do not rewrite it from scratch. Do not turn it into corporate-speak. Keep the voice, intent, and phrasing style intact. Do not use em dashes. If the text is technical or code-related, keep the terminology precise. Make the smallest changes needed. Return only the refined text.";
+const DEFAULT_CUSTOM_PROMPT = "Refine the user's text by looking at the text and context, and convey the same message in the smoothest, clearest way possible while keeping the original tone. Do not rewrite it from scratch. Do not turn it into corporate-speak. Never use em dashes anywhere in the output. If you would normally use an em dash, use a comma, period, colon, or plain hyphen instead. Remove filler words only when they are clearly speech filler. Keep them if the user is actually talking about the words themselves or using them in a technical context. If the text is technical or code-related, keep the terminology precise. Make the smallest changes needed. Return only the refined text.";
 
 const DEFAULT_SETTINGS = {
     groqApiKey: '',

@@ -5,6 +5,7 @@ const { transcribe, enhance, validateApiKey } = require('./services/groq');
 const rateLimiter = require('./services/rate-limiter');
 const { autoPaste } = require('./services/clipboard');
 const historyService = require('./services/history');
+const { retryAndPasteTranscript } = require('./services/retry-transcript');
 const { closeSettingsWindow } = require('./settings-window');
 const { updateHotkey } = require('./shortcuts');
 const { applyLaunchOnStartupPreference } = require('./services/startup');
@@ -26,12 +27,116 @@ function sendTranscriptionStatus(status) {
     mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, status);
 }
 
+async function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function hideSettingsBeforePaste() {
+    closeSettingsWindow();
+    await wait(200);
+}
+
+async function processAudioChunk(audioData) {
+    const { buffer, audioSeconds, sessionId } = audioData;
+    const settings = getSettings();
+    let rawText = '';
+    let transcribingStageShown = false;
+    const uploadStageStartedAt = Date.now();
+    let transcribingStageStartedAt = 0;
+
+    logger.info(`[Pipeline] Received audio chunk for session ${sessionId}: ${buffer?.byteLength || 'N/A'} bytes, ${audioSeconds?.toFixed(1)}s`);
+
+    sendTranscriptionStatus({
+        sessionId,
+        stage: 'uploading',
+        label: 'Uploading',
+        progress: 16
+    });
+
+    const showTranscribingStage = () => {
+        if (transcribingStageShown) {
+            return;
+        }
+
+        transcribingStageShown = true;
+        transcribingStageStartedAt = Date.now();
+        sendTranscriptionStatus({
+            sessionId,
+            stage: 'transcribing',
+            label: 'Transcribing',
+            progress: 58
+        });
+    };
+
+    const transcribingTimer = setTimeout(showTranscribingStage, 700);
+
+    try {
+        logger.info('[Pipeline] Calling Groq transcribe...');
+        rawText = await transcribe(buffer, audioSeconds, settings.language || 'auto');
+        logger.info(`[Pipeline] Raw transcription result: "${rawText?.substring(0, 80) || 'null'}"`);
+    } finally {
+        clearTimeout(transcribingTimer);
+    }
+
+    if (!rawText) {
+        sendTranscriptionStatus({
+            sessionId,
+            stage: 'empty',
+            label: 'No speech detected',
+            progress: 0
+        });
+        return null;
+    }
+
+    if (!transcribingStageShown) {
+        const uploadStageElapsed = Date.now() - uploadStageStartedAt;
+        if (uploadStageElapsed < 400) {
+            await wait(400 - uploadStageElapsed);
+        }
+
+        showTranscribingStage();
+    }
+
+    const transcribingStageElapsed = Date.now() - transcribingStageStartedAt;
+    if (transcribingStageElapsed < 300) {
+        await wait(300 - transcribingStageElapsed);
+    }
+
+    let refinedText = rawText;
+    if (settings.enhanceText) {
+        sendTranscriptionStatus({
+            sessionId,
+            stage: 'refining',
+            label: 'Refining',
+            progress: 86
+        });
+
+        logger.info('[Pipeline] Enhancing text...');
+        refinedText = await enhance(rawText, settings.promptStyle || 'Clean');
+        logger.info(`[Pipeline] Refined result: "${refinedText?.substring(0, 80) || 'null'}"`);
+    }
+
+    await wait(200);
+
+    if (settings.autoPaste !== false) {
+        autoPaste(refinedText);
+    }
+
+    historyService.addHistoryEntry({
+        rawText,
+        refinedText,
+        language: settings.language || 'auto',
+        isLlamaEnhanced: settings.enhanceText && !!refinedText,
+        source: 'transcription'
+    });
+
+    return { rawText, refinedText, sessionId };
+}
+
 function setupIpcHandlers(mainWindow) {
     mainWindowRef = mainWindow;
 
-    ipcMain.handle(CHANNELS.GET_SETTINGS, async () => {
-        return getSettings();
-    });
+    ipcMain.handle(CHANNELS.GET_SETTINGS, async () => getSettings());
 
     ipcMain.handle(CHANNELS.SAVE_SETTINGS, async (event, newSettings) => {
         const oldSettings = getSettings();
@@ -62,20 +167,21 @@ function setupIpcHandlers(mainWindow) {
         return true;
     });
 
-    ipcMain.handle(CHANNELS.TEST_GROQ_KEY, async (event, apiKey) => {
-        return validateApiKey(apiKey);
+    ipcMain.handle(CHANNELS.TEST_GROQ_KEY, async (event, apiKey) => validateApiKey(apiKey));
+    ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => rateLimiter.getUsageStats());
+    ipcMain.handle(CHANNELS.GET_HISTORY, async () => historyService.getHistory());
+    ipcMain.handle(CHANNELS.CLEAR_HISTORY, async () => historyService.clearHistory());
+
+    ipcMain.handle(CHANNELS.RETRY_HISTORY_ENTRY, async (event, entryId) => {
+        const result = await retryAndPasteTranscript(entryId, {
+            beforePaste: hideSettingsBeforePaste
+        });
+        return result;
     });
 
-    ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => {
-        return rateLimiter.getUsageStats();
-    });
-
-    ipcMain.handle(CHANNELS.GET_HISTORY, async () => {
-        return historyService.getHistory();
-    });
-
-    ipcMain.handle(CHANNELS.CLEAR_HISTORY, async () => {
-        return historyService.clearHistory();
+    ipcMain.handle(CHANNELS.RETRY_LAST_TRANSCRIPT, async () => {
+        const result = await retryAndPasteTranscript(null);
+        return result;
     });
 
     ipcMain.on(CHANNELS.LOG, (event, message) => {
@@ -105,63 +211,20 @@ function setupIpcHandlers(mainWindow) {
     });
 
     ipcMain.on(CHANNELS.AUDIO_CHUNK, async (event, audioData) => {
-        const { buffer, audioSeconds, sessionId } = audioData;
-
         try {
-            const settings = getSettings();
-            logger.info(`[Pipeline] Received audio chunk for session ${sessionId}: ${buffer?.byteLength || 'N/A'} bytes, ${audioSeconds?.toFixed(1)}s`);
-
-            sendTranscriptionStatus({
-                sessionId,
-                stage: 'transcribing',
-                label: 'Transcribing',
-                progress: 18
-            });
-
-            logger.info('[Pipeline] Calling Groq transcribe...');
-            let text = await transcribe(buffer, audioSeconds, settings.language || 'auto');
-            logger.info(`[Pipeline] Transcription result: "${text?.substring(0, 80) || 'null'}"`);
-
-            if (text && settings.enhanceText) {
-                sendTranscriptionStatus({
-                    sessionId,
-                    stage: 'enhancing',
-                    label: 'Refining',
-                    progress: 72
-                });
-
-                logger.info('[Pipeline] Enhancing text...');
-                text = await enhance(text, settings.promptStyle || 'Clean');
-                logger.info(`[Pipeline] Enhanced: "${text?.substring(0, 80) || 'null'}"`);
-            }
-
-            if (text) {
-                sendTranscriptionStatus({
-                    sessionId,
-                    stage: 'pasting',
-                    label: 'Pasting',
-                    progress: 92
-                });
-
-                await new Promise(r => setTimeout(r, 200));
-                logger.info('[Pipeline] Firing autoPaste...');
-                autoPaste(text);
-
-                historyService.addHistoryEntry(text, settings.language || 'auto', settings.enhanceText && !!text);
-            } else {
-                sendTranscriptionStatus({
-                    sessionId,
-                    stage: 'empty',
-                    label: 'No speech detected',
-                    progress: 0
-                });
-            }
+            const result = await processAudioChunk(audioData);
 
             if (mainWindowRef && !mainWindowRef.isDestroyed()) {
                 mainWindowRef.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
-                if (text) {
-                    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_RESULT, text);
-                    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, { text, sessionId });
+            }
+
+            if (result?.refinedText) {
+                if (mainWindowRef && !mainWindowRef.isDestroyed()) {
+                    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_RESULT, result.refinedText);
+                    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, {
+                        text: result.refinedText,
+                        sessionId: result.sessionId
+                    });
                 }
             }
 
@@ -169,7 +232,7 @@ function setupIpcHandlers(mainWindow) {
         } catch (error) {
             logger.error('[Pipeline] Transcription error:', error);
             sendTranscriptionStatus({
-                sessionId,
+                sessionId: audioData?.sessionId,
                 stage: 'error',
                 error: error.message
             });
@@ -207,14 +270,13 @@ function setupIpcHandlers(mainWindow) {
 
             let content = `Koe Transcriptions - ${dateHeader}\n${separator}\n\n`;
 
-            history.forEach(entry => {
+            history.forEach((entry) => {
                 const entryDate = new Date(entry.timestamp);
                 const timeString = entryDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                content += `${timeString} - ${entry.text}\n\n`;
+                content += `${timeString} - ${(entry.refinedText || entry.text || '').trim()}\n\n`;
             });
 
             fs.writeFileSync(filePath, content, 'utf8');
-
             return { success: true, filePath };
         } catch (error) {
             logger.error('[Export] Error exporting history:', error);
@@ -234,13 +296,8 @@ function setupIpcHandlers(mainWindow) {
         }
     });
 
-    ipcMain.handle('app:is-packaged', () => {
-        return app.isPackaged;
-    });
-
-    ipcMain.handle('app:resources-path', () => {
-        return process.resourcesPath;
-    });
+    ipcMain.handle('app:is-packaged', () => app.isPackaged);
+    ipcMain.handle('app:resources-path', () => process.resourcesPath);
 }
 
 module.exports = {

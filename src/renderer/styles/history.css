@@ -112,6 +112,11 @@
     color: var(--koe-accent);
 }
 
+.badge.retry-badge {
+    background: rgba(255, 184, 77, 0.16);
+    color: #ffcf70;
+}
+
 .history-text-preview {
     font-size: 12px;
     line-height: 1.4;
@@ -125,16 +130,59 @@
     overflow: hidden;
 }
 
+.history-entry.is-expanded .history-text-preview {
+    display: none;
+}
+
 .history-text-full {
+    margin-bottom: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.history-entry:not(.is-expanded) .history-text-full {
+    display: none;
+}
+
+.history-text-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.history-text-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: var(--koe-text-muted);
+}
+
+.history-text-body {
     font-size: 12px;
-    line-height: 1.4;
+    line-height: 1.5;
     color: var(--koe-text);
     white-space: pre-wrap;
     word-break: break-word;
-    margin-bottom: 8px;
-    /* space before actions */
     user-select: text;
-    /* Allow selection */
+}
+
+.history-text-section-raw .history-text-body {
+    color: var(--koe-text-muted);
+}
+
+.btn-history-retry {
+    padding: 6px 10px;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.btn-history-expand,
+.btn-history-copy-raw {
+    padding: 6px 10px;
+    font-size: 11px;
+    line-height: 1;
 }
 
 .history-actions {

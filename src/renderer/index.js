@@ -103,7 +103,7 @@ async function init() {
             }
 
             isRecording = false;
-            pill.setProcessingStatus('Transcribing', 12, recordingPayload.sessionId);
+            pill.setProcessingStatus('Uploading', 12, recordingPayload.sessionId);
 
             try {
                 const didCaptureAudio = stopListening(recordingPayload.sessionId);
@@ -134,12 +134,12 @@ async function init() {
                 return;
             }
 
-            if (status.stage === 'transcribing' || status.stage === 'processing') {
+            if (status.stage === 'uploading') {
+                pill.setProcessingStatus(status.label || 'Uploading', status.progress ?? 16, status.sessionId);
+            } else if (status.stage === 'transcribing' || status.stage === 'processing') {
                 pill.setProcessingStatus(status.label || 'Transcribing', status.progress ?? 20, status.sessionId);
-            } else if (status.stage === 'enhancing') {
+            } else if (status.stage === 'refining' || status.stage === 'enhancing') {
                 pill.setProcessingStatus(status.label || 'Refining', status.progress ?? 72, status.sessionId);
-            } else if (status.stage === 'pasting') {
-                pill.setProcessingStatus(status.label || 'Pasting', status.progress ?? 92, status.sessionId);
             } else if (status.stage === 'empty') {
                 pill.hideWithMessage(status.label || 'No speech detected', status.sessionId);
             } else if (status.stage === 'error' || status.error) {

@@ -31,6 +31,8 @@ contextBridge.exposeInMainWorld('api', {
     // History
     getHistory: () => ipcRenderer.invoke(CHANNELS.GET_HISTORY),
     clearHistory: () => ipcRenderer.invoke(CHANNELS.CLEAR_HISTORY),
+    retryHistoryEntry: (entryId) => ipcRenderer.invoke(CHANNELS.RETRY_HISTORY_ENTRY, entryId),
+    retryLastTranscript: () => ipcRenderer.invoke(CHANNELS.RETRY_LAST_TRANSCRIPT),
     exportHistory: (format) => ipcRenderer.invoke('history:export', format),
 
     // Logs

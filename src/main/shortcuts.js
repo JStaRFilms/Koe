@@ -3,8 +3,16 @@ const { CHANNELS, DEFAULT_SETTINGS } = require('../shared/constants');
 const { getSetting } = require('./services/settings');
 const { setRecordingState } = require('./tray');
 const { toggleRecording } = require('./services/recording-state');
+const { retryAndPasteTranscript } = require('./services/retry-transcript');
+const { closeSettingsWindow } = require('./settings-window');
+
+const RETRY_LAST_HOTKEY = 'CommandOrControl+Shift+,';
 
 let currentHotkey = null;
+
+function wait(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 function handleRecordingToggle(mainWindow) {
     const recordingState = toggleRecording();
@@ -20,6 +28,26 @@ function handleRecordingToggle(mainWindow) {
     }
 }
 
+async function handleRetryLastTranscript() {
+    closeSettingsWindow();
+    await wait(200);
+    await retryAndPasteTranscript(null);
+}
+
+function registerRetryShortcut() {
+    const registered = globalShortcut.register(RETRY_LAST_HOTKEY, () => {
+        handleRetryLastTranscript().catch((error) => {
+            console.error(`[Retry] Failed to retry last transcript: ${error.message}`);
+        });
+    });
+
+    if (!registered) {
+        console.warn(`Retry shortcut ${RETRY_LAST_HOTKEY} failed to register.`);
+    } else {
+        console.log(`Retry shortcut ${RETRY_LAST_HOTKEY} registered successfully.`);
+    }
+}
+
 function registerShortcuts(mainWindow) {
     const hotkey = getSetting('hotkey') || DEFAULT_SETTINGS.hotkey;
     currentHotkey = hotkey;
@@ -32,6 +60,8 @@ function registerShortcuts(mainWindow) {
         console.error(`Global shortcut ${hotkey} failed to register.`);
         return false;
     }
+
+    registerRetryShortcut();
 
     console.log(`Global shortcut ${hotkey} registered successfully.`);
     return true;
@@ -51,6 +81,7 @@ function updateHotkey(mainWindow, newHotkey) {
 
     if (registered) {
         currentHotkey = newHotkey;
+        registerRetryShortcut();
         console.log(`Global shortcut updated to ${newHotkey}.`);
         return true;
     }
