@@ -75,7 +75,7 @@ jobs:
         include:
           - label: Windows
             os: windows-latest
-            build_command: pnpm build
+            build_command: pnpm build:ci
             artifact_name: koe-windows
             artifact_paths: |
               release/*.exe
@@ -83,7 +83,7 @@ jobs:
               release/latest*.yml
           - label: macOS
             os: macos-latest
-            build_command: pnpm build:mac
+            build_command: pnpm build:mac:ci
             artifact_name: koe-macos
             artifact_paths: |
               release/*.dmg

@@ -1,12 +1,14 @@
 {
   "name": "koe",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Koe — Voice Dictation Desktop App",
   "main": "src/main/main.js",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
     "build": "vite build && electron-builder",
-    "build:mac": "vite build && electron-builder --mac dmg zip --universal"
+    "build:mac": "vite build && electron-builder --mac dmg zip --universal",
+    "build:ci": "vite build && electron-builder --publish never",
+    "build:mac:ci": "vite build && electron-builder --mac dmg zip --universal --publish never"
   },
   "repository": {
     "type": "git",

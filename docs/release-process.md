@@ -26,6 +26,8 @@ It does this:
 6. Uploads build artifacts to the workflow run.
 7. Uploads release artifacts to the matching GitHub Release.
 
+In CI, the workflow uses non-publishing build scripts so `electron-builder` only creates artifacts and does not try to publish on its own.
+
 ## What Gets Uploaded
 
 Windows:
