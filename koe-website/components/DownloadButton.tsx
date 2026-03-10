@@ -45,9 +45,22 @@ function detectClientPlatform(): ClientPlatform {
 
 function getPreferredAsset(assets: GitHubAsset[], platform: ClientPlatform) {
     if (platform === "mac") {
-        return assets.find((asset) =>
-            asset.name.endsWith(".dmg") || asset.name.endsWith(".pkg") || asset.name.endsWith(".zip")
-        );
+        const macAssetPreferences = [
+            (asset: GitHubAsset) => asset.name.includes("universal") && asset.name.endsWith(".dmg"),
+            (asset: GitHubAsset) => asset.name.includes("universal") && asset.name.endsWith(".zip"),
+            (asset: GitHubAsset) => asset.name.endsWith(".dmg"),
+            (asset: GitHubAsset) => asset.name.endsWith(".pkg"),
+            (asset: GitHubAsset) => asset.name.endsWith(".zip"),
+        ];
+
+        for (const matches of macAssetPreferences) {
+            const asset = assets.find(matches);
+            if (asset) {
+                return asset;
+            }
+        }
+
+        return undefined;
     }
 
     return assets.find((asset) =>
