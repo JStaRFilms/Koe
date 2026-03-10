@@ -109,7 +109,7 @@ export default function DownloadPage() {
                             EXECUTE DOWNLOAD
                         </h1>
                         <p className="text-xl text-muted max-w-2xl mx-auto normal-case">
-                            Get Koe for your desktop. The main button adapts to the device you are on.
+                            Get Koe for your desktop. Free forever. No subscriptions.
                         </p>
                     </div>
 
@@ -121,8 +121,8 @@ export default function DownloadPage() {
                                     <Monitor className="w-12 h-12 text-amber" />
                                 </div>
                                 <div className="flex-1 text-center md:text-left">
-                                    <h2 className="font-deco text-2xl md:text-3xl text-bone mb-2">AUTO-DETECTED DOWNLOAD</h2>
-                                    <p className="text-muted mb-4">Mac visitors see Mac first. Windows visitors see Windows first. Phones and tablets get desktop download options.</p>
+                                    <h2 className="font-deco text-2xl md:text-3xl text-bone mb-2">LATEST DOWNLOAD</h2>
+                                    <p className="text-muted mb-4">Grab the latest build.</p>
                                     <div className="flex flex-col sm:flex-row gap-4 items-center">
                                         <DownloadButton className="w-full sm:w-auto" />
                                     </div>
