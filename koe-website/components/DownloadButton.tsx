@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 
+import { detectClientPlatform, getDownloadCtaLabel, getPreferredAsset } from "@/lib/download-platform";
+
 interface DownloadButtonProps {
     className?: string;
     showVersion?: boolean;
@@ -13,63 +15,6 @@ interface ReleaseInfo {
     downloadUrl: string;
     publishedAt: string;
     buttonLabel: string;
-}
-
-type ClientPlatform = "mac" | "windows" | "other";
-
-interface GitHubAsset {
-    name: string;
-    browser_download_url: string;
-}
-
-function detectClientPlatform(): ClientPlatform {
-    if (typeof navigator === "undefined") {
-        return "windows";
-    }
-
-    const userAgentDataPlatform = (navigator as Navigator & {
-        userAgentData?: { platform?: string };
-    }).userAgentData?.platform;
-    const platform = userAgentDataPlatform || navigator.platform || navigator.userAgent;
-
-    if (/mac/i.test(platform)) {
-        return "mac";
-    }
-
-    if (/win/i.test(platform)) {
-        return "windows";
-    }
-
-    return "other";
-}
-
-function getPreferredAsset(assets: GitHubAsset[], platform: ClientPlatform) {
-    if (platform === "mac") {
-        const macAssetPreferences = [
-            (asset: GitHubAsset) => asset.name.includes("universal") && asset.name.endsWith(".dmg"),
-            (asset: GitHubAsset) => asset.name.includes("universal") && asset.name.endsWith(".zip"),
-            (asset: GitHubAsset) => asset.name.endsWith(".dmg"),
-            (asset: GitHubAsset) => asset.name.endsWith(".pkg"),
-            (asset: GitHubAsset) => asset.name.endsWith(".zip"),
-        ];
-
-        for (const matches of macAssetPreferences) {
-            const asset = assets.find(matches);
-            if (asset) {
-                return asset;
-            }
-        }
-
-        return undefined;
-    }
-
-    return assets.find((asset) =>
-        asset.name.endsWith(".exe") || asset.name.endsWith(".msi")
-    );
-}
-
-function getButtonLabel(platform: ClientPlatform) {
-    return platform === "mac" ? "DOWNLOAD FOR YOUR MAC" : "DOWNLOAD FOR WINDOWS";
 }
 
 export function DownloadButton({ className = "", showVersion = true }: DownloadButtonProps) {
@@ -93,12 +38,15 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
 
                 const preferredAsset = getPreferredAsset(data.assets, platform);
                 const windowsInstaller = getPreferredAsset(data.assets, "windows");
+                const fallbackUrl = platform === "windows"
+                    ? windowsInstaller?.browser_download_url || data.html_url
+                    : data.html_url;
 
                 setRelease({
                     version: data.tag_name,
-                    downloadUrl: preferredAsset?.browser_download_url || windowsInstaller?.browser_download_url || data.html_url,
+                    downloadUrl: preferredAsset?.browser_download_url || fallbackUrl,
                     publishedAt: data.published_at,
-                    buttonLabel: getButtonLabel(platform),
+                    buttonLabel: getDownloadCtaLabel(platform),
                 });
             } catch (err) {
                 console.error("Error fetching release:", err);

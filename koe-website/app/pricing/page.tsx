@@ -1,8 +1,8 @@
 import { StatusBar } from "@/components/StatusBar";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/sections/Footer";
+import { ContextAwareDownloadLink } from "@/components/ContextAwareDownloadLink";
 import { Check } from "lucide-react";
-import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -60,12 +60,9 @@ export default function PricingPage() {
                                 ))}
                             </ul>
 
-                            <Link
-                                href="/download/"
-                                className="block w-full px-8 py-4 bg-amber text-void font-bold text-lg uppercase tracking-wider hover:bg-bone transition-colors border-2 border-amber"
-                            >
-                                Download Now
-                            </Link>
+                            <ContextAwareDownloadLink
+                                className="block w-full px-8 py-4 bg-amber text-void font-bold text-lg uppercase tracking-wider hover:bg-bone transition-colors border-2 border-amber text-center"
+                            />
                         </div>
                     </div>
 

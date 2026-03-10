@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X, Download, Github, Star } from "lucide-react";
 
+import { ContextAwareDownloadLink } from "./ContextAwareDownloadLink";
+
 const GITHUB_REPO_URL = "https://github.com/JStaRFilms/Koe";
 
 const navLinks = [
@@ -97,12 +99,10 @@ export function Header() {
               </span>
             )}
           </a>
-          <Link
-            href="/download/"
+          <ContextAwareDownloadLink
             className="px-6 py-6 bg-amber text-void font-bold text-sm uppercase tracking-wider hover:bg-bone transition-colors"
-          >
-            <span>DOWNLOAD</span>
-          </Link>
+            labelMode="compact"
+          />
         </div>
       </div>
 
@@ -144,17 +144,15 @@ export function Header() {
               </span>
             )}
           </a>
-          <Link
-            href="/download/"
+          <ContextAwareDownloadLink
             className={`flex items-center justify-center gap-2 px-6 py-4 bg-amber text-void font-bold text-sm uppercase tracking-wider hover:bg-bone transition-all duration-300 ease-out ${
               isOpen ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-2"
             }`}
+            labelMode="compact"
+            prefix={<Download className="w-4 h-4" />}
             style={{ transitionDelay: isOpen ? `${(navLinks.length + 1) * 40}ms` : "0ms" }}
             onClick={() => setIsOpen(false)}
-          >
-            <Download className="w-4 h-4" />
-            DOWNLOAD
-          </Link>
+          />
         </nav>
       </div>
     </header>

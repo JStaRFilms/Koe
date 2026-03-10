@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Terminal } from "lucide-react";
+
+import { ContextAwareDownloadLink } from "@/components/ContextAwareDownloadLink";
 
 export function Hero() {
     const [levels, setLevels] = useState([22, 78, 56, 42, 28]);
@@ -55,10 +56,10 @@ export function Hero() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center w-full">
-                    <Link href="/download/" className="btn-brutal w-full sm:w-auto justify-center sm:justify-start">
-                        <Terminal className="w-6 h-6" />
-                        EXECUTE DOWNLOAD
-                    </Link>
+                    <ContextAwareDownloadLink
+                        className="btn-brutal w-full sm:w-auto justify-center sm:justify-start"
+                        prefix={<Terminal className="w-6 h-6" />}
+                    />
                     <div className="text-xs text-muted flex flex-col group">
                         <span>[INFO] ADAPTS TO YOUR DEVICE</span>
                         <span className="group-hover:text-amber transition-colors">[INFO] REQUIRES GROQ API KEY</span>

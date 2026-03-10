@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { Menu, X, Download, Github, Star, Terminal } from "lucide-react";
 
 import { ThemeToggle } from "./ThemeToggle";
+import { ContextAwareDownloadLink } from "./ContextAwareDownloadLink";
 
 const GITHUB_REPO_URL = "https://github.com/JStaRFilms/Koe";
 
@@ -160,14 +161,12 @@ export function Navbar() {
                                         </span>
                                     )}
                                 </a>
-                                <Link
-                                    href="/download/"
+                                <ContextAwareDownloadLink
                                     className="flex items-center justify-center gap-2 px-6 py-4 bg-amber text-void font-bold text-sm uppercase tracking-wider hover:bg-bone transition-colors"
+                                    labelMode="compact"
+                                    prefix={<Download className="w-4 h-4" />}
                                     onClick={() => setIsOpen(false)}
-                                >
-                                    <Download className="w-4 h-4" />
-                                    DOWNLOAD
-                                </Link>
+                                />
                             </nav>
                         </div>
                     )}

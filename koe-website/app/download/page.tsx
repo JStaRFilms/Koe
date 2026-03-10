@@ -122,7 +122,7 @@ export default function DownloadPage() {
                                 </div>
                                 <div className="flex-1 text-center md:text-left">
                                     <h2 className="font-deco text-2xl md:text-3xl text-bone mb-2">AUTO-DETECTED DOWNLOAD</h2>
-                                    <p className="text-muted mb-4">Mac visitors see Mac first. Everyone else sees Windows first.</p>
+                                    <p className="text-muted mb-4">Mac visitors see Mac first. Windows visitors see Windows first. Phones and tablets get desktop download options.</p>
                                     <div className="flex flex-col sm:flex-row gap-4 items-center">
                                         <DownloadButton className="w-full sm:w-auto" />
                                     </div>
