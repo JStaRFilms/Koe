@@ -114,7 +114,7 @@ export default function DownloadPage() {
                     </div>
 
                     <div className="max-w-4xl mx-auto relative z-10">
-                        <div className="border-raw p-8 md:p-12 mb-8 bg-zinc/5 relative overflow-hidden">
+                        <div className="border-raw p-8 md:p-12 mb-8 bg-zinc/5 relative overflow-visible">
                             <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
                             <div className="flex flex-col md:flex-row items-center gap-8 relative z-10">
                                 <div className="flex items-center justify-center w-24 h-24 border-raw bg-void relative z-10">

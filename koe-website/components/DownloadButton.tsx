@@ -121,7 +121,7 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
 
     return (
         <div className="flex flex-col items-center gap-2">
-            <div ref={menuRef} className={`relative w-full ${className}`}>
+            <div ref={menuRef} className={`relative z-20 w-full ${className}`}>
                 <div className="flex w-full items-stretch gap-2">
                     <a
                         href={release.downloadUrl}
@@ -143,7 +143,7 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
                 </div>
 
                 {isMenuOpen && (
-                    <div className="absolute right-0 top-full z-20 mt-2 min-w-[260px] border-raw bg-void shadow-[8px_8px_0_0_#D83B1D]">
+                    <div className="absolute right-0 top-full z-30 mt-2 min-w-[260px] border-raw bg-void shadow-[8px_8px_0_0_#D83B1D]">
                         <div className="border-raw-b px-4 py-3 text-left">
                             <p className="text-xs font-bold text-amber">OTHER BUILDS</p>
                         </div>
