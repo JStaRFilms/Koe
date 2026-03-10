@@ -7,7 +7,7 @@ import type { Metadata } from "next";
 
 export const metadata: Metadata = {
     title: "Download",
-    description: "Download Koe for Windows. Free voice dictation app with AI-powered transcription.",
+    description: "Download Koe for your desktop. Free voice dictation app with AI-powered transcription.",
     alternates: {
         canonical: "/download/",
     },
@@ -109,7 +109,7 @@ export default function DownloadPage() {
                             EXECUTE DOWNLOAD
                         </h1>
                         <p className="text-xl text-muted max-w-2xl mx-auto normal-case">
-                            Get Koe for Windows. Free forever. No subscriptions.
+                            Get Koe for your desktop. The main button adapts to the device you are on.
                         </p>
                     </div>
 
@@ -121,8 +121,8 @@ export default function DownloadPage() {
                                     <Monitor className="w-12 h-12 text-amber" />
                                 </div>
                                 <div className="flex-1 text-center md:text-left">
-                                    <h2 className="font-deco text-2xl md:text-3xl text-bone mb-2">WINDOWS</h2>
-                                    <p className="text-muted mb-4">Windows 10/11 (64-bit)</p>
+                                    <h2 className="font-deco text-2xl md:text-3xl text-bone mb-2">AUTO-DETECTED DOWNLOAD</h2>
+                                    <p className="text-muted mb-4">Mac visitors see Mac first. Everyone else sees Windows first.</p>
                                     <div className="flex flex-col sm:flex-row gap-4 items-center">
                                         <DownloadButton className="w-full sm:w-auto" />
                                     </div>
@@ -135,7 +135,7 @@ export default function DownloadPage() {
                             <div className="grid md:grid-cols-3 gap-4 relative z-10">
                                 <div className="border-raw p-4 bg-void glitch-hover group transition-colors">
                                     <p className="text-amber font-bold text-xs mb-2 group-hover:text-void">START HERE</p>
-                                    <p className="text-bone normal-case text-sm group-hover:text-void/80">Install the `.exe`, open tray settings, paste key.</p>
+                                    <p className="text-bone normal-case text-sm group-hover:text-void/80">Install the suggested app package, open Koe settings, paste your key.</p>
                                 </div>
                                 <div className="border-raw p-4 bg-void glitch-hover group transition-colors">
                                     <p className="text-amber font-bold text-xs mb-2 group-hover:text-void">FIRST USE</p>

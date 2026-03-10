@@ -5,11 +5,11 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 export const metadata: Metadata = {
   metadataBase: new URL("https://koe.jstarstudios.com"),
   title: {
-    default: "Koe - Free Voice Dictation for Windows",
+    default: "Koe - Free Voice Dictation for Desktop",
     template: "%s | Koe",
   },
-  description: "Lightning-fast, free voice dictation app for Windows. Powered by AI, completely open source. No subscriptions, just your voice.",
-  keywords: ["voice dictation", "speech to text", "Windows", "free", "open source", "Whisper", "Groq"],
+  description: "Lightning-fast, free voice dictation for desktop. Powered by AI, completely open source. No subscriptions, just your voice.",
+  keywords: ["voice dictation", "speech to text", "desktop", "Windows", "macOS", "free", "open source", "Whisper", "Groq"],
   authors: [{ name: "Koe" }],
   creator: "Koe",
   publisher: "Koe",
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Koe - Free Voice Dictation for Windows",
-    description: "Lightning-fast, free voice dictation app for Windows. Powered by AI, completely open source.",
+    title: "Koe - Free Voice Dictation for Desktop",
+    description: "Lightning-fast, free voice dictation for desktop. Powered by AI, completely open source.",
     url: "https://koe.jstarstudios.com",
     siteName: "Koe",
     images: [
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
         url: "/og-image.svg",
         width: 1200,
         height: 630,
-        alt: "Koe - Free Voice Dictation for Windows",
+        alt: "Koe - Free Voice Dictation for Desktop",
       },
     ],
     locale: "en_US",
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Koe - Free Voice Dictation for Windows",
-    description: "Lightning-fast, free voice dictation app for Windows. Powered by AI, completely open source.",
+    title: "Koe - Free Voice Dictation for Desktop",
+    description: "Lightning-fast, free voice dictation for desktop. Powered by AI, completely open source.",
     images: ["/og-image.svg"],
   },
   icons: {
@@ -71,9 +71,9 @@ export default function RootLayout({
               "@type": "SoftwareApplication",
               name: "Koe",
               applicationCategory: "ProductivityApplication",
-              operatingSystem: "Windows 10/11",
+              operatingSystem: "Windows 10/11, macOS",
               url: "https://koe.jstarstudios.com",
-              description: "Free and open source Windows voice dictation app with AI transcription.",
+              description: "Free and open source desktop voice dictation app with AI transcription.",
               offers: {
                 "@type": "Offer",
                 price: "0",
