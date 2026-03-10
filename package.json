@@ -1,6 +1,6 @@
 {
   "name": "koe",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Koe — Voice Dictation Desktop App",
   "main": "src/main/main.js",
   "scripts": {

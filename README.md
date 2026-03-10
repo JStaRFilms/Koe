@@ -3,7 +3,7 @@
   <h1>Koe (声)</h1>
   <p><strong>Lightning-Fast, Privacy-First Voice Dictation for Windows</strong></p>
 
-  [![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)](https://github.com/JStaRFilms/Koe/releases)
+  [![Release](https://img.shields.io/github/v/release/JStaRFilms/Koe)](https://github.com/JStaRFilms/Koe/releases)
   [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
   [![Electron](https://img.shields.io/badge/Electron-40.6.1-47848F?logo=electron)](https://electronjs.org/)
   [![Groq](https://img.shields.io/badge/Powered%20by-Groq-orange)](https://groq.com/)
@@ -48,7 +48,7 @@ Unlike cloud-based solutions that charge monthly fees, Koe uses your own [Groq A
 ### Download Pre-built Installer
 
 1. Go to the [Releases](https://github.com/JStaRFilms/Koe/releases) page
-2. Download the latest `Koe-1.0.4-win-x64.exe`
+2. Download the latest Windows installer asset from the release
 3. Run the installer and launch Koe
 
 ### Build from Source
@@ -67,6 +67,13 @@ pnpm dev
 # Build for production
 pnpm build
 ```
+
+### Release Builds
+
+- Real release artifacts should be built on GitHub Actions, not locally
+- Push a matching version tag such as `v1.0.5` after updating `package.json`
+- The release workflow will build Windows and macOS and attach artifacts to that GitHub Release
+- See [docs/release-process.md](docs/release-process.md)
 
 ### Requirements
 

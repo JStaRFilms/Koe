@@ -1,0 +1,152 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Version tag to build and publish, for example v1.0.5
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
+
+jobs:
+  prepare-release:
+    name: Prepare Release
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.version.outputs.release_tag }}
+      package_version: ${{ steps.version.outputs.package_version }}
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Validate release tag against package version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_tag="${RELEASE_TAG}"
+          package_version="$(node -p "require('./package.json').version")"
+          expected_tag="v${package_version}"
+
+          echo "release_tag=${release_tag}" >> "$GITHUB_OUTPUT"
+          echo "package_version=${package_version}" >> "$GITHUB_OUTPUT"
+
+          if [ "${release_tag}" != "${expected_tag}" ]; then
+            echo "Tag ${release_tag} does not match package.json version ${package_version}."
+            exit 1
+          fi
+
+      - name: Create or update GitHub release shell
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists."
+          else
+            gh release create "${RELEASE_TAG}" \
+              --title "Koe ${RELEASE_TAG}" \
+              --generate-notes
+          fi
+
+  build:
+    name: Build ${{ matrix.label }}
+    needs: prepare-release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Windows
+            os: windows-latest
+            build_command: pnpm build
+            artifact_name: koe-windows
+            artifact_paths: |
+              release/*.exe
+              release/*.blockmap
+              release/latest*.yml
+          - label: macOS
+            os: macos-latest
+            build_command: pnpm build:mac
+            artifact_name: koe-macos
+            artifact_paths: |
+              release/*.dmg
+              release/*.zip
+              release/latest-mac*.yml
+    steps:
+      - name: Check out tagged source
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare-release.outputs.release_tag }}
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build release artifacts
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: ${{ matrix.build_command }}
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}-${{ needs.prepare-release.outputs.release_tag }}
+          path: ${{ matrix.artifact_paths }}
+          if-no-files-found: error
+
+      - name: Attach Windows artifacts to GitHub release
+        if: matrix.label == 'Windows'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(release/*.exe release/*.blockmap release/latest.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No Windows artifacts found in release/."
+            exit 1
+          fi
+          gh release upload "${{ needs.prepare-release.outputs.release_tag }}" "${files[@]}" --clobber
+
+      - name: Attach macOS artifacts to GitHub release
+        if: matrix.label == 'macOS'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          files=(release/*.dmg release/*.zip release/latest-mac*.yml)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No macOS artifacts found in release/."
+            exit 1
+          fi
+          gh release upload "${{ needs.prepare-release.outputs.release_tag }}" "${files[@]}" --clobber

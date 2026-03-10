@@ -15,6 +15,22 @@ const fs = require('fs');
 
 let mainWindowRef = null;
 
+function countWords(text) {
+    return String(text || '')
+        .trim()
+        .split(/\s+/)
+        .filter(Boolean)
+        .length;
+}
+
+function isSuspiciouslyShortTranscript(text, audioSeconds) {
+    if (!text || !audioSeconds || audioSeconds < 5) {
+        return false;
+    }
+
+    return countWords(text) <= 3;
+}
+
 function sendTranscriptionStatus(status) {
     if (!mainWindowRef || mainWindowRef.isDestroyed()) {
         return;
@@ -45,6 +61,10 @@ async function processAudioChunk(audioData) {
     let transcribingStageStartedAt = 0;
 
     logger.info(`[Pipeline] Received audio chunk for session ${sessionId}: ${buffer?.byteLength || 'N/A'} bytes, ${audioSeconds?.toFixed(1)}s`);
+    logger.info(
+        `[Pipeline] Session ${sessionId} settings: model=${settings.model || 'whisper-large-v3-turbo'}, ` +
+        `language=${settings.language || 'auto'}, enhance=${settings.enhanceText !== false}, autoPaste=${settings.autoPaste !== false}`
+    );
 
     sendTranscriptionStatus({
         sessionId,
@@ -74,6 +94,13 @@ async function processAudioChunk(audioData) {
         logger.info('[Pipeline] Calling Groq transcribe...');
         rawText = await transcribe(buffer, audioSeconds, settings.language || 'auto');
         logger.info(`[Pipeline] Raw transcription result: "${rawText?.substring(0, 80) || 'null'}"`);
+
+        if (isSuspiciouslyShortTranscript(rawText, audioSeconds)) {
+            logger.warn(
+                `[Pipeline] Session ${sessionId} produced a very short transcript for a ${audioSeconds.toFixed(1)}s chunk. ` +
+                'This usually indicates low-signal audio, silence, or the wrong microphone input.'
+            );
+        }
     } finally {
         clearTimeout(transcribingTimer);
     }
