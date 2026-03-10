@@ -1,8 +1,10 @@
 const { clipboard } = require('electron');
 const { exec } = require('child_process');
+const logger = require('./logger');
 
 function writeToClipboard(text) {
     clipboard.writeText(text);
+    logger.info(`[AutoPaste] Wrote ${String(text || '').length} characters to clipboard.`);
 }
 
 /**
@@ -11,7 +13,7 @@ function writeToClipboard(text) {
  */
 function autoPaste(text) {
     writeToClipboard(text);
-    console.log('[AutoPaste] Text written to clipboard. Simulating Ctrl+V...');
+    logger.info(`[AutoPaste] Starting auto-paste on ${process.platform}.`);
 
     if (process.platform === 'win32') {
         // Use .NET SendKeys via PowerShell — more reliable than WScript.Shell COM
@@ -24,25 +26,49 @@ function autoPaste(text) {
             { timeout: 5000 },
             (error, stdout, stderr) => {
                 if (error) {
-                    console.error('[AutoPaste] PowerShell SendKeys failed:', error.message);
-                    console.error('[AutoPaste] stderr:', stderr);
+                    logger.error('[AutoPaste] PowerShell SendKeys failed:', error.message);
+                    if (stderr) {
+                        logger.error('[AutoPaste] PowerShell stderr:', stderr);
+                    }
                 } else {
-                    console.log('[AutoPaste] Ctrl+V simulated successfully.');
+                    logger.info('[AutoPaste] Ctrl+V simulated successfully.');
                 }
             }
         );
     } else if (process.platform === 'darwin') {
         exec(
             'osascript -e \'tell application "System Events" to keystroke "v" using command down\'',
-            (error) => {
-                if (error) console.error('[AutoPaste] macOS paste failed:', error);
-                else console.log('[AutoPaste] Cmd+V simulated successfully.');
+            (error, stdout, stderr) => {
+                if (error) {
+                    logger.error('[AutoPaste] macOS paste failed:', error.message);
+                    if (stderr) {
+                        logger.error('[AutoPaste] macOS paste stderr:', stderr);
+                    }
+
+                    logger.warn(
+                        '[AutoPaste] On macOS, simulated paste requires Accessibility permission for Koe and Apple Events access to System Events.'
+                    );
+                } else {
+                    if (stdout) {
+                        logger.info('[AutoPaste] macOS paste stdout:', stdout.trim());
+                    }
+                    logger.info('[AutoPaste] Cmd+V simulated successfully.');
+                }
             }
         );
     } else {
-        exec('xdotool key ctrl+v', (error) => {
-            if (error) console.error('[AutoPaste] xdotool paste failed:', error);
-            else console.log('[AutoPaste] Ctrl+V simulated successfully.');
+        exec('xdotool key ctrl+v', (error, stdout, stderr) => {
+            if (error) {
+                logger.error('[AutoPaste] xdotool paste failed:', error.message);
+                if (stderr) {
+                    logger.error('[AutoPaste] xdotool stderr:', stderr);
+                }
+            } else {
+                if (stdout) {
+                    logger.info('[AutoPaste] xdotool stdout:', stdout.trim());
+                }
+                logger.info('[AutoPaste] Ctrl+V simulated successfully.');
+            }
         });
     }
 }

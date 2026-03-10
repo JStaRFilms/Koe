@@ -23,6 +23,13 @@ const AUDIO_CONSTRAINTS = {
     autoGainControl: true
 };
 
+const MACOS_AUDIO_CONSTRAINTS = {
+    channelCount: 1,
+    echoCancellation: false,
+    noiseSuppression: false,
+    autoGainControl: false
+};
+
 function createSessionDiagnostics(sessionId = null) {
     return {
         sessionId,
@@ -68,6 +75,33 @@ function formatAudioInputDevices(devices) {
     return devices
         .map((device, index) => `${index + 1}:${device.label || '(label unavailable)'} [id=${redactDeviceId(device.deviceId)}]`)
         .join(' | ');
+}
+
+function resolvePreferredAudioInput(devices) {
+    const defaultDevice = devices.find((device) => device.deviceId === 'default');
+    if (!defaultDevice) {
+        return devices[0] || null;
+    }
+
+    const labelWithoutPrefix = defaultDevice.label?.replace(/^Default - /, '').trim();
+    if (!labelWithoutPrefix) {
+        return defaultDevice;
+    }
+
+    const concreteMatch = devices.find((device) => device.deviceId !== 'default' && device.label?.trim() === labelWithoutPrefix);
+    return concreteMatch || defaultDevice;
+}
+
+function buildAudioConstraints(preferredDevice) {
+    const audioConstraints = {
+        ...(process.platform === 'darwin' ? MACOS_AUDIO_CONSTRAINTS : AUDIO_CONSTRAINTS)
+    };
+
+    if (preferredDevice?.deviceId && preferredDevice.deviceId !== 'default') {
+        audioConstraints.deviceId = { exact: preferredDevice.deviceId };
+    }
+
+    return audioConstraints;
 }
 
 async function listAudioInputDevices() {
@@ -156,7 +190,17 @@ async function openMicStream(contextLabel) {
     const devicesBefore = await listAudioInputDevices();
     window.api?.log?.(`[Audio] ${contextLabel}: microphone permission=${permissionState}; inputs=${formatAudioInputDevices(devicesBefore)}`);
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: AUDIO_CONSTRAINTS });
+    const preferredInput = resolvePreferredAudioInput(devicesBefore);
+    const audioConstraints = buildAudioConstraints(preferredInput);
+
+    if (preferredInput) {
+        window.api?.log?.(
+            `[Audio] ${contextLabel}: requesting ${process.platform === 'darwin' ? 'raw macOS' : 'processed'} input from ` +
+            `${preferredInput.label || '(label unavailable)'} [id=${redactDeviceId(preferredInput.deviceId)}] with constraints=${JSON.stringify(audioConstraints)}`
+        );
+    }
+
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
 
     const devicesAfter = await listAudioInputDevices();
     if (devicesAfter.length) {
