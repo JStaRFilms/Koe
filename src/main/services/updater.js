@@ -16,7 +16,7 @@ function showUpdateReadyNotification(version) {
 
     new Notification({
         title: 'Koe update ready',
-        body: `Version ${version} has been downloaded and will install when you quit Koe.`
+        body: `Version ${version} is ready. Quit Koe anytime to install it.`
     }).show();
 }
 
