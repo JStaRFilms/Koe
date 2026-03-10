@@ -30,6 +30,10 @@ export class SettingsPanel {
         this.initListeners();
     }
 
+    isMacPlatform() {
+        return /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+    }
+
     async show() {
         await this.loadSettings();
         this.panel.classList.remove('hide');
@@ -113,10 +117,11 @@ export class SettingsPanel {
 
         // Build the accelerator string
         const modifiers = [];
-        if (e.ctrlKey) modifiers.push('CommandOrControl');
+        const isMac = this.isMacPlatform();
+        if (e.ctrlKey) modifiers.push(isMac ? 'Control' : 'CommandOrControl');
         if (e.altKey) modifiers.push('Alt');
         if (e.shiftKey) modifiers.push('Shift');
-        if (e.metaKey) modifiers.push('Super');
+        if (e.metaKey) modifiers.push(isMac ? 'Command' : 'Super');
 
         let key = e.key;
         // Handle special keys
@@ -141,6 +146,16 @@ export class SettingsPanel {
     }
 
     formatHotkeyForDisplay(accelerator) {
+        if (this.isMacPlatform()) {
+            return accelerator
+                .replace('CommandOrControl', 'Cmd')
+                .replace('Command', 'Cmd')
+                .replace('Control', 'Ctrl')
+                .replace('Alt', 'Option')
+                .replace('Super', 'Cmd')
+                .replace(/\+/g, ' + ');
+        }
+
         return accelerator
             .replace('CommandOrControl', 'Ctrl')
             .replace('Super', 'Win')
@@ -244,6 +259,14 @@ export class SettingsPanel {
 
     parseHotkeyFromDisplay(displayValue) {
         if (!displayValue) return 'CommandOrControl+Shift+Space';
+        if (this.isMacPlatform()) {
+            return displayValue
+                .replace(/Cmd/g, 'Command')
+                .replace(/Option/g, 'Alt')
+                .replace(/Ctrl/g, 'Control')
+                .replace(/\s*\+\s*/g, '+');
+        }
+
         return displayValue
             .replace(/Ctrl/g, 'CommandOrControl')
             .replace(/Win/g, 'Super')

@@ -5,7 +5,8 @@
   "main": "src/main/main.js",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
-    "build": "vite build && electron-builder"
+    "build": "vite build && electron-builder",
+    "build:mac": "vite build && electron-builder --mac dmg zip"
   },
   "repository": {
     "type": "git",

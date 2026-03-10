@@ -1,6 +1,6 @@
 appId: com.jstarfilmsstudios.koe
 productName: Koe
-artifactName: ${productName}-Setup-${version}.${ext}
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
 copyright: "Copyright © 2026 J StaR Films Studios"
 directories:
   output: release
@@ -20,6 +20,15 @@ win:
   target: nsis
   icon: src/assets/icons/logo.png
   legalTrademarks: "J StaR Films Studios"
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch:
+        - universal
+    - target: zip
+      arch:
+        - universal
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true

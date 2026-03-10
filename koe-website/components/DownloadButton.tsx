@@ -12,6 +12,51 @@ interface ReleaseInfo {
     version: string;
     downloadUrl: string;
     publishedAt: string;
+    buttonLabel: string;
+}
+
+type ClientPlatform = "mac" | "windows" | "other";
+
+interface GitHubAsset {
+    name: string;
+    browser_download_url: string;
+}
+
+function detectClientPlatform(): ClientPlatform {
+    if (typeof navigator === "undefined") {
+        return "windows";
+    }
+
+    const userAgentDataPlatform = (navigator as Navigator & {
+        userAgentData?: { platform?: string };
+    }).userAgentData?.platform;
+    const platform = userAgentDataPlatform || navigator.platform || navigator.userAgent;
+
+    if (/mac/i.test(platform)) {
+        return "mac";
+    }
+
+    if (/win/i.test(platform)) {
+        return "windows";
+    }
+
+    return "other";
+}
+
+function getPreferredAsset(assets: GitHubAsset[], platform: ClientPlatform) {
+    if (platform === "mac") {
+        return assets.find((asset) =>
+            asset.name.endsWith(".dmg") || asset.name.endsWith(".pkg") || asset.name.endsWith(".zip")
+        );
+    }
+
+    return assets.find((asset) =>
+        asset.name.endsWith(".exe") || asset.name.endsWith(".msi")
+    );
+}
+
+function getButtonLabel(platform: ClientPlatform) {
+    return platform === "mac" ? "DOWNLOAD FOR YOUR MAC" : "DOWNLOAD FOR WINDOWS";
 }
 
 export function DownloadButton({ className = "", showVersion = true }: DownloadButtonProps) {
@@ -31,16 +76,16 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
                 }
 
                 const data = await response.json();
+                const platform = detectClientPlatform();
 
-                // Find Windows installer
-                const installer = data.assets.find((asset: { name: string }) =>
-                    asset.name.endsWith(".exe") || asset.name.endsWith(".msi")
-                );
+                const preferredAsset = getPreferredAsset(data.assets, platform);
+                const windowsInstaller = getPreferredAsset(data.assets, "windows");
 
                 setRelease({
                     version: data.tag_name,
-                    downloadUrl: installer?.browser_download_url || data.html_url,
+                    downloadUrl: preferredAsset?.browser_download_url || windowsInstaller?.browser_download_url || data.html_url,
                     publishedAt: data.published_at,
+                    buttonLabel: getButtonLabel(platform),
                 });
             } catch (err) {
                 console.error("Error fetching release:", err);
@@ -86,7 +131,7 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
                 className={`btn-brutal ${className}`}
             >
                 <Download className="w-4 h-4" />
-                DOWNLOAD FOR WINDOWS
+                {release.buttonLabel}
             </a>
             {showVersion && (
                 <span className="text-xs text-muted">
