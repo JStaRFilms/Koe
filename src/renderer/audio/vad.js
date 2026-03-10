@@ -30,6 +30,11 @@ const MACOS_AUDIO_CONSTRAINTS = {
     autoGainControl: false
 };
 
+function isMacOSPlatform() {
+    const reportedPlatform = navigator.userAgentData?.platform || navigator.platform || navigator.userAgent || '';
+    return /mac/i.test(reportedPlatform);
+}
+
 function createSessionDiagnostics(sessionId = null) {
     return {
         sessionId,
@@ -94,7 +99,7 @@ function resolvePreferredAudioInput(devices) {
 
 function buildAudioConstraints(preferredDevice) {
     const audioConstraints = {
-        ...(process.platform === 'darwin' ? MACOS_AUDIO_CONSTRAINTS : AUDIO_CONSTRAINTS)
+        ...(isMacOSPlatform() ? MACOS_AUDIO_CONSTRAINTS : AUDIO_CONSTRAINTS)
     };
 
     if (preferredDevice?.deviceId && preferredDevice.deviceId !== 'default') {
@@ -195,7 +200,7 @@ async function openMicStream(contextLabel) {
 
     if (preferredInput) {
         window.api?.log?.(
-            `[Audio] ${contextLabel}: requesting ${process.platform === 'darwin' ? 'raw macOS' : 'processed'} input from ` +
+            `[Audio] ${contextLabel}: requesting ${isMacOSPlatform() ? 'raw macOS' : 'processed'} input from ` +
             `${preferredInput.label || '(label unavailable)'} [id=${redactDeviceId(preferredInput.deviceId)}] with constraints=${JSON.stringify(audioConstraints)}`
         );
     }
