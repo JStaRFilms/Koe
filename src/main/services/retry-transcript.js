@@ -21,7 +21,7 @@ async function retryTranscript(entryId = null) {
 
     logger.info(`[Retry] Retrying transcript from history entry ${entry.id}.`);
 
-    let refinedText = rawText;
+    let refinedText = (entry.refinedText || rawText).trim();
     if (settings.groqApiKey) {
         refinedText = await enhance(rawText, settings.promptStyle || 'Clean');
     }
@@ -30,7 +30,7 @@ async function retryTranscript(entryId = null) {
         rawText,
         refinedText,
         language: entry.language || settings.language || 'auto',
-        isLlamaEnhanced: Boolean(settings.groqApiKey),
+        isLlamaEnhanced: Boolean(settings.groqApiKey) || refinedText !== rawText,
         source: 'retry'
     });
 

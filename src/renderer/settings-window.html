@@ -407,6 +407,18 @@
                         <div class="test-result" id="test-key-result"></div>
                     </div>
 
+                    <div class="setting-group checkbox-group">
+                        <input type="checkbox" id="cloud-processing-enabled">
+                        <label for="cloud-processing-enabled">Use cloud processing proxy</label>
+                    </div>
+
+                    <div class="setting-group" id="cloud-processing-url-group">
+                        <label>Processing Endpoint</label>
+                        <input type="text" id="cloud-processing-url"
+                            placeholder="http://localhost:3000/api/process">
+                        <small class="input-help">Upload audio once, process it remotely with the Groq key stored in this app, then return only the final text. Leave blank in development to use the local website default.</small>
+                    </div>
+
                     <div class="section-header">Transcription Settings</div>
                     <div class="setting-group">
                         <label>Language</label>

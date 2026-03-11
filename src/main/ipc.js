@@ -1,7 +1,7 @@
 const { ipcMain, dialog, shell, app } = require('electron');
 const { CHANNELS } = require('../shared/constants');
 const { getSettings, setSettings } = require('./services/settings');
-const { transcribe, enhance, validateApiKey } = require('./services/groq');
+const { processAudio, validateApiKey } = require('./services/groq');
 const rateLimiter = require('./services/rate-limiter');
 const { autoPaste } = require('./services/clipboard');
 const historyService = require('./services/history');
@@ -55,10 +55,6 @@ async function hideSettingsBeforePaste() {
 async function processAudioChunk(audioData) {
     const { buffer, audioSeconds, sessionId } = audioData;
     const settings = getSettings();
-    let rawText = '';
-    let transcribingStageShown = false;
-    const uploadStageStartedAt = Date.now();
-    let transcribingStageStartedAt = 0;
 
     logger.info(`[Pipeline] Received audio chunk for session ${sessionId}: ${buffer?.byteLength || 'N/A'} bytes, ${audioSeconds?.toFixed(1)}s`);
     logger.info(
@@ -73,37 +69,24 @@ async function processAudioChunk(audioData) {
         progress: 16
     });
 
-    const showTranscribingStage = () => {
-        if (transcribingStageShown) {
-            return;
+    logger.info('[Pipeline] Starting transcription pipeline...');
+    const result = await processAudio(buffer, audioSeconds, {
+        language: settings.language || 'auto',
+        enhanceText: settings.enhanceText !== false,
+        promptStyle: settings.promptStyle || 'Clean',
+        customPrompt: settings.customPrompt || '',
+        model: settings.model || 'whisper-large-v3-turbo',
+        onStage: (status) => {
+            sendTranscriptionStatus({
+                sessionId,
+                stage: status.stage,
+                label: status.label,
+                progress: status.progress
+            });
         }
+    });
 
-        transcribingStageShown = true;
-        transcribingStageStartedAt = Date.now();
-        sendTranscriptionStatus({
-            sessionId,
-            stage: 'transcribing',
-            label: 'Transcribing',
-            progress: 58
-        });
-    };
-
-    const transcribingTimer = setTimeout(showTranscribingStage, 700);
-
-    try {
-        logger.info('[Pipeline] Calling Groq transcribe...');
-        rawText = await transcribe(buffer, audioSeconds, settings.language || 'auto');
-        logger.info(`[Pipeline] Raw transcription result: "${rawText?.substring(0, 80) || 'null'}"`);
-
-        if (isSuspiciouslyShortTranscript(rawText, audioSeconds)) {
-            logger.warn(
-                `[Pipeline] Session ${sessionId} produced a very short transcript for a ${audioSeconds.toFixed(1)}s chunk. ` +
-                'This usually indicates low-signal audio, silence, or the wrong microphone input.'
-            );
-        }
-    } finally {
-        clearTimeout(transcribingTimer);
-    }
+    const rawText = result?.rawText || '';
 
     if (!rawText) {
         sendTranscriptionStatus({
@@ -115,33 +98,17 @@ async function processAudioChunk(audioData) {
         return null;
     }
 
-    if (!transcribingStageShown) {
-        const uploadStageElapsed = Date.now() - uploadStageStartedAt;
-        if (uploadStageElapsed < 400) {
-            await wait(400 - uploadStageElapsed);
-        }
+    logger.info(`[Pipeline] Raw transcription result: "${rawText.substring(0, 80) || 'null'}"`);
 
-        showTranscribingStage();
+    if (isSuspiciouslyShortTranscript(rawText, audioSeconds)) {
+        logger.warn(
+            `[Pipeline] Session ${sessionId} produced a very short transcript for a ${audioSeconds.toFixed(1)}s chunk. ` +
+            'This usually indicates low-signal audio, silence, or the wrong microphone input.'
+        );
     }
 
-    const transcribingStageElapsed = Date.now() - transcribingStageStartedAt;
-    if (transcribingStageElapsed < 300) {
-        await wait(300 - transcribingStageElapsed);
-    }
-
-    let refinedText = rawText;
-    if (settings.enhanceText) {
-        sendTranscriptionStatus({
-            sessionId,
-            stage: 'refining',
-            label: 'Refining',
-            progress: 86
-        });
-
-        logger.info('[Pipeline] Enhancing text...');
-        refinedText = await enhance(rawText, settings.promptStyle || 'Clean');
-        logger.info(`[Pipeline] Refined result: "${refinedText?.substring(0, 80) || 'null'}"`);
-    }
+    const refinedText = result?.refinedText || rawText;
+    logger.info(`[Pipeline] Final result: "${refinedText.substring(0, 80) || 'null'}"`);
 
     await wait(200);
 

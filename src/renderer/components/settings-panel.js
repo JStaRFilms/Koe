@@ -7,6 +7,8 @@ export class SettingsPanel {
         this.btnTestKey = document.getElementById('btn-test-key');
         this.btnOpenLogs = document.getElementById('btn-open-logs');
         this.inputApiKey = document.getElementById('api-key');
+        this.chkCloudProcessing = document.getElementById('cloud-processing-enabled');
+        this.inputCloudProcessingUrl = document.getElementById('cloud-processing-url');
         this.selLanguage = document.getElementById('language');
         this.chkEnhance = document.getElementById('enhance-text');
         this.selPromptStyle = document.getElementById('prompt-style');
@@ -15,6 +17,7 @@ export class SettingsPanel {
         this.chkLaunchOnStartup = document.getElementById('launch-on-startup');
         this.chkAutoUpdate = document.getElementById('auto-update');
         this.testResult = document.getElementById('test-key-result');
+        this.cloudProcessingUrlGroup = document.getElementById('cloud-processing-url-group');
         this.promptStyleGroup = document.getElementById('prompt-style-group');
         this.customPromptGroup = document.getElementById('custom-prompt-group');
 
@@ -60,6 +63,12 @@ export class SettingsPanel {
         });
 
         this.btnTestKey.addEventListener('click', () => this.testApiKey());
+
+        if (this.chkCloudProcessing) {
+            this.chkCloudProcessing.addEventListener('change', () => {
+                this.updateCloudProcessingControls();
+            });
+        }
 
         this.chkEnhance.addEventListener('change', () => {
             this.updateEnhancementControls();
@@ -184,12 +193,30 @@ export class SettingsPanel {
         }
     }
 
+    updateCloudProcessingControls() {
+        const isEnabled = this.chkCloudProcessing ? this.chkCloudProcessing.checked : false;
+
+        if (this.cloudProcessingUrlGroup) {
+            this.cloudProcessingUrlGroup.style.opacity = isEnabled ? '1' : '0.5';
+        }
+
+        if (this.inputCloudProcessingUrl) {
+            this.inputCloudProcessingUrl.disabled = !isEnabled;
+        }
+    }
+
     async loadSettings() {
         if (!window.api) return;
         try {
             const settings = await window.api.getSettings();
             if (settings) {
                 this.inputApiKey.value = settings.groqApiKey || '';
+                if (this.chkCloudProcessing) {
+                    this.chkCloudProcessing.checked = settings.cloudProcessingEnabled === true;
+                }
+                if (this.inputCloudProcessingUrl) {
+                    this.inputCloudProcessingUrl.value = settings.cloudProcessingUrl || '';
+                }
                 this.selLanguage.value = settings.language || 'auto';
                 this.chkEnhance.checked = settings.enhanceText !== false; // default true
                 this.selPromptStyle.value = settings.promptStyle || 'Clean';
@@ -216,6 +243,7 @@ export class SettingsPanel {
                 }
 
                 // Trigger change to update style group opacity
+                this.updateCloudProcessingControls();
                 this.updateEnhancementControls();
             }
         } catch (e) {
@@ -228,6 +256,8 @@ export class SettingsPanel {
 
         const newSettings = {
             groqApiKey: this.inputApiKey.value.trim(),
+            cloudProcessingEnabled: this.chkCloudProcessing ? this.chkCloudProcessing.checked : false,
+            cloudProcessingUrl: this.inputCloudProcessingUrl ? this.inputCloudProcessingUrl.value.trim() : '',
             language: this.selLanguage.value,
             enhanceText: this.chkEnhance.checked,
             promptStyle: this.selPromptStyle.value,

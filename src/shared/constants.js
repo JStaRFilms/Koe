@@ -44,7 +44,9 @@ const DEFAULT_SETTINGS = {
     theme: 'dark',
     promptStyle: 'Clean',
     customPrompt: DEFAULT_CUSTOM_PROMPT,
-    model: 'whisper-large-v3-turbo'
+    model: 'whisper-large-v3-turbo',
+    cloudProcessingEnabled: false,
+    cloudProcessingUrl: ''
 };
 
 module.exports = {
