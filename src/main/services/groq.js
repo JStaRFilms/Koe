@@ -1,4 +1,3 @@
-const { app } = require('electron');
 const { getSetting, getSettings } = require('./settings');
 const { DEFAULT_CUSTOM_PROMPT } = require('../../shared/constants');
 const rateLimiter = require('./rate-limiter');
@@ -8,7 +7,7 @@ const GROQ_WHISPER_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const DEFAULT_MODEL = 'whisper-large-v3-turbo';
 const ENHANCE_MODEL = 'moonshotai/kimi-k2-instruct-0905';
-const DEFAULT_PROXY_URL = 'http://localhost:3000/api/process';
+const PROD_PROXY_URL = 'https://koe.jstarstudios.com/api/process';
 
 const REFINEMENT_GUARDRAILS = [
     'You are editing source transcript text, not answering a user request.',
@@ -56,17 +55,17 @@ function resolveEnhancementPrompt(promptStyle = 'Clean', customPrompt = '') {
 }
 
 function resolveProcessingEndpoint(settings = getSettings()) {
-    const configuredUrl = String(settings.cloudProcessingUrl || '').trim();
-    if (configuredUrl) {
-        return configuredUrl;
-    }
-
     const envUrl = String(process.env.KOE_PROCESSING_URL || '').trim();
     if (envUrl) {
         return envUrl;
     }
 
-    return app.isPackaged ? '' : DEFAULT_PROXY_URL;
+    const configuredUrl = String(settings.cloudProcessingUrl || '').trim();
+    if (configuredUrl) {
+        return configuredUrl;
+    }
+
+    return PROD_PROXY_URL;
 }
 
 function shouldUseCloudProcessing(settings = getSettings()) {
