@@ -1,5 +1,12 @@
 import { encodeWAV } from './wav-encoder.js';
 
+const SAMPLE_RATE = 16000;
+const MAX_SEGMENT_SECONDS = 10;
+const MAX_SEGMENT_SAMPLES = SAMPLE_RATE * MAX_SEGMENT_SECONDS;
+const SILENCE_FLUSH_MS = 5000;
+const SPEECH_THRESHOLD = 0.5;
+const MIN_SEGMENT_SECONDS = 0.25;
+
 let MicVAD;
 async function loadVAD() {
     if (!MicVAD) {
@@ -11,11 +18,17 @@ async function loadVAD() {
 
 let vad;
 let isListening = false;
-let recordingFrames = [];
 let currentSessionId = null;
+let currentSequence = 0;
+let sentSegments = 0;
+let activeSegmentFrames = [];
+let activeSegmentSamples = 0;
+let activeSegmentSawSpeech = false;
+let lastSpeechAt = 0;
 let deviceChangeLoggingAttached = false;
-let sessionDiagnostics = createSessionDiagnostics();
+
 const audioLevelListeners = new Set();
+const recorderWarningListeners = new Set();
 
 const AUDIO_CONSTRAINTS = {
     channelCount: 1,
@@ -36,32 +49,28 @@ function isMacOSPlatform() {
     return /mac/i.test(reportedPlatform);
 }
 
-function createSessionDiagnostics(sessionId = null) {
-    return {
-        sessionId,
-        startedAt: 0,
-        framesCaptured: 0,
-        samplesCaptured: 0,
-        sumSquares: 0,
-        peak: 0,
-        clippedSamples: 0,
-        nonTrivialSamples: 0,
-        speechStarts: 0,
-        speechEnds: 0,
-        misfires: 0,
-        speechProbabilitySamples: 0,
-        speechProbabilitySum: 0,
-        maxSpeechProbability: null,
-        minSpeechProbability: null
-    };
-}
-
 function notifyAudioLevelListeners(levels) {
     for (const listener of audioLevelListeners) {
         try {
             listener(levels);
         } catch (error) {
             window.api?.log?.(`[Audio] Live level listener failed: ${error.message}`);
+        }
+    }
+}
+
+function notifyRecorderWarning(message) {
+    const detail = String(message || '').trim();
+    if (!detail) {
+        return;
+    }
+
+    window.api?.log?.(`[Audio] ${detail}`);
+    for (const listener of recorderWarningListeners) {
+        try {
+            listener(detail);
+        } catch (error) {
+            window.api?.log?.(`[Audio] Recorder warning listener failed: ${error.message}`);
         }
     }
 }
@@ -106,11 +115,6 @@ function buildVisualizerLevels(frame, barCount = 7) {
     return levels;
 }
 
-function resetSessionDiagnostics(sessionId = null) {
-    sessionDiagnostics = createSessionDiagnostics(sessionId);
-    sessionDiagnostics.startedAt = Date.now();
-}
-
 function redactDeviceId(deviceId) {
     if (!deviceId) {
         return 'n/a';
@@ -133,28 +137,13 @@ function formatAudioInputDevices(devices) {
         .join(' | ');
 }
 
-function resolvePreferredAudioInput(devices) {
-    const defaultDevice = devices.find((device) => device.deviceId === 'default');
-    if (!defaultDevice) {
-        return devices[0] || null;
-    }
-
-    const labelWithoutPrefix = defaultDevice.label?.replace(/^Default - /, '').trim();
-    if (!labelWithoutPrefix) {
-        return defaultDevice;
-    }
-
-    const concreteMatch = devices.find((device) => device.deviceId !== 'default' && device.label?.trim() === labelWithoutPrefix);
-    return concreteMatch || defaultDevice;
-}
-
-function buildAudioConstraints(preferredDevice) {
+function buildAudioConstraints(device) {
     const audioConstraints = {
         ...(isMacOSPlatform() ? MACOS_AUDIO_CONSTRAINTS : AUDIO_CONSTRAINTS)
     };
 
-    if (preferredDevice?.deviceId && preferredDevice.deviceId !== 'default') {
-        audioConstraints.deviceId = { exact: preferredDevice.deviceId };
+    if (device?.deviceId && device.deviceId !== 'default') {
+        audioConstraints.deviceId = { exact: device.deviceId };
     }
 
     return audioConstraints;
@@ -174,97 +163,50 @@ async function listAudioInputDevices() {
     }
 }
 
-async function getMicrophonePermissionState() {
-    if (!navigator.permissions?.query) {
-        return 'unavailable';
-    }
-
-    try {
-        const status = await navigator.permissions.query({ name: 'microphone' });
-        return status.state || 'unknown';
-    } catch (error) {
-        return `unsupported (${error.message})`;
-    }
-}
-
-function sanitizeTrackSettings(settings = {}) {
-    return {
-        deviceId: redactDeviceId(settings.deviceId),
-        groupId: redactDeviceId(settings.groupId),
-        sampleRate: settings.sampleRate ?? 'n/a',
-        sampleSize: settings.sampleSize ?? 'n/a',
-        channelCount: settings.channelCount ?? 'n/a',
-        latency: settings.latency ?? 'n/a',
-        echoCancellation: settings.echoCancellation ?? 'n/a',
-        noiseSuppression: settings.noiseSuppression ?? 'n/a',
-        autoGainControl: settings.autoGainControl ?? 'n/a'
-    };
-}
-
-function attachTrackEventLogging(track, contextLabel) {
-    if (!track || track.__koeLoggingAttached) {
-        return;
-    }
-
-    track.__koeLoggingAttached = true;
-
-    track.addEventListener('ended', () => {
-        window.api?.log?.(`[Audio] Track ended (${contextLabel}): ${track.label || 'unlabeled track'}`);
-    });
-
-    track.addEventListener('mute', () => {
-        window.api?.log?.(`[Audio] Track muted (${contextLabel}): ${track.label || 'unlabeled track'}`);
-    });
-
-    track.addEventListener('unmute', () => {
-        window.api?.log?.(`[Audio] Track unmuted (${contextLabel}): ${track.label || 'unlabeled track'}`);
-    });
-}
-
-function logStreamDiagnostics(stream, contextLabel) {
-    const track = stream?.getAudioTracks?.()[0];
-    if (!track) {
-        window.api?.log?.(`[Audio] ${contextLabel}: stream has no audio tracks.`);
-        return;
-    }
-
-    attachTrackEventLogging(track, contextLabel);
-
-    const details = {
-        label: track.label || '(label unavailable)',
-        enabled: track.enabled,
-        muted: track.muted,
-        readyState: track.readyState,
-        settings: sanitizeTrackSettings(track.getSettings?.() || {})
-    };
-
-    window.api?.log?.(`[Audio] ${contextLabel}: ${JSON.stringify(details)}`);
-}
-
 async function openMicStream(contextLabel) {
-    const permissionState = await getMicrophonePermissionState();
-    const devicesBefore = await listAudioInputDevices();
-    window.api?.log?.(`[Audio] ${contextLabel}: microphone permission=${permissionState}; inputs=${formatAudioInputDevices(devicesBefore)}`);
+    const devices = await listAudioInputDevices();
+    window.api?.log?.(`[Audio] ${contextLabel}: inputs=${formatAudioInputDevices(devices)}`);
 
-    const preferredInput = resolvePreferredAudioInput(devicesBefore);
-    const audioConstraints = buildAudioConstraints(preferredInput);
-
-    if (preferredInput) {
-        window.api?.log?.(
-            `[Audio] ${contextLabel}: requesting ${isMacOSPlatform() ? 'raw macOS' : 'processed'} input from ` +
-            `${preferredInput.label || '(label unavailable)'} [id=${redactDeviceId(preferredInput.deviceId)}] with constraints=${JSON.stringify(audioConstraints)}`
-        );
+    if (!devices.length) {
+        throw new Error('No microphone devices are available.');
     }
 
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: audioConstraints });
-
-    const devicesAfter = await listAudioInputDevices();
-    if (devicesAfter.length) {
-        window.api?.log?.(`[Audio] ${contextLabel}: inputs after permission grant=${formatAudioInputDevices(devicesAfter)}`);
+    const candidates = [];
+    const seenIds = new Set();
+    const defaultDevice = devices.find((device) => device.deviceId === 'default');
+    if (defaultDevice) {
+        candidates.push(defaultDevice);
+        seenIds.add(defaultDevice.deviceId);
     }
 
-    logStreamDiagnostics(stream, contextLabel);
-    return stream;
+    for (const device of devices) {
+        if (!seenIds.has(device.deviceId)) {
+            candidates.push(device);
+            seenIds.add(device.deviceId);
+        }
+    }
+
+    let lastError = null;
+
+    for (let index = 0; index < candidates.length; index += 1) {
+        const candidate = candidates[index];
+        const constraints = buildAudioConstraints(candidate);
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: constraints });
+            if (index > 0) {
+                notifyRecorderWarning(`Preferred microphone was unavailable. Using ${candidate.label || 'another input'} instead.`);
+            }
+            return stream;
+        } catch (error) {
+            lastError = error;
+            window.api?.log?.(
+                `[Audio] Failed to open ${candidate.label || '(label unavailable)'} [id=${redactDeviceId(candidate.deviceId)}]: ${error.message}`
+            );
+        }
+    }
+
+    throw new Error(lastError?.message || 'Unable to open any microphone input.');
 }
 
 function attachDeviceChangeLogging() {
@@ -274,7 +216,7 @@ function attachDeviceChangeLogging() {
 
     navigator.mediaDevices.addEventListener('devicechange', async () => {
         const devices = await listAudioInputDevices();
-        window.api?.log?.(`[Audio] Audio input device change detected: ${formatAudioInputDevices(devices)}`);
+        notifyRecorderWarning(`Audio input devices changed. Available inputs: ${formatAudioInputDevices(devices)}`);
     });
 
     deviceChangeLoggingAttached = true;
@@ -300,223 +242,165 @@ function extractSpeechProbability(probabilities) {
     return null;
 }
 
-function recordFrameDiagnostics(frame, probabilities) {
-    sessionDiagnostics.framesCaptured += 1;
-    sessionDiagnostics.samplesCaptured += frame.length;
-
-    let localPeak = sessionDiagnostics.peak;
-    let localSumSquares = sessionDiagnostics.sumSquares;
-    let localClippedSamples = sessionDiagnostics.clippedSamples;
-    let localNonTrivialSamples = sessionDiagnostics.nonTrivialSamples;
-
-    for (const sample of frame) {
-        const absolute = Math.abs(sample);
-        localPeak = Math.max(localPeak, absolute);
-        localSumSquares += sample * sample;
-
-        if (absolute >= 0.98) {
-            localClippedSamples += 1;
-        }
-
-        if (absolute >= 0.01) {
-            localNonTrivialSamples += 1;
-        }
-    }
-
-    sessionDiagnostics.peak = localPeak;
-    sessionDiagnostics.sumSquares = localSumSquares;
-    sessionDiagnostics.clippedSamples = localClippedSamples;
-    sessionDiagnostics.nonTrivialSamples = localNonTrivialSamples;
-
-    const speechProbability = extractSpeechProbability(probabilities);
-    if (speechProbability !== null) {
-        sessionDiagnostics.speechProbabilitySamples += 1;
-        sessionDiagnostics.speechProbabilitySum += speechProbability;
-        sessionDiagnostics.maxSpeechProbability = sessionDiagnostics.maxSpeechProbability === null
-            ? speechProbability
-            : Math.max(sessionDiagnostics.maxSpeechProbability, speechProbability);
-        sessionDiagnostics.minSpeechProbability = sessionDiagnostics.minSpeechProbability === null
-            ? speechProbability
-            : Math.min(sessionDiagnostics.minSpeechProbability, speechProbability);
-    }
+function resetActiveSegment() {
+    activeSegmentFrames = [];
+    activeSegmentSamples = 0;
+    activeSegmentSawSpeech = false;
+    lastSpeechAt = 0;
 }
 
-function formatDbfs(value) {
-    if (!Number.isFinite(value) || value <= 0) {
-        return '-inf dBFS';
+function mergeFrames(frames) {
+    const totalLength = frames.reduce((sum, frame) => sum + frame.length, 0);
+    if (totalLength === 0) {
+        return new Float32Array(0);
     }
 
-    return `${(20 * Math.log10(value)).toFixed(1)} dBFS`;
+    const merged = new Float32Array(totalLength);
+    let offset = 0;
+    for (const frame of frames) {
+        merged.set(frame, offset);
+        offset += frame.length;
+    }
+
+    return merged;
 }
 
-function buildSessionSummary(totalSamples) {
-    const durationSeconds = totalSamples / 16000;
-    const rms = sessionDiagnostics.samplesCaptured > 0
-        ? Math.sqrt(sessionDiagnostics.sumSquares / sessionDiagnostics.samplesCaptured)
-        : 0;
-    const activeSampleRatio = sessionDiagnostics.samplesCaptured > 0
-        ? sessionDiagnostics.nonTrivialSamples / sessionDiagnostics.samplesCaptured
-        : 0;
-    const averageSpeechProbability = sessionDiagnostics.speechProbabilitySamples > 0
-        ? sessionDiagnostics.speechProbabilitySum / sessionDiagnostics.speechProbabilitySamples
-        : null;
+function emitSegment(audio) {
+    if (!audio || audio.length === 0) {
+        return false;
+    }
 
-    return {
-        sessionId: sessionDiagnostics.sessionId,
-        durationSeconds,
-        framesCaptured: sessionDiagnostics.framesCaptured,
-        samplesCaptured: sessionDiagnostics.samplesCaptured,
-        rms,
-        peak: sessionDiagnostics.peak,
-        clippedSamples: sessionDiagnostics.clippedSamples,
-        activeSampleRatio,
-        speechStarts: sessionDiagnostics.speechStarts,
-        speechEnds: sessionDiagnostics.speechEnds,
-        misfires: sessionDiagnostics.misfires,
-        averageSpeechProbability,
-        maxSpeechProbability: sessionDiagnostics.maxSpeechProbability,
-        minSpeechProbability: sessionDiagnostics.minSpeechProbability,
-        elapsedMs: sessionDiagnostics.startedAt ? (Date.now() - sessionDiagnostics.startedAt) : 0
-    };
-}
+    const audioSeconds = audio.length / SAMPLE_RATE;
+    if (!activeSegmentSawSpeech || audioSeconds < MIN_SEGMENT_SECONDS) {
+        return false;
+    }
 
-function logSessionSummary(summary) {
-    const speechProbabilityText = summary.averageSpeechProbability === null
-        ? 'n/a'
-        : `${summary.averageSpeechProbability.toFixed(3)} avg (${summary.minSpeechProbability?.toFixed(3)}-${summary.maxSpeechProbability?.toFixed(3)})`;
+    const wavBuffer = encodeWAV(audio, SAMPLE_RATE);
+    const sequence = currentSequence;
+    currentSequence += 1;
+    sentSegments += 1;
+
+    window.api.sendAudioSegment({
+        buffer: wavBuffer,
+        audioSeconds,
+        sessionId: currentSessionId,
+        segmentId: `${currentSessionId}-${sequence}`,
+        sequence
+    });
 
     window.api?.log?.(
-        `[Audio] Session ${summary.sessionId} summary: duration=${summary.durationSeconds.toFixed(2)}s, frames=${summary.framesCaptured}, ` +
-        `samples=${summary.samplesCaptured}, rms=${formatDbfs(summary.rms)}, peak=${summary.peak.toFixed(3)}, ` +
-        `active=${(summary.activeSampleRatio * 100).toFixed(1)}%, clipped=${summary.clippedSamples}, ` +
-        `speechStarts=${summary.speechStarts}, speechEnds=${summary.speechEnds}, misfires=${summary.misfires}, ` +
-        `speechProb=${speechProbabilityText}, elapsed=${summary.elapsedMs}ms`
+        `Sent audio segment ${sequence} for session ${currentSessionId}: ${wavBuffer.byteLength} bytes (${audioSeconds.toFixed(1)}s).`
     );
-
-    if (summary.rms < 0.01 || summary.activeSampleRatio < 0.05) {
-        window.api?.log?.(
-            `[Audio] Session ${summary.sessionId} looks low-signal. Whisper may hallucinate short stock phrases when audio is quiet or the wrong input is selected.`
-        );
-    }
+    return true;
 }
 
-function logActiveVadRuntime(sessionId) {
-    if (!vad || typeof vad.getAudioInstances !== 'function') {
-        return;
+function flushActiveSegment(reason = 'flush') {
+    if (activeSegmentFrames.length === 0) {
+        resetActiveSegment();
+        return false;
     }
 
-    try {
-        const { stream, audioContext } = vad.getAudioInstances();
-        const track = stream?.getAudioTracks?.()[0];
-        const trackSettings = sanitizeTrackSettings(track?.getSettings?.() || {});
-        window.api?.log?.(
-            `[Audio] Session ${sessionId} runtime: processor=${vad._audioProcessorAdapterType || 'unknown'}, ` +
-            `audioContextSampleRate=${audioContext?.sampleRate || 'n/a'}, audioContextState=${audioContext?.state || 'n/a'}, ` +
-            `trackLabel=${track?.label || '(label unavailable)'}, trackSettings=${JSON.stringify(trackSettings)}`
-        );
-    } catch (error) {
-        window.api?.log?.(`[Audio] Failed to inspect active VAD runtime for session ${sessionId}: ${error.message}`);
-    }
+    const merged = mergeFrames(activeSegmentFrames);
+    const didSend = emitSegment(merged);
+    window.api?.log?.(
+        `[Audio] ${didSend ? 'Flushed' : 'Discarded'} segment for session ${currentSessionId} (${reason}, ${(merged.length / SAMPLE_RATE).toFixed(2)}s).`
+    );
+    resetActiveSegment();
+    return didSend;
 }
 
 async function getVadBasePath() {
     try {
         const isPackaged = await window.api?.isPackaged?.() || false;
-        window.api?.log?.(`VAD: isPackaged = ${isPackaged}`);
-
         if (isPackaged) {
             const resourcesPath = await window.api?.getResourcesPath?.();
             if (resourcesPath) {
                 const normalizedPath = resourcesPath.replace(/\\/g, '/');
                 const encodedPath = encodeURI(normalizedPath);
-                const vadPath = `file:///${encodedPath}/app.asar.unpacked/dist/renderer/assets/vad/`;
-                window.api?.log?.(`VAD: Using unpacked path: ${vadPath}`);
-                return vadPath;
+                return `file:///${encodedPath}/app.asar.unpacked/dist/renderer/assets/vad/`;
             }
 
-            window.api?.log?.('VAD: resourcesPath not available, falling back to relative path');
             return './assets/vad/';
         }
 
         return '/assets/vad/';
-    } catch (e) {
-        window.api?.log?.(`VAD: Error checking isPackaged: ${e.message}, defaulting to dev path`);
+    } catch (error) {
+        window.api?.log?.(`VAD base path resolution failed: ${error.message}`);
         return '/assets/vad/';
     }
 }
 
 export async function initVAD() {
-    if (vad) return;
-
-    const basePath = await getVadBasePath();
-    window.api?.log?.(`VAD: Initializing with basePath: ${basePath}`);
-    attachDeviceChangeLogging();
-
-    try {
-        const VADClass = await loadVAD();
-        vad = await VADClass.new({
-            positiveSpeechThreshold: 0.5,
-            minSpeechFrames: 3,
-            startOnLoad: false,
-            baseAssetPath: basePath,
-            onnxWASMBasePath: basePath,
-            getStream: () => openMicStream('Opening microphone stream'),
-            resumeStream: () => openMicStream('Resuming microphone stream'),
-            pauseStream: async (stream) => {
-                logStreamDiagnostics(stream, 'Pausing microphone stream');
-                stream.getTracks().forEach((track) => {
-                    track.stop();
-                });
-            },
-
-            onFrameProcessed: (probabilities, frame) => {
-                if (!isListening || !frame || frame.length === 0) {
-                    return;
-                }
-
-                recordingFrames.push(new Float32Array(frame));
-                recordFrameDiagnostics(frame, probabilities);
-                notifyAudioLevelListeners(buildVisualizerLevels(frame));
-            },
-
-            onSpeechStart: () => {
-                sessionDiagnostics.speechStarts += 1;
-                window.api?.log?.(`VAD: Speech started (session ${currentSessionId})`);
-            },
-
-            onSpeechEnd: () => {
-                sessionDiagnostics.speechEnds += 1;
-                window.api?.log?.(`VAD: Speech ended (session ${currentSessionId})`);
-            },
-
-            onVADMisfire: () => {
-                sessionDiagnostics.misfires += 1;
-                window.api?.log?.(`VAD: Misfire (session ${currentSessionId}, speech too short)`);
-            }
-        });
-
-        window.api?.log?.('VAD initialized successfully.');
-    } catch (error) {
-        console.error('VAD init error:', error);
-        window.api?.log?.(`VAD init error: ${error.message}`);
-        throw error;
+    if (vad) {
+        return;
     }
+
+    attachDeviceChangeLogging();
+    const basePath = await getVadBasePath();
+    const VADClass = await loadVAD();
+    vad = await VADClass.new({
+        positiveSpeechThreshold: SPEECH_THRESHOLD,
+        minSpeechFrames: 3,
+        startOnLoad: false,
+        baseAssetPath: basePath,
+        onnxWASMBasePath: basePath,
+        getStream: () => openMicStream('Opening microphone stream'),
+        resumeStream: () => openMicStream('Resuming microphone stream'),
+        pauseStream: async (stream) => {
+            stream.getTracks().forEach((track) => track.stop());
+        },
+        onFrameProcessed: (probabilities, frame) => {
+            if (!isListening || !frame || frame.length === 0) {
+                return;
+            }
+
+            const frameCopy = new Float32Array(frame);
+            activeSegmentFrames.push(frameCopy);
+            activeSegmentSamples += frameCopy.length;
+            notifyAudioLevelListeners(buildVisualizerLevels(frameCopy));
+
+            const speechProbability = extractSpeechProbability(probabilities);
+            if (speechProbability !== null && speechProbability >= SPEECH_THRESHOLD) {
+                activeSegmentSawSpeech = true;
+                lastSpeechAt = Date.now();
+            }
+
+            if (activeSegmentSawSpeech && lastSpeechAt && (Date.now() - lastSpeechAt) >= SILENCE_FLUSH_MS) {
+                flushActiveSegment('silence-threshold');
+                return;
+            }
+
+            if (activeSegmentSamples >= MAX_SEGMENT_SAMPLES) {
+                flushActiveSegment('max-segment-length');
+            }
+        },
+        onSpeechStart: () => {
+            lastSpeechAt = Date.now();
+        },
+        onSpeechEnd: () => {
+            lastSpeechAt = Date.now();
+        },
+        onVADMisfire: () => {
+            window.api?.log?.(`[Audio] VAD misfire in session ${currentSessionId}.`);
+        }
+    });
+
+    window.api?.log?.('VAD initialized successfully.');
 }
 
 export async function startListening(sessionId) {
     if (!vad) {
-        window.api?.log?.('VAD not initialized, cannot start listening.');
         return false;
     }
 
     currentSessionId = sessionId ?? currentSessionId;
-    recordingFrames = [];
-    resetSessionDiagnostics(currentSessionId);
+    currentSequence = 0;
+    sentSegments = 0;
+    resetActiveSegment();
     isListening = true;
     notifyAudioLevelListeners(buildVisualizerLevels(null));
+    notifyRecorderWarning('');
     await vad.start();
-    window.api?.log?.(`VAD: Listening started for session ${currentSessionId}.`);
-    logActiveVadRuntime(currentSessionId);
     return true;
 }
 
@@ -525,45 +409,19 @@ export function isVADReady() {
 }
 
 export function stopListening(sessionId = currentSessionId) {
-    if (!vad) return false;
+    if (!vad) {
+        return false;
+    }
 
     const finalSessionId = sessionId ?? currentSessionId;
     isListening = false;
     notifyAudioLevelListeners(buildVisualizerLevels(null));
     vad.pause();
-    window.api?.log?.(`VAD: Listening paused for session ${finalSessionId}.`);
 
-    if (recordingFrames.length === 0) {
-        window.api?.log?.(`[Audio] Session ${finalSessionId} ended without captured speech frames.`);
-        resetSessionDiagnostics();
-        currentSessionId = null;
-        return false;
-    }
-
-    const totalLength = recordingFrames.reduce((sum, frame) => sum + frame.length, 0);
-    if (totalLength === 0) {
-        recordingFrames = [];
-        window.api?.log?.(`[Audio] Session ${finalSessionId} produced zero total samples after merge.`);
-        resetSessionDiagnostics();
-        currentSessionId = null;
-        return false;
-    }
-
-    const merged = new Float32Array(totalLength);
-    let offset = 0;
-    for (const frame of recordingFrames) {
-        merged.set(frame, offset);
-        offset += frame.length;
-    }
-
-    const summary = buildSessionSummary(totalLength);
-    logSessionSummary(summary);
-
-    recordingFrames = [];
-    resetSessionDiagnostics();
+    const didFlush = flushActiveSegment('manual-stop');
     currentSessionId = null;
-    sendAudioChunk(merged, finalSessionId);
-    return true;
+    window.api.notifyAudioSessionStopped({ sessionId: finalSessionId });
+    return didFlush || sentSegments > 0;
 }
 
 export function subscribeAudioLevels(listener) {
@@ -579,13 +437,13 @@ export function subscribeAudioLevels(listener) {
     };
 }
 
-function sendAudioChunk(audio, sessionId) {
-    if (!audio || audio.length === 0) {
-        return;
+export function subscribeRecorderWarnings(listener) {
+    if (typeof listener !== 'function') {
+        return () => {};
     }
 
-    const wavBuffer = encodeWAV(audio, 16000);
-    const audioSeconds = audio.length / 16000;
-    window.api.sendAudioChunk({ buffer: wavBuffer, audioSeconds, sessionId });
-    window.api?.log?.(`Sent WAV chunk for session ${sessionId}: ${wavBuffer.byteLength} bytes (${audioSeconds.toFixed(1)}s).`);
+    recorderWarningListeners.add(listener);
+    return () => {
+        recorderWarningListeners.delete(listener);
+    };
 }

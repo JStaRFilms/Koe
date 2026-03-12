@@ -1,4 +1,4 @@
-import { initVAD, startListening, stopListening, isVADReady, subscribeAudioLevels } from './audio/vad.js';
+import { initVAD, startListening, stopListening, isVADReady, subscribeAudioLevels, subscribeRecorderWarnings } from './audio/vad.js';
 import { PillUI } from './components/pill-ui.js';
 
 let isRecording = false;
@@ -103,6 +103,11 @@ async function init() {
     subscribeAudioLevels((levels) => {
         pill.setVoiceLevels(levels);
     });
+    subscribeRecorderWarnings((message) => {
+        if (isRecording) {
+            pill.setDetail(message || '');
+        }
+    });
 
     if (!window.api) {
         console.warn('API bridge not found. Preload script may not be configured.');
@@ -153,7 +158,7 @@ async function init() {
             }
 
             isRecording = false;
-            pill.setProcessingStatus('Uploading', 12, recordingPayload.sessionId);
+            pill.setProcessingStatus('Finalizing', 18, recordingPayload.sessionId);
 
             try {
                 const didCaptureAudio = stopListening(recordingPayload.sessionId);
@@ -189,7 +194,13 @@ async function init() {
                 return;
             }
 
-            if (status.stage === 'retrying') {
+            if (status.stage === 'warning') {
+                if (isRecording) {
+                    pill.setDetail(status.detail || status.label || '');
+                }
+            } else if (isRecording && !status.forceDisplay) {
+                return;
+            } else if (status.stage === 'retrying') {
                 pill.setProcessingStatus(
                     compactPillLabel(status.stage, status.label),
                     status.progress ?? 8,
@@ -205,7 +216,7 @@ async function init() {
                 );
             } else if (status.stage === 'transcribing' || status.stage === 'processing') {
                 pill.setProcessingStatus(
-                    compactPillLabel(status.stage, status.label),
+                    status.label || 'Finalizing',
                     status.progress ?? 20,
                     status.sessionId,
                     status.detail || ''

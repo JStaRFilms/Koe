@@ -35,6 +35,10 @@ export class SettingsPanel {
         this.pendingHotkey = null;
 
         this.initListeners();
+        if (this.chkEnhance) {
+            this.chkEnhance.checked = true;
+            this.chkEnhance.disabled = true;
+        }
     }
 
     isMacPlatform() {
@@ -288,7 +292,8 @@ export class SettingsPanel {
                     this.inputCloudProcessingUrl.value = settings.cloudProcessingUrl || '';
                 }
                 this.selLanguage.value = settings.language || 'auto';
-                this.chkEnhance.checked = settings.enhanceText !== false; // default true
+                this.chkEnhance.checked = true;
+                this.chkEnhance.disabled = true;
                 this.selPromptStyle.value = settings.promptStyle || 'Clean';
                 if (this.inputCustomPrompt) {
                     this.inputCustomPrompt.value = settings.customPrompt || '';
@@ -330,7 +335,7 @@ export class SettingsPanel {
             cloudProcessingEnabled: this.chkCloudProcessing ? this.chkCloudProcessing.checked : false,
             cloudProcessingUrl: this.inputCloudProcessingUrl ? this.inputCloudProcessingUrl.value.trim() : '',
             language: this.selLanguage.value,
-            enhanceText: this.chkEnhance.checked,
+            enhanceText: true,
             promptStyle: this.selPromptStyle.value,
             customPrompt: this.inputCustomPrompt ? this.inputCustomPrompt.value.trim() : '',
             autoPaste: this.chkAutoPaste.checked,

@@ -1,7 +1,7 @@
 :root {
   /* ─── HUD Palette ─────────────────────────────────── */
   --koe-void: #06060a;
-  --koe-surface: rgba(12, 12, 18, 0.72);
+  --koe-surface: rgba(12, 12, 18, 0.92);
   --koe-glass: rgba(18, 18, 28, 0.55);
 
   /* Solid/elevated surfaces for settings window */
@@ -58,13 +58,13 @@
   --radius-round: 999px;
 
   /* Shadows */
-  --shadow-pill: 0 8px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-pill: 0 8px 32px rgba(0, 0, 0, 0.65), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
 /* Light Theme Variables */
 [data-theme="light"] {
   --koe-void: #f5f5f7;
-  --koe-surface: rgba(255, 255, 255, 0.85);
+  --koe-surface: rgba(255, 255, 255, 0.96);
   --koe-glass: rgba(255, 255, 255, 0.72);
 
   /* Solid/elevated surfaces for settings window */
@@ -102,7 +102,7 @@
   --koe-border-highlight: rgba(0, 0, 0, 0.15);
 
   /* Shadows */
-  --shadow-pill: 0 8px 32px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+  --shadow-pill: 0 8px 32px rgba(0, 0, 0, 0.22), 0 2px 8px rgba(0, 0, 0, 0.14);
 }
 
 * {

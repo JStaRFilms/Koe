@@ -39,7 +39,9 @@ contextBridge.exposeInMainWorld('api', {
     openLogsFolder: () => ipcRenderer.invoke('app:open-logs'),
 
     // Audio
-    sendAudioChunk: (arrayBuffer) => ipcRenderer.send(CHANNELS.AUDIO_CHUNK, arrayBuffer),
+    sendAudioSegment: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SEGMENT, payload),
+    sendAudioChunk: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SEGMENT, payload),
+    notifyAudioSessionStopped: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SESSION_STOPPED, payload),
 
     // Window Controls
     hideWindow: () => ipcRenderer.send(CHANNELS.WINDOW_HIDE),

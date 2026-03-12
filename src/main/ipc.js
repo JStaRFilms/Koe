@@ -1,12 +1,12 @@
 const { ipcMain, dialog, shell, app } = require('electron');
 const { CHANNELS } = require('../shared/constants');
 const { getSettings, setSettings } = require('./services/settings');
-const { processAudio, validateApiKey } = require('./services/groq');
+const { validateApiKey } = require('./services/groq');
 const rateLimiter = require('./services/rate-limiter');
-const { autoPaste } = require('./services/clipboard');
 const historyService = require('./services/history');
 const { retryAndPasteTranscript } = require('./services/retry-transcript');
 const pendingRetryService = require('./services/pending-retry');
+const sessionManager = require('./services/transcription-session-manager');
 const { closeSettingsWindow } = require('./settings-window');
 const { updateHotkey } = require('./shortcuts');
 const { applyLaunchOnStartupPreference } = require('./services/startup');
@@ -15,34 +15,6 @@ const logger = require('./services/logger');
 const fs = require('fs');
 
 let mainWindowRef = null;
-
-function countWords(text) {
-    return String(text || '')
-        .trim()
-        .split(/\s+/)
-        .filter(Boolean)
-        .length;
-}
-
-function isSuspiciouslyShortTranscript(text, audioSeconds) {
-    if (!text || !audioSeconds || audioSeconds < 5) {
-        return false;
-    }
-
-    return countWords(text) <= 3;
-}
-
-function sendTranscriptionStatus(status) {
-    if (!mainWindowRef || mainWindowRef.isDestroyed()) {
-        return;
-    }
-
-    if (status?.stage && status.stage !== 'error' && !mainWindowRef.isVisible()) {
-        mainWindowRef.showInactive();
-    }
-
-    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, status);
-}
 
 async function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -53,94 +25,20 @@ async function hideSettingsBeforePaste() {
     await wait(200);
 }
 
-async function processAudioChunk(audioData) {
-    const { buffer, audioSeconds, sessionId } = audioData;
-    const settings = getSettings();
-
-    pendingRetryService.savePendingRetry(audioData, {
-        language: settings.language || 'auto',
-        enhanceText: settings.enhanceText !== false,
-        promptStyle: settings.promptStyle || 'Clean',
-        customPrompt: settings.customPrompt || '',
-        model: settings.model || 'whisper-large-v3-turbo'
-    });
-
-    logger.info(`[Pipeline] Received audio chunk for session ${sessionId}: ${buffer?.byteLength || 'N/A'} bytes, ${audioSeconds?.toFixed(1)}s`);
-    logger.info(
-        `[Pipeline] Session ${sessionId} settings: model=${settings.model || 'whisper-large-v3-turbo'}, ` +
-        `language=${settings.language || 'auto'}, enhance=${settings.enhanceText !== false}, autoPaste=${settings.autoPaste !== false}`
-    );
-
-    sendTranscriptionStatus({
-        sessionId,
-        stage: 'uploading',
-        label: 'Uploading',
-        progress: 16
-    });
-
-    logger.info('[Pipeline] Starting transcription pipeline...');
-    const result = await processAudio(buffer, audioSeconds, {
-        language: settings.language || 'auto',
-        enhanceText: settings.enhanceText !== false,
-        promptStyle: settings.promptStyle || 'Clean',
-        customPrompt: settings.customPrompt || '',
-        model: settings.model || 'whisper-large-v3-turbo',
-        onStage: (status) => {
-            sendTranscriptionStatus({
-                sessionId,
-                stage: status.stage,
-                label: status.label,
-                progress: status.progress
-            });
-        }
-    });
-
-    const rawText = result?.rawText || '';
-
-    if (!rawText) {
-        pendingRetryService.clearPendingRetry();
-        sendTranscriptionStatus({
-            sessionId,
-            stage: 'empty',
-            label: 'No speech detected',
-            progress: 0
-        });
-        return null;
+function sendRetryStatus(status) {
+    if (!mainWindowRef || mainWindowRef.isDestroyed()) {
+        return;
     }
 
-    logger.info(`[Pipeline] Raw transcription result: "${rawText.substring(0, 80) || 'null'}"`);
-
-    if (isSuspiciouslyShortTranscript(rawText, audioSeconds)) {
-        logger.warn(
-            `[Pipeline] Session ${sessionId} produced a very short transcript for a ${audioSeconds.toFixed(1)}s chunk. ` +
-            'This usually indicates low-signal audio, silence, or the wrong microphone input.'
-        );
-    }
-
-    const refinedText = result?.refinedText || rawText;
-    logger.info(`[Pipeline] Final result: "${refinedText.substring(0, 80) || 'null'}"`);
-
-    await wait(200);
-
-    if (settings.autoPaste !== false) {
-        autoPaste(refinedText);
-    }
-
-    historyService.addHistoryEntry({
-        rawText,
-        refinedText,
-        language: settings.language || 'auto',
-        isLlamaEnhanced: settings.enhanceText && !!refinedText,
-        source: 'transcription'
+    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, {
+        ...status,
+        forceDisplay: true
     });
-
-    pendingRetryService.clearPendingRetry();
-
-    return { rawText, refinedText, sessionId };
 }
 
 function setupIpcHandlers(mainWindow) {
     mainWindowRef = mainWindow;
+    sessionManager.init(mainWindow);
 
     ipcMain.handle(CHANNELS.GET_SETTINGS, async () => getSettings());
 
@@ -179,19 +77,19 @@ function setupIpcHandlers(mainWindow) {
     ipcMain.handle(CHANNELS.CLEAR_HISTORY, async () => historyService.clearHistory());
 
     ipcMain.handle(CHANNELS.RETRY_HISTORY_ENTRY, async (event, entryId) => {
-        const result = await retryAndPasteTranscript(entryId, {
+        return retryAndPasteTranscript(entryId, {
             beforePaste: hideSettingsBeforePaste
         });
-        return result;
     });
 
     ipcMain.handle(CHANNELS.RETRY_LAST_TRANSCRIPT, async () => {
-        const result = await retryAndPasteTranscript(null);
-        return result;
+        return retryAndPasteTranscript(null, {
+            onStatus: (status) => sendRetryStatus(status)
+        });
     });
 
     ipcMain.on(CHANNELS.LOG, (event, message) => {
-        logger.info('[Renderer]', message);
+        logger.debug('[Renderer]', message);
     });
 
     ipcMain.on(CHANNELS.WINDOW_MINIMIZE, () => {
@@ -216,41 +114,31 @@ function setupIpcHandlers(mainWindow) {
         closeSettingsWindow();
     });
 
-    ipcMain.on(CHANNELS.AUDIO_CHUNK, async (event, audioData) => {
-        try {
-            const result = await processAudioChunk(audioData);
-
-            if (mainWindowRef && !mainWindowRef.isDestroyed()) {
-                mainWindowRef.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
-            }
-
-            if (result?.refinedText) {
-                if (mainWindowRef && !mainWindowRef.isDestroyed()) {
-                    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_RESULT, result.refinedText);
-                    mainWindowRef.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, {
-                        text: result.refinedText,
-                        sessionId: result.sessionId
-                    });
-                }
-            }
-
-            logger.info('[Pipeline] Done.');
-        } catch (error) {
-            logger.error('[Pipeline] Transcription error:', error);
-            pendingRetryService.markPendingRetryError(error.message);
-            const retryAvailable = Boolean(pendingRetryService.getPendingRetry());
-            sendTranscriptionStatus({
+    ipcMain.on(CHANNELS.AUDIO_SEGMENT, (event, audioData) => {
+        sessionManager.handleSegment(audioData).catch((error) => {
+            logger.error('[Pipeline] Failed to enqueue audio segment:', error);
+            sendRetryStatus({
                 sessionId: audioData?.sessionId,
                 stage: 'error',
                 error: error.message,
-                retryAvailable,
-                lingerMs: retryAvailable ? 6500 : 3500
+                retryAvailable: Boolean(pendingRetryService.getPendingRetry()),
+                lingerMs: 6500
             });
+        });
+    });
 
-            if (mainWindowRef && !mainWindowRef.isDestroyed()) {
-                mainWindowRef.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
-            }
-        }
+    ipcMain.on(CHANNELS.AUDIO_SESSION_STOPPED, (event, payload) => {
+        const sessionId = typeof payload === 'object' ? payload?.sessionId : payload;
+        sessionManager.handleSessionStopped(sessionId).catch((error) => {
+            logger.error('[Pipeline] Failed to stop audio session:', error);
+            sendRetryStatus({
+                sessionId,
+                stage: 'error',
+                error: error.message,
+                retryAvailable: Boolean(pendingRetryService.getPendingRetry()),
+                lingerMs: 6500
+            });
+        });
     });
 
     ipcMain.handle('history:export', async (event, format = 'txt') => {
@@ -297,7 +185,6 @@ function setupIpcHandlers(mainWindow) {
     ipcMain.handle('app:open-logs', async () => {
         try {
             const logDir = logger.getLogDirectory();
-            logger.info('[IPC] Opening logs folder:', logDir);
             await shell.openPath(logDir);
             return { success: true, path: logDir };
         } catch (error) {

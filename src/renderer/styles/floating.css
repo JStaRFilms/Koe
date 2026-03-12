@@ -1,8 +1,8 @@
-/* ═══════════════════════════════════════════════════════════
-   KOE PILL — HUD-Style Floating Status Indicator
-   ═══════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   KOE PILL â€” HUD-Style Floating Status Indicator
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
-/* ─── Pill Shell ────────────────────────────────────── */
+/* â”€â”€â”€ Pill Shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pill-shell {
     position: relative;
     --pill-shell-width: 304px;
@@ -47,7 +47,7 @@
         transform 0.25s cubic-bezier(0.4, 0, 1, 1);
 }
 
-/* ─── Pill Container ────────────────────────────────── */
+/* â”€â”€â”€ Pill Container â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pill {
     position: relative;
     width: 100%;
@@ -57,13 +57,15 @@
     cursor: default;
 }
 
-/* ─── Glass Background ──────────────────────────────── */
+/* â”€â”€â”€ Glass Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .glass-pill {
-    backdrop-filter: blur(28px) saturate(1.5);
-    -webkit-backdrop-filter: blur(28px) saturate(1.5);
+    backdrop-filter: blur(36px) saturate(1.5);
+    -webkit-backdrop-filter: blur(36px) saturate(1.5);
     background: var(--koe-surface);
     border: 1px solid var(--koe-border);
-    box-shadow: var(--shadow-pill);
+    box-shadow:
+        var(--shadow-pill),
+        0 0 12px 3px rgba(10, 10, 16, 0.35);
 }
 
 .glass-pill::before,
@@ -92,13 +94,12 @@
     backdrop-filter: blur(20px) saturate(1.15);
     -webkit-backdrop-filter: blur(20px) saturate(1.15);
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 255, 0.9)),
-        linear-gradient(135deg, rgba(209, 226, 255, 0.18), rgba(255, 255, 255, 0.12));
-    border: 1px solid rgba(255, 255, 255, 0.92);
+        linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(244, 248, 255, 0.97));
+    border: 1px solid rgba(200, 210, 230, 0.4);
     box-shadow:
-        0 20px 38px rgba(125, 139, 171, 0.24),
-        0 8px 18px rgba(84, 98, 129, 0.14),
-        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 20px 38px rgba(100, 115, 150, 0.28),
+        0 8px 18px rgba(60, 75, 110, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95),
         inset 0 -10px 22px rgba(213, 222, 241, 0.35);
 }
 
@@ -116,7 +117,7 @@
     opacity: 1;
 }
 
-/* ─── Animated Gradient Border (the "magic ring") ──── */
+/* â”€â”€â”€ Animated Gradient Border (the "magic ring") â”€â”€â”€â”€ */
 .pill__border-glow {
     position: absolute;
     inset: -1px;
@@ -156,7 +157,7 @@
     }
 }
 
-/* ─── Inner Content Layout ──────────────────────────── */
+/* â”€â”€â”€ Inner Content Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pill__content {
     position: relative;
     z-index: 1;
@@ -167,7 +168,7 @@
     gap: 10px;
 }
 
-/* ─── Left: Indicator ───────────────────────────────── */
+/* â”€â”€â”€ Left: Indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pill__left {
     display: flex;
     align-items: center;
@@ -207,7 +208,7 @@
     transition: opacity 0.3s ease;
 }
 
-/* ─── Center: Status + Visualizer ───────────────────── */
+/* â”€â”€â”€ Center: Status + Visualizer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pill__center {
     flex: 1;
     display: flex;
@@ -236,7 +237,7 @@
     transition: color 0.3s ease;
 }
 
-/* ─── Audio Visualizer Bars ─────────────────────────── */
+/* â”€â”€â”€ Audio Visualizer Bars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pill__visualizer {
     display: flex;
     align-items: center;
@@ -344,7 +345,7 @@
     transform: translateY(0);
 }
 
-/* ─── Right: Timer / Spinner / Check ────────────────── */
+/* â”€â”€â”€ Right: Timer / Spinner / Check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pill__right {
     display: flex;
     align-items: center;
@@ -381,10 +382,10 @@
     stroke-dashoffset: 24;
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    STATE: IDLE
    Subtle, dim, waiting. Mic icon visible, muted.
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .state-idle .pill__icon--mic {
     color: var(--koe-text-dim);
     opacity: 0.6;
@@ -398,10 +399,10 @@
     color: var(--koe-text-dim);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    STATE: RECORDING
    Alive. Red glow, pulsing dot, visualizer active.
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .state-recording {
     --glow-color: var(--koe-danger);
 }
@@ -464,10 +465,10 @@
     background: var(--koe-danger);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    STATE: PROCESSING
    Purple glow, spinner visible, calm.
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .state-processing {
     --glow-color: var(--koe-process);
 }
@@ -527,10 +528,10 @@
     background: var(--koe-process);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    STATE: DONE
    Green flash, checkmark draw, then fade.
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .state-done {
     --glow-color: var(--koe-success);
 }
@@ -596,10 +597,10 @@
     background: var(--koe-success);
 }
 
-/* ═══════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    STATE: ERROR
    Amber/orange glow, warning icon, user-facing error message.
-   ═══════════════════════════════════════════════════════════ */
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 .state-error {
     --glow-color: #f59e0b;
 }
@@ -666,9 +667,129 @@
     background: #f59e0b;
 }
 
+
 /* ═══════════════════════════════════════════════════════════
-   KEYFRAMES
+   LIGHT MODE — Per-State Glass Overrides
+   Preserve the premium glass highlights while adding subtle
+   colored accents. Never nuke the inner shadow structure.
    ═══════════════════════════════════════════════════════════ */
+
+/* --- Recording (light) --- */
+[data-theme="light"] .state-recording .glass-pill {
+    border-color: rgba(230, 41, 74, 0.28);
+    box-shadow:
+        0 20px 38px rgba(230, 41, 74, 0.12),
+        0 8px 18px rgba(230, 41, 74, 0.06),
+        0 0 0 1px rgba(230, 41, 74, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -8px 18px rgba(230, 41, 74, 0.06);
+}
+
+[data-theme="light"] .state-recording .pill__banner {
+    background: linear-gradient(180deg, rgba(255, 245, 247, 0.96), rgba(255, 240, 242, 0.92));
+    border-color: rgba(230, 41, 74, 0.18);
+    box-shadow: 0 12px 24px rgba(230, 41, 74, 0.08);
+}
+
+[data-theme="light"] .state-recording .pill__banner::before {
+    background: var(--koe-danger);
+}
+
+[data-theme="light"] .state-recording .pill__border-glow {
+    opacity: 0.5;
+}
+
+[data-theme="light"] .state-recording .viz-bar {
+    box-shadow: none;
+}
+
+/* --- Processing (light) --- */
+[data-theme="light"] .state-processing .glass-pill {
+    border-color: rgba(94, 79, 224, 0.24);
+    box-shadow:
+        0 20px 38px rgba(94, 79, 224, 0.1),
+        0 8px 18px rgba(94, 79, 224, 0.06),
+        0 0 0 1px rgba(94, 79, 224, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -8px 18px rgba(94, 79, 224, 0.05);
+}
+
+[data-theme="light"] .state-processing .pill__progress {
+    background: rgba(94, 79, 224, 0.1);
+}
+
+[data-theme="light"] .state-processing .pill__progress-bar {
+    background: linear-gradient(90deg, var(--koe-process), #8b7cf6);
+    box-shadow: 0 0 8px rgba(94, 79, 224, 0.3);
+}
+
+[data-theme="light"] .state-processing .pill__banner {
+    background: linear-gradient(180deg, rgba(248, 246, 255, 0.96), rgba(243, 240, 255, 0.92));
+    border-color: rgba(94, 79, 224, 0.16);
+    box-shadow: 0 12px 24px rgba(94, 79, 224, 0.08);
+}
+
+[data-theme="light"] .state-processing .pill__banner::before {
+    background: var(--koe-process);
+}
+
+[data-theme="light"] .state-processing .pill__border-glow {
+    opacity: 0.45;
+}
+
+/* --- Done (light) --- */
+[data-theme="light"] .state-done .glass-pill {
+    border-color: rgba(0, 200, 83, 0.28);
+    box-shadow:
+        0 20px 38px rgba(0, 200, 83, 0.1),
+        0 8px 18px rgba(0, 200, 83, 0.06),
+        0 0 0 1px rgba(0, 200, 83, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -8px 18px rgba(0, 200, 83, 0.05);
+}
+
+[data-theme="light"] .state-done .pill__banner {
+    background: linear-gradient(180deg, rgba(243, 255, 248, 0.96), rgba(237, 255, 244, 0.92));
+    border-color: rgba(0, 200, 83, 0.18);
+    box-shadow: 0 12px 24px rgba(0, 200, 83, 0.08);
+}
+
+[data-theme="light"] .state-done .pill__banner::before {
+    background: var(--koe-success);
+}
+
+[data-theme="light"] .state-done .pill__border-glow {
+    opacity: 0.55;
+}
+
+/* --- Error (light) --- */
+[data-theme="light"] .state-error .glass-pill {
+    border-color: rgba(245, 158, 11, 0.3);
+    box-shadow:
+        0 20px 38px rgba(245, 158, 11, 0.1),
+        0 8px 18px rgba(245, 158, 11, 0.06),
+        0 0 0 1px rgba(245, 158, 11, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -8px 18px rgba(245, 158, 11, 0.04);
+}
+
+[data-theme="light"] .state-error .pill__banner {
+    background: linear-gradient(180deg, rgba(255, 251, 243, 0.96), rgba(255, 248, 237, 0.92));
+    border-color: rgba(245, 158, 11, 0.2);
+    box-shadow: 0 12px 24px rgba(245, 158, 11, 0.08);
+}
+
+[data-theme="light"] .state-error .pill__banner::before {
+    background: #f59e0b;
+}
+
+[data-theme="light"] .state-error .pill__border-glow {
+    opacity: 0.5;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   KEYFRAMES
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 
 @keyframes pulse-beat {
 

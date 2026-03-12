@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+const { app } = require('electron');
 const Store = require('electron-store').default || require('electron-store');
 
 let pendingRetryStore = null;
@@ -10,6 +13,15 @@ function getStore() {
     }
 
     return pendingRetryStore;
+}
+
+function getRetryDirectory() {
+    const retryDir = path.join(app.getPath('userData'), 'pending-retry');
+    if (!fs.existsSync(retryDir)) {
+        fs.mkdirSync(retryDir, { recursive: true });
+    }
+
+    return retryDir;
 }
 
 function toBuffer(input) {
@@ -36,66 +48,86 @@ function toBuffer(input) {
     return Buffer.from(input);
 }
 
-function savePendingRetry(audioData = {}, metadata = {}) {
-    const buffer = toBuffer(audioData.buffer);
+function persistSegmentAudio(sessionId, sequence, input) {
+    const buffer = toBuffer(input);
     if (!buffer || buffer.length === 0) {
         return null;
     }
 
-    const payload = {
-        sessionId: audioData.sessionId ?? null,
-        audioSeconds: Number(audioData.audioSeconds || 0),
-        capturedAt: Date.now(),
-        bufferBase64: buffer.toString('base64'),
-        options: {
-            language: metadata.language || 'auto',
-            enhanceText: metadata.enhanceText !== false,
-            promptStyle: metadata.promptStyle || 'Clean',
-            customPrompt: metadata.customPrompt || '',
-            model: metadata.model || 'whisper-large-v3-turbo'
-        },
-        lastError: metadata.lastError || null,
-        lastFailedAt: metadata.lastFailedAt || null
-    };
+    const filePath = path.join(
+        getRetryDirectory(),
+        `session-${sessionId}-segment-${sequence}-${Date.now()}.wav`
+    );
 
-    getStore().set('pending', payload);
-    return payload;
+    fs.writeFileSync(filePath, buffer);
+    return filePath;
 }
 
-function getPendingRetry() {
-    const payload = getStore().get('pending');
-    if (!payload?.bufferBase64) {
+function readTempAudio(filePath) {
+    if (!filePath || !fs.existsSync(filePath)) {
         return null;
     }
 
-    return {
-        ...payload,
-        buffer: Buffer.from(payload.bufferBase64, 'base64')
-    };
+    return fs.readFileSync(filePath);
+}
+
+function removeTempFile(filePath) {
+    if (!filePath || !fs.existsSync(filePath)) {
+        return;
+    }
+
+    try {
+        fs.unlinkSync(filePath);
+    } catch (error) {
+        // Ignore best-effort cleanup failures.
+    }
+}
+
+function savePendingRetryManifest(manifest = {}) {
+    getStore().set('pending', manifest);
+    return manifest;
+}
+
+function getPendingRetry() {
+    return getStore().get('pending') || null;
+}
+
+function cleanupManifestFiles(manifest) {
+    for (const segment of manifest?.unresolvedSegments || []) {
+        removeTempFile(segment.tempPath);
+    }
 }
 
 function clearPendingRetry() {
+    const manifest = getPendingRetry();
+    if (manifest) {
+        cleanupManifestFiles(manifest);
+    }
+
     getStore().delete('pending');
 }
 
 function markPendingRetryError(errorMessage) {
-    const payload = getStore().get('pending');
-    if (!payload) {
+    const manifest = getPendingRetry();
+    if (!manifest) {
         return null;
     }
 
-    const updatedPayload = {
-        ...payload,
+    const updatedManifest = {
+        ...manifest,
         lastError: String(errorMessage || '').trim() || 'Processing failed.',
         lastFailedAt: Date.now()
     };
 
-    getStore().set('pending', updatedPayload);
-    return updatedPayload;
+    savePendingRetryManifest(updatedManifest);
+    return updatedManifest;
 }
 
 module.exports = {
-    savePendingRetry,
+    persistSegmentAudio,
+    readTempAudio,
+    removeTempFile,
+    savePendingRetryManifest,
     getPendingRetry,
     clearPendingRetry,
     markPendingRetryError

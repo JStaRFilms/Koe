@@ -7,6 +7,7 @@ const { createSettingsWindow } = require('./settings-window');
 const { getSetting } = require('./services/settings');
 const { applyLaunchOnStartupPreference } = require('./services/startup');
 const { applyAutoUpdatePreference } = require('./services/updater');
+const sessionManager = require('./services/transcription-session-manager');
 const logger = require('./services/logger');
 
 let mainWindow = null;
@@ -102,6 +103,7 @@ app.on('window-all-closed', () => {
 app.on('before-quit', () => {
     app.isQuitting = true;
     unregisterShortcuts();
+    sessionManager.shutdown();
 });
 
 module.exports = {

@@ -13,9 +13,9 @@
 
 ## What is Koe?
 
-**Koe** (声, Japanese for "voice") is a free, open-source alternative to subscription-based voice dictation tools like WhisperFlow. Press a hotkey, speak naturally, and get polished text instantly pasted wherever your cursor is.
+**Koe** (声, Japanese for "voice") is a free, open-source alternative to subscription-based voice dictation tools like WhisperFlow. Press a hotkey, speak naturally, pause when you need to think, and get polished text typed where your cursor already is.
 
-Unlike cloud-based solutions that charge monthly fees, Koe uses your own [Groq API key](https://console.groq.com/keys) — completely free for up to 8 hours of audio transcription per day.
+Unlike cloud-based solutions that charge monthly fees, Koe uses your own [Groq API key](https://console.groq.com/keys) and stays free for up to 8 hours of transcription a day on Groq's free tier.
 
 ### Why Koe?
 
@@ -23,8 +23,8 @@ Unlike cloud-based solutions that charge monthly fees, Koe uses your own [Groq A
 |---------|---------------------|----------------------|----------------|
 | Cost | Subscription | Free | **Free (BYOK)** |
 | Accuracy | High | Poor | **High (Whisper)** |
-| AI Enhancement | Yes | No | **Yes (Llama)** |
-| Privacy | Cloud audio | Local | **VAD local only** |
+| AI Enhancement | Yes | No | **Yes** |
+| Privacy | Cloud audio | Local | **Local VAD + BYOK** |
 | Global Hotkey | Yes | Limited | **Yes** |
 | Auto-Paste | Yes | No | **Yes** |
 
@@ -32,14 +32,16 @@ Unlike cloud-based solutions that charge monthly fees, Koe uses your own [Groq A
 
 ## Features
 
-- **Global Hotkey** — Press `Ctrl + Shift + Space` anywhere to start dictating
-- **Local Voice Activity Detection** — ONNX-powered VAD runs 100% offline on your machine. Audio only leaves your device when speech is detected
-- **Instant Transcription** — Groq's Whisper API processes at 216x realtime speed
-- **AI Text Enhancement** — Automatic cleanup of filler words, punctuation, and formatting via Llama 3
-- **Auto-Type** — Transcribed text is automatically typed into any focused text field
-- **Minimalist "Pill" UI** — Beautiful, non-intrusive floating interface with real-time visual feedback
-- **Transcription History** — Scrollable history with one-click copy for past recordings
-- **Usage Dashboard** — Track daily audio seconds and API rate limits
+- **Global Hotkey** — Press `Ctrl + Shift + Space` anywhere to start or stop dictation
+- **Pause Naturally** — Koe keeps listening through short pauses instead of treating every breath like the end of a recording
+- **Rolling Segments** — Long recordings are processed in the background as ordered chunks, so performance stays fast even on longer sessions
+- **Instant Transcription** — Groq Whisper handles speech-to-text at high speed
+- **AI Text Enhancement** — Each segment is refined before it is typed, so only polished text is committed to the target app
+- **Auto-Type** — Refined text is typed progressively into the focused text field while you are still talking
+- **Retry Failed Segments** — If a chunk fails, Koe retries only the missing part instead of rebuilding the entire session
+- **Minimalist "Pill" UI** — A compact floating interface with live voice levels, recording state, and warnings
+- **Transcription History** — One-click copy and retry for saved transcripts
+- **Usage Dashboard** — Track daily audio seconds, request pressure, and queue activity
 
 ---
 
@@ -48,7 +50,7 @@ Unlike cloud-based solutions that charge monthly fees, Koe uses your own [Groq A
 ### Download Pre-built Installer
 
 1. Go to the [Releases](https://github.com/JStaRFilms/Koe/releases) page
-2. Download the latest Windows installer asset from the release
+2. Download the latest Windows installer asset
 3. Run the installer and launch Koe
 
 ### Build from Source
@@ -85,43 +87,53 @@ pnpm build
 
 ## Quick Start
 
-1. **Launch** Koe — it will minimize to your system tray
+1. **Launch** Koe — it minimizes to your system tray
 2. **Configure** — Right-click the tray icon → **Settings** → Enter your Groq API key
 3. **Dictate** — Click any text field and press `Ctrl + Shift + Space`
-4. **Speak** — The pill UI appears. Talk naturally.
-5. **Done** — Pause for 1 second or press the hotkey again. Text appears instantly!
+4. **Speak** — The pill UI appears. Talk naturally, including pauses
+5. **Done** — Press the hotkey again when you're finished. Koe finalizes the session, copies the full refined transcript, and keeps it in history
 
 ---
 
 ## Usage Guide
 
-### Global Hotkey
+### Global Hotkeys
 
 | Action | Shortcut |
 |--------|----------|
-| Start/Stop Recording | `Ctrl + Shift + Space` |
-| Open Settings | Tray menu or `Ctrl + Shift + ,` |
+| Start / Stop Recording | `Ctrl + Shift + Space` |
+| Retry Last Failed / Latest Transcript | `Ctrl + Shift + ,` |
+| Open Settings | Tray menu |
+
+### How Recording Works
+
+- Koe records one continuous session until you stop it
+- Internally, it breaks longer recordings into ordered segments
+- Segments are transcribed and refined in the background
+- Refined text is typed in order as it becomes ready
+- When the session ends, Koe keeps one full final transcript in clipboard and history
 
 ### The Pill UI
 
-The floating "pill" window provides visual feedback:
+The floating pill is designed to stay out of the way while still telling you what matters:
 
-- **Idle** — Dimmed, shows last transcription
-- **Listening** — Animated gradient, shows "Listening..."
-- **Processing** — Pulsing, shows "Transcribing..."
-- **Complete** — Brief success state, auto-copies to clipboard
+- **Idle** — Waiting for the next dictation
+- **Listening** — Live voice levels and active recording state
+- **Warning** — Mic fallback or chunk failure without immediately killing the session
+- **Processing** — Finalizing remaining work after you stop
+- **Complete** — Brief success state before hiding
 
 ### Settings
 
-Configure via the settings window (right-click tray icon):
+Configure via the settings window (right-click the tray icon):
 
 | Setting | Description | Default |
 |---------|-------------|---------|
 | Groq API Key | Your API key from [console.groq.com](https://console.groq.com/keys) | — |
 | Language | Transcription language (`auto` for detection) | `auto` |
-| AI Enhancement | Clean up filler words and punctuation | `enabled` |
-| Auto-Paste | Automatically type into focused window | `enabled` |
-| Theme | Dark/Light mode | `dark` |
+| Prompt Style | How Koe refines the transcript | `Clean` |
+| Auto-Paste | Automatically type into the focused window | `enabled` |
+| Theme | Dark / Light mode | `dark` |
 
 ---
 
@@ -135,10 +147,16 @@ Configure via the settings window (right-click tray icon):
 │  │ Tray     │  │ (Ctrl+Shift+Space)   │    │
 │  └──────────┘  └──────────────────────┘    │
 │  ┌──────────────────────────────────────┐  │
-│  │ Groq Service                         │  │
+│  │ Session Coordinator                  │  │
+│  │ ├─ Ordered segment commit            │  │
+│  │ ├─ Live auto-paste                   │  │
+│  │ └─ Retry manifest + final transcript │  │
+│  └──────────────────────────────────────┘  │
+│  ┌──────────────────────────────────────┐  │
+│  │ Worker Thread                        │  │
 │  │ ├─ Whisper STT (audio → text)        │  │
-│  │ ├─ Llama LLM (text → clean)          │  │
-│  │ └─ Rate Limiter (20 RPM / 2K RPD)    │  │
+│  │ ├─ Transcript refinement             │  │
+│  │ └─ RPM-aware request pacing          │  │
 │  └──────────────────────────────────────┘  │
 └──────────────────┬──────────────────────────┘
                    │ IPC
@@ -151,9 +169,9 @@ Configure via the settings window (right-click tray icon):
 │  ┌──────────────────────────────────────┐   │
 │  │ Audio Pipeline                       │   │
 │  │ ├─ Web Audio API (mic capture)       │   │
-│  │ ├─ AudioWorklet (processing)         │   │
 │  │ ├─ Silero VAD (local speech detect)  │   │
-│  │ └─ WAV encoder (chunk → file)        │   │
+│  │ ├─ Rolling segment flush             │   │
+│  │ └─ WAV encoder (segment → file)      │   │
 │  └──────────────────────────────────────┘   │
 └─────────────────────────────────────────────┘
 ```
@@ -161,9 +179,9 @@ Configure via the settings window (right-click tray icon):
 ### Privacy-First Design
 
 1. **Voice Activity Detection** runs entirely offline using ONNX WebAssembly
-2. **Audio chunks** (~3-5 seconds) are only sent when speech is detected
-3. **No audio storage** — processed and immediately discarded
-4. **Your API key** — stored locally via `electron-store`, never transmitted elsewhere
+2. **Audio segments** are only sent for transcription after speech has been captured
+3. **Retry audio** is stored only for failed or unresolved segments, and only as temporary files
+4. **Your API key** is stored locally via `electron-store`, never sent anywhere except Groq
 
 ---
 
@@ -173,59 +191,61 @@ Configure via the settings window (right-click tray icon):
 |-------|------------|
 | **Framework** | Electron + Vite |
 | **Frontend** | Vanilla JavaScript, Custom CSS |
-| **Audio Capture** | Web Audio API + AudioWorklet |
+| **Audio Capture** | Web Audio API |
 | **Voice Detection** | `@ricky0123/vad-web` (Silero VAD) |
 | **Transcription** | Groq Whisper API (`whisper-large-v3-turbo`) |
-| **Text Enhancement** | Groq Llama 3 (free tier) |
-| **Storage** | `electron-store` (local encrypted) |
+| **Text Enhancement** | Groq chat refinement pipeline |
+| **Storage** | `electron-store` + temp retry files |
 | **Packaging** | `electron-builder` |
 
 ---
 
 ## Groq API Limits
 
-Koe respects Groq's free tier limits:
+Koe is designed to stay inside Groq's free-tier limits:
 
 | Metric | Limit | Approximate Usage |
 |--------|-------|-------------------|
-| Requests per minute | 20 | ~4-5 min of continuous dictation |
-| Requests per day | 2,000 | ~8 hours of audio |
+| Requests per minute | 20 | ~6 transcribed segments/minute with paced refinement |
+| Requests per day | 2,000 | ~8 hours of normal dictation |
 | Audio per day | 28,800 sec | 8 hours |
 
-The built-in rate limiter queues requests and displays usage in the UI dashboard.
+The built-in scheduler tracks request pressure and keeps the app responsive while staying inside the cap.
 
 ---
 
 ## Roadmap
 
-### Completed (v1.0.0)
+### Completed
 - [x] Global hotkey toggle
 - [x] Local VAD speech detection
 - [x] Groq Whisper transcription
-- [x] AI text enhancement (Llama)
+- [x] AI transcript refinement
 - [x] Auto-paste to focused window
 - [x] Transcription history
 - [x] Usage dashboard
+- [x] Long-session segmented processing
+- [x] Retry for failed segments
 
-### Planned (v1.1.0)
-- [ ] Custom AI prompts (formal, casual, bullet points)
+### Planned
+- [ ] Custom AI prompts
 - [ ] Keyboard shortcut customization
-- [ ] Export history as .txt/.md
-- [ ] MacOS support
+- [ ] Export history as `.txt` / `.md`
+- [ ] macOS support
 
-### Future (v2.0+)
+### Future
 - [ ] Snippet library with voice shortcuts
 - [ ] App-specific tone profiles
 - [ ] Cloud sync across devices
 - [ ] Team collaboration features
 
-See [Feature Requests](docs/issues/) for full details.
+See [Feature Requests](docs/issues/) for the full backlog.
 
 ---
 
 ## Contributing
 
-Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+Contributions are welcome. Please see the repo docs and existing code patterns before opening a PR.
 
 ### Development Setup
 
@@ -237,38 +257,28 @@ cd Koe
 # Install dependencies
 pnpm install
 
-# Create environment file
-echo "VITE_GROQ_API_KEY=your_key_here" > .env.local
-
 # Start development
 pnpm dev
 ```
 
 ### Project Structure
 
-```
+```text
 Koe/
 ├── src/
 │   ├── main/           # Electron main process
 │   │   ├── main.js     # Entry point
 │   │   ├── ipc.js      # IPC handlers
-│   │   ├── services/   # API, settings, rate limiter
+│   │   ├── services/   # Session coordinator, worker, settings, retry
 │   │   └── ...
 │   ├── renderer/       # UI code
 │   │   ├── components/ # Pill UI, panels
-│   │   ├── audio/      # VAD, capture, encoding
+│   │   ├── audio/      # VAD, segmentation, encoding
 │   │   └── ...
 │   └── shared/         # Constants
 ├── docs/               # Documentation, tasks
 ├── public/             # Static assets
 └── release/            # Build output
-```
-
-### Running Tests
-
-```bash
-# Coming in v1.1.0
-pnpm test
 ```
 
 ---
@@ -278,31 +288,31 @@ pnpm test
 ### "No audio detected"
 - Ensure microphone permissions are granted in Windows Settings
 - Check that your default recording device is selected
-- Try adjusting VAD sensitivity in Settings
+- If another app is holding the mic, Koe will try another available input and warn you in the pill UI
 
 ### "API rate limit exceeded"
-- Wait 1 minute for the RPM limit to reset
-- Check the usage dashboard to see remaining daily quota
-- Consider upgrading to Groq's paid tier for higher limits
+- Wait for the per-minute window to clear
+- Check the usage dashboard for queue pressure
+- Very long continuous dictation can still pile up requests on the free tier
 
 ### "Auto-paste not working"
 - Some applications block simulated keystrokes
-- Disable auto-paste in Settings and use Ctrl+V manually
+- Disable auto-paste in Settings and use `Ctrl + V` manually
 - Run Koe as administrator if the issue persists
 
 ### App won't launch
 - Ensure you're on Windows 10/11 64-bit
 - Check that [Visual C++ Redistributables](https://aka.ms/vs/17/release/vc_redist.x64.exe) are installed
-- Check Windows Event Viewer for error details
+- Check Windows Event Viewer for crash details
 
 ---
 
 ## Acknowledgments
 
-- **Groq** — For the blazing-fast Whisper and Llama APIs
-- **Silero** — For the excellent VAD model
+- **Groq** — For the fast Whisper and chat APIs
+- **Silero** — For the VAD model
 - **@ricky0123** — For the `vad-web` library
-- **WhisperFlow** — For proving the concept (and the pricing model to avoid)
+- **WhisperFlow** — For helping prove the category exists
 
 ---
 
@@ -314,5 +324,5 @@ Koe is licensed under the ISC License. See the [LICENSE](LICENSE) file for detai
 
 <div align="center">
   <p>Built with ❤️ by <a href="https://github.com/JStaRFilms">J StaR Films Studios</a></p>
-  <p><sub>Star us on GitHub if you find Koe useful!</sub></p>
+  <p><sub>Star us on GitHub if you find Koe useful.</sub></p>
 </div>
