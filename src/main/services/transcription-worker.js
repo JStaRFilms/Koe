@@ -215,7 +215,7 @@ async function refineText(rawText, options) {
                 }
             ],
             temperature: 0.2,
-            max_completion_tokens: 1024
+            max_completion_tokens: 2048
         })
     });
 
@@ -231,43 +231,48 @@ async function refineText(rawText, options) {
 async function processSegment(payload) {
     const rawText = await transcribeAudio(payload.buffer, payload.options);
 
-    if (!rawText) {
-        postMessage('segment-result', {
-            sessionId: payload.sessionId,
-            segmentId: payload.segmentId,
-            sequence: payload.sequence,
-            audioSeconds: payload.audioSeconds,
-            empty: true,
-            rawText: '',
-            refinedText: ''
-        });
-        return;
-    }
-
-    const refinedText = await refineText(rawText, payload.options);
     postMessage('segment-result', {
         sessionId: payload.sessionId,
         segmentId: payload.segmentId,
         sequence: payload.sequence,
         audioSeconds: payload.audioSeconds,
-        empty: false,
-        rawText,
-        refinedText: refinedText || rawText
+        empty: !rawText,
+        rawText
+    });
+}
+
+async function processSessionRefinement(payload) {
+    const refinedText = await refineText(payload.rawText, payload.options);
+    postMessage('session-refined', {
+        sessionId: payload.sessionId,
+        refinedText
     });
 }
 
 parentPort.on('message', (message) => {
-    if (!message || message.type !== 'process-segment') {
+    if (!message || !message.type) {
         return;
     }
 
-    processSegment(message.payload).catch((error) => {
-        postMessage('segment-error', {
-            sessionId: message.payload.sessionId,
-            segmentId: message.payload.segmentId,
-            sequence: message.payload.sequence,
-            audioSeconds: message.payload.audioSeconds,
-            error: error.message || 'Segment processing failed.'
+    if (message.type === 'process-segment') {
+        processSegment(message.payload).catch((error) => {
+            postMessage('segment-error', {
+                sessionId: message.payload.sessionId,
+                segmentId: message.payload.segmentId,
+                sequence: message.payload.sequence,
+                audioSeconds: message.payload.audioSeconds,
+                error: error.message || 'Segment processing failed.'
+            });
         });
-    });
+        return;
+    }
+
+    if (message.type === 'refine-session') {
+        processSessionRefinement(message.payload).catch((error) => {
+            postMessage('session-refine-error', {
+                sessionId: message.payload.sessionId,
+                error: error.message || 'Session refinement failed.'
+            });
+        });
+    }
 });

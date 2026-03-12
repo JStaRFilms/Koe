@@ -1,9 +1,11 @@
 import { encodeWAV } from './wav-encoder.js';
 
 const SAMPLE_RATE = 16000;
-const MAX_SEGMENT_SECONDS = 10;
-const MAX_SEGMENT_SAMPLES = SAMPLE_RATE * MAX_SEGMENT_SECONDS;
-const SILENCE_FLUSH_MS = 5000;
+const MIN_CHUNK_SECONDS = 10;
+const MIN_CHUNK_SAMPLES = SAMPLE_RATE * MIN_CHUNK_SECONDS;
+const HARD_CAP_SECONDS = 30;
+const HARD_CAP_SAMPLES = SAMPLE_RATE * HARD_CAP_SECONDS;
+const PAUSE_CLOSE_MS = 1200;
 const SPEECH_THRESHOLD = 0.5;
 const MIN_SEGMENT_SECONDS = 0.25;
 
@@ -365,12 +367,17 @@ export async function initVAD() {
                 lastSpeechAt = Date.now();
             }
 
-            if (activeSegmentSawSpeech && lastSpeechAt && (Date.now() - lastSpeechAt) >= SILENCE_FLUSH_MS) {
+            if (
+                activeSegmentSawSpeech &&
+                activeSegmentSamples >= MIN_CHUNK_SAMPLES &&
+                lastSpeechAt &&
+                (Date.now() - lastSpeechAt) >= PAUSE_CLOSE_MS
+            ) {
                 flushActiveSegment('silence-threshold');
                 return;
             }
 
-            if (activeSegmentSamples >= MAX_SEGMENT_SAMPLES) {
+            if (activeSegmentSamples >= HARD_CAP_SAMPLES) {
                 flushActiveSegment('max-segment-length');
             }
         },

@@ -95,7 +95,22 @@ function compactPillLabel(stage, label) {
         return 'Transcribing';
     }
 
-    return rawLabel.length > 18 ? `${rawLabel.slice(0, 17).trimEnd()}…` : rawLabel;
+    return rawLabel.length > 18 ? `${rawLabel.slice(0, 17).trimEnd()}...` : rawLabel;
+}
+
+function buildRetryDetail(detail = '') {
+    const baseDetail = String(detail || '').trim();
+    const hint = `Press ${formatRetryShortcut()} to retry.`;
+
+    if (!baseDetail) {
+        return hint;
+    }
+
+    if (baseDetail.toLowerCase().includes('press ')) {
+        return baseDetail;
+    }
+
+    return `${baseDetail} ${hint}`;
 }
 
 async function init() {
@@ -174,6 +189,16 @@ async function init() {
         window.api.log(`Recording toggled: ${recordingPayload.isRecording} (session ${recordingPayload.sessionId})`);
     });
 
+    if (window.api.onTranscriptionPreview) {
+        window.api.onTranscriptionPreview((payload) => {
+            if (!payload || payload.sessionId !== activeSessionId || !isRecording) {
+                return;
+            }
+
+            pill.setStreamingDetail(payload.text || '');
+        });
+    }
+
     if (window.api.onTranscriptionStatus) {
         window.api.onTranscriptionStatus((payload) => {
             const status = normalizeStatusPayload(payload);
@@ -231,14 +256,13 @@ async function init() {
             } else if (status.stage === 'empty') {
                 pill.hideWithMessage(status.label || 'No speech detected', status.sessionId, status.detail || '');
             } else if (status.stage === 'error' || status.error) {
-                const errorLabel = getErrorLabel(status.error || '');
-                const detail = status.retryAvailable && errorLabel === 'Network Error'
-                    ? `Last unsent recording is ready. Retry? Press ${formatRetryShortcut()}`
+                const detail = status.retryAvailable
+                    ? buildRetryDetail(status.detail || '')
                     : (status.detail || '');
 
-                pill.setError(errorLabel, status.sessionId, {
+                pill.setError(getErrorLabel(status.error || ''), status.sessionId, {
                     detail,
-                    lingerMs: status.retryAvailable && errorLabel === 'Network Error'
+                    lingerMs: status.retryAvailable
                         ? Math.max(status.lingerMs || 0, 6500)
                         : status.lingerMs
                 });

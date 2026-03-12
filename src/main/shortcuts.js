@@ -4,6 +4,7 @@ const { getSetting } = require('./services/settings');
 const { setRecordingState } = require('./tray');
 const { toggleRecording } = require('./services/recording-state');
 const { retryAndPasteTranscript } = require('./services/retry-transcript');
+const historyService = require('./services/history');
 const pendingRetryService = require('./services/pending-retry');
 const { closeSettingsWindow } = require('./settings-window');
 
@@ -15,14 +16,14 @@ function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function sendRetryStatus(mainWindow, status) {
+function sendRetryStatus(mainWindow, status, fallbackSessionId = null) {
     if (!mainWindow || mainWindow.isDestroyed()) {
         return;
     }
 
     mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, {
         ...status,
-        sessionId: status.sessionId,
+        sessionId: status.sessionId ?? fallbackSessionId,
         forceDisplay: true
     });
 }
@@ -53,14 +54,21 @@ async function handleRetryLastTranscript(mainWindow) {
     try {
         const result = await retryAndPasteTranscript(null, {
             onStatus: (status) => {
-                sendRetryStatus(mainWindow, {
-                    ...status,
-                    sessionId: retrySessionId
-                });
+                sendRetryStatus(mainWindow, status, retrySessionId);
             }
         });
 
         if (mainWindow && !mainWindow.isDestroyed()) {
+            if (result?.source === 'pending-session' && result.sessionId) {
+                sendRetryStatus(mainWindow, {
+                    stage: 'retrying',
+                    label: 'Retrying',
+                    progress: 18,
+                    sessionId: result.sessionId
+                });
+                return;
+            }
+
             if (result?.refinedText) {
                 mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, {
                     text: result.refinedText,
@@ -77,7 +85,10 @@ async function handleRetryLastTranscript(mainWindow) {
             }
         }
     } catch (error) {
-        const retryAvailable = Boolean(pendingRetryService.getPendingRetry());
+        const retryAvailable = Boolean(
+            pendingRetryService.getPendingRetry() ||
+            historyService.getEntryRawText(historyService.getLatestEntry())
+        );
         const detail = retryAvailable
             ? 'Retry could not be completed.'
             : 'No retryable audio or transcript is available.';

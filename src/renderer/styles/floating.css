@@ -277,12 +277,15 @@
 }
 
 .pill__detail {
-    font-size: 10.5px;
-    line-height: 1.4;
-    letter-spacing: 0.2px;
-    color: var(--koe-text-dim);
-    white-space: normal;
-    overflow-wrap: anywhere;
+    display: inline-block;
+    min-width: max-content;
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: 0.18px;
+    color: rgba(255, 248, 248, 0.98);
+    text-shadow: 0 1px 10px rgba(0, 0, 0, 0.34);
+    white-space: nowrap;
+    will-change: transform;
 }
 
 .pill__banner {
@@ -290,12 +293,12 @@
     margin-top: 0;
     max-height: 0;
     padding: 0 14px;
-    border-radius: 16px;
+    border-radius: 999px;
     border: 1px solid transparent;
-    background: rgba(6, 6, 10, 0.88);
+    background: linear-gradient(90deg, rgba(30, 11, 18, 0.96), rgba(20, 11, 16, 0.92));
     backdrop-filter: blur(24px) saturate(1.35);
     -webkit-backdrop-filter: blur(24px) saturate(1.35);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
     overflow: hidden;
     opacity: 0;
     transform: translateY(-6px);
@@ -309,7 +312,7 @@
 }
 
 [data-theme="light"] .pill__banner {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 248, 255, 0.9));
+    background: linear-gradient(90deg, rgba(255, 252, 252, 0.96), rgba(250, 244, 246, 0.92));
     border-color: rgba(214, 223, 243, 0.9);
     box-shadow:
         0 16px 30px rgba(129, 142, 172, 0.18),
@@ -323,26 +326,118 @@
 .pill__banner::before {
     content: '';
     position: absolute;
-    top: 10px;
-    bottom: 10px;
-    left: 8px;
-    width: 2px;
-    border-radius: 999px;
-    background: var(--koe-border-highlight);
+    inset: 1px;
+    border-radius: inherit;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 12%, transparent 88%, rgba(255, 255, 255, 0.08)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 26%);
+    opacity: 0.9;
+    pointer-events: none;
+}
+
+.pill__detail-viewport {
+    position: relative;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+    mask-image: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 1) 8%, rgba(0, 0, 0, 1) 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 1) 8%, rgba(0, 0, 0, 1) 92%, transparent 100%);
+}
+
+.pill__detail-viewport::-webkit-scrollbar {
+    display: none;
 }
 
 .pill__banner .pill__detail {
-    padding-left: 8px;
+    padding-left: 2px;
+    padding-right: 18px;
+}
+
+.pill__detail.is-streaming {
+    transition: color 0.2s ease;
+}
+
+[data-theme="light"] .pill__detail {
+    color: rgba(45, 21, 28, 0.96);
+    text-shadow: none;
+}
+
+[data-theme="light"] .pill__detail-viewport {
+    mask-image: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 1) 6%, rgba(0, 0, 0, 1) 94%, transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, rgba(0, 0, 0, 1) 6%, rgba(0, 0, 0, 1) 94%, transparent 100%);
 }
 
 .pill__banner.has-content {
     margin-top: 8px;
-    max-height: 84px;
-    padding-top: 10px;
-    padding-bottom: 10px;
-    border-color: var(--koe-border);
+    max-height: 42px;
+    padding-top: 9px;
+    padding-bottom: 9px;
+    border-color: rgba(255, 255, 255, 0.08);
     opacity: 1;
     transform: translateY(0);
+}
+
+.state-recording .pill__detail {
+    color: rgba(255, 249, 250, 0.98);
+}
+
+.state-processing .pill__detail {
+    color: rgba(245, 248, 255, 0.96);
+}
+
+.state-error .pill__detail {
+    color: rgba(255, 244, 230, 0.98);
+}
+
+.state-done .pill__detail {
+    color: rgba(235, 255, 244, 0.98);
+}
+
+.state-recording .pill__banner {
+    background:
+        linear-gradient(90deg, rgba(66, 15, 29, 0.96), rgba(36, 14, 21, 0.93)),
+        rgba(22, 10, 16, 0.9);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+.state-processing .pill__banner {
+    background:
+        linear-gradient(90deg, rgba(28, 37, 74, 0.94), rgba(20, 25, 46, 0.92));
+    border-color: rgba(139, 171, 255, 0.16);
+}
+
+.state-error .pill__banner {
+    background:
+        linear-gradient(90deg, rgba(70, 37, 8, 0.96), rgba(38, 22, 8, 0.93));
+    border-color: rgba(245, 158, 11, 0.22);
+}
+
+.state-done .pill__banner {
+    background:
+        linear-gradient(90deg, rgba(10, 56, 33, 0.94), rgba(9, 28, 20, 0.92));
+    border-color: rgba(56, 189, 120, 0.18);
+}
+
+[data-theme="light"] .state-recording .pill__banner {
+    background: linear-gradient(90deg, rgba(255, 243, 246, 0.98), rgba(255, 238, 242, 0.94));
+    border-color: rgba(230, 41, 74, 0.14);
+}
+
+[data-theme="light"] .state-processing .pill__banner {
+    background: linear-gradient(90deg, rgba(243, 246, 255, 0.98), rgba(237, 241, 255, 0.94));
+    border-color: rgba(94, 79, 224, 0.12);
+}
+
+[data-theme="light"] .state-error .pill__banner {
+    background: linear-gradient(90deg, rgba(255, 248, 238, 0.98), rgba(255, 244, 232, 0.94));
+    border-color: rgba(245, 158, 11, 0.16);
+}
+
+[data-theme="light"] .state-done .pill__banner {
+    background: linear-gradient(90deg, rgba(239, 255, 247, 0.98), rgba(234, 251, 242, 0.94));
+    border-color: rgba(0, 200, 83, 0.16);
 }
 
 /* â”€â”€â”€ Right: Timer / Spinner / Check â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -442,7 +537,7 @@
 }
 
 .state-recording .pill__detail {
-    color: var(--koe-text-dim);
+    color: rgba(255, 249, 250, 0.98);
 }
 
 .state-recording .pill__progress {
@@ -458,11 +553,15 @@
 }
 
 .state-recording .pill__banner {
-    background: rgba(22, 10, 16, 0.9);
+    background:
+        linear-gradient(90deg, rgba(66, 15, 29, 0.96), rgba(36, 14, 21, 0.93)),
+        rgba(22, 10, 16, 0.9);
 }
 
 .state-recording .pill__banner::before {
-    background: var(--koe-danger);
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 12%, transparent 88%, rgba(255, 255, 255, 0.08)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 26%);
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -505,7 +604,7 @@
 }
 
 .state-processing .pill__detail {
-    color: var(--koe-process);
+    color: rgba(245, 248, 255, 0.96);
 }
 
 .state-processing .pill__progress {
@@ -521,11 +620,14 @@
 }
 
 .state-processing .pill__banner {
-    background: rgba(15, 12, 26, 0.92);
+    background:
+        linear-gradient(90deg, rgba(28, 37, 74, 0.94), rgba(20, 25, 46, 0.92));
 }
 
 .state-processing .pill__banner::before {
-    background: var(--koe-process);
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 12%, transparent 88%, rgba(255, 255, 255, 0.08)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 26%);
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -557,7 +659,7 @@
 }
 
 .state-done .pill__detail {
-    color: var(--koe-success);
+    color: rgba(235, 255, 244, 0.98);
 }
 
 .state-done .pill__visualizer {
@@ -590,11 +692,14 @@
 }
 
 .state-done .pill__banner {
-    background: rgba(8, 20, 14, 0.9);
+    background:
+        linear-gradient(90deg, rgba(10, 56, 33, 0.94), rgba(9, 28, 20, 0.92));
 }
 
 .state-done .pill__banner::before {
-    background: var(--koe-success);
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 12%, transparent 88%, rgba(255, 255, 255, 0.08)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 26%);
 }
 
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -633,7 +738,7 @@
 }
 
 .state-error .pill__detail {
-    color: #fbbf24;
+    color: rgba(255, 244, 230, 0.98);
 }
 
 .state-error .pill__visualizer {
@@ -660,11 +765,14 @@
 }
 
 .state-error .pill__banner {
-    background: rgba(28, 16, 6, 0.94);
+    background:
+        linear-gradient(90deg, rgba(70, 37, 8, 0.96), rgba(38, 22, 8, 0.93));
 }
 
 .state-error .pill__banner::before {
-    background: #f59e0b;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 12%, transparent 88%, rgba(255, 255, 255, 0.08)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.14), transparent 26%);
 }
 
 
@@ -686,13 +794,15 @@
 }
 
 [data-theme="light"] .state-recording .pill__banner {
-    background: linear-gradient(180deg, rgba(255, 245, 247, 0.96), rgba(255, 240, 242, 0.92));
-    border-color: rgba(230, 41, 74, 0.18);
+    background: linear-gradient(90deg, rgba(255, 243, 246, 0.98), rgba(255, 238, 242, 0.94));
+    border-color: rgba(230, 41, 74, 0.14);
     box-shadow: 0 12px 24px rgba(230, 41, 74, 0.08);
 }
 
 [data-theme="light"] .state-recording .pill__banner::before {
-    background: var(--koe-danger);
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.32), transparent 14%, transparent 90%, rgba(255, 255, 255, 0.14)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.26), transparent 28%);
 }
 
 [data-theme="light"] .state-recording .pill__border-glow {
@@ -724,13 +834,15 @@
 }
 
 [data-theme="light"] .state-processing .pill__banner {
-    background: linear-gradient(180deg, rgba(248, 246, 255, 0.96), rgba(243, 240, 255, 0.92));
-    border-color: rgba(94, 79, 224, 0.16);
+    background: linear-gradient(90deg, rgba(243, 246, 255, 0.98), rgba(237, 241, 255, 0.94));
+    border-color: rgba(94, 79, 224, 0.12);
     box-shadow: 0 12px 24px rgba(94, 79, 224, 0.08);
 }
 
 [data-theme="light"] .state-processing .pill__banner::before {
-    background: var(--koe-process);
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.32), transparent 14%, transparent 90%, rgba(255, 255, 255, 0.14)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.26), transparent 28%);
 }
 
 [data-theme="light"] .state-processing .pill__border-glow {
@@ -749,13 +861,15 @@
 }
 
 [data-theme="light"] .state-done .pill__banner {
-    background: linear-gradient(180deg, rgba(243, 255, 248, 0.96), rgba(237, 255, 244, 0.92));
-    border-color: rgba(0, 200, 83, 0.18);
+    background: linear-gradient(90deg, rgba(239, 255, 247, 0.98), rgba(234, 251, 242, 0.94));
+    border-color: rgba(0, 200, 83, 0.16);
     box-shadow: 0 12px 24px rgba(0, 200, 83, 0.08);
 }
 
 [data-theme="light"] .state-done .pill__banner::before {
-    background: var(--koe-success);
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.32), transparent 14%, transparent 90%, rgba(255, 255, 255, 0.14)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.26), transparent 28%);
 }
 
 [data-theme="light"] .state-done .pill__border-glow {
@@ -774,13 +888,15 @@
 }
 
 [data-theme="light"] .state-error .pill__banner {
-    background: linear-gradient(180deg, rgba(255, 251, 243, 0.96), rgba(255, 248, 237, 0.92));
-    border-color: rgba(245, 158, 11, 0.2);
+    background: linear-gradient(90deg, rgba(255, 248, 238, 0.98), rgba(255, 244, 232, 0.94));
+    border-color: rgba(245, 158, 11, 0.16);
     box-shadow: 0 12px 24px rgba(245, 158, 11, 0.08);
 }
 
 [data-theme="light"] .state-error .pill__banner::before {
-    background: #f59e0b;
+    background:
+        linear-gradient(90deg, rgba(255, 255, 255, 0.32), transparent 14%, transparent 90%, rgba(255, 255, 255, 0.14)),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.26), transparent 28%);
 }
 
 [data-theme="light"] .state-error .pill__border-glow {

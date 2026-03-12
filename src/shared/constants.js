@@ -5,6 +5,7 @@ const CHANNELS = {
     TRANSCRIPTION_RESULT: 'transcription:result',
     TRANSCRIPTION_STATUS: 'transcription:status',
     TRANSCRIPTION_COMPLETE: 'transcription:complete',
+    TRANSCRIPTION_PREVIEW: 'transcription:preview',
     WINDOW_ANIMATE_IN: 'window:animate-in',
 
     // Renderer -> Main

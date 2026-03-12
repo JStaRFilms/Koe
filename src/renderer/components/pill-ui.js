@@ -14,11 +14,16 @@ export class PillUI {
         this.shell = document.getElementById('pill-shell');
         this.pill = document.getElementById('pill');
         this.banner = document.getElementById('pill-banner');
+        this.detailViewport = document.getElementById('pill-detail-viewport');
         this.status = document.getElementById('pill-status');
         this.detail = document.getElementById('pill-detail');
         this.timer = document.getElementById('pill-timer');
         this.progressBar = document.getElementById('pill-progress-bar');
         this.visualizerBars = Array.from(document.querySelectorAll('.viz-bar'));
+        this.detailStreamTimer = null;
+        this.detailSourceText = '';
+        this.detailQueuedWords = [];
+        this.detailVisibleWords = [];
 
         this.resetVisualizer();
     }
@@ -31,6 +36,13 @@ export class PillUI {
         if (this.animateOutTimeout) {
             clearTimeout(this.animateOutTimeout);
             this.animateOutTimeout = null;
+        }
+    }
+
+    clearDetailStream() {
+        if (this.detailStreamTimer) {
+            clearTimeout(this.detailStreamTimer);
+            this.detailStreamTimer = null;
         }
     }
 
@@ -125,12 +137,100 @@ export class PillUI {
             return;
         }
 
+        this.clearDetailStream();
+        this.detailSourceText = '';
+        this.detailQueuedWords = [];
+        this.detailVisibleWords = [];
+
         const value = String(message || '').trim();
         this.detail.textContent = value;
+        this.detail.classList.remove('is-streaming');
         this.detail.classList.toggle('has-content', Boolean(value));
         if (this.banner) {
             this.banner.classList.toggle('has-content', Boolean(value));
         }
+        this.syncDetailScroll(false);
+    }
+
+    syncDetailScroll(smooth = true) {
+        if (!this.detailViewport) {
+            return;
+        }
+
+        const left = Math.max(0, this.detailViewport.scrollWidth - this.detailViewport.clientWidth);
+        this.detailViewport.scrollTo({
+            left,
+            behavior: smooth ? 'smooth' : 'auto'
+        });
+    }
+
+    flushStreamQueue() {
+        if (this.detailQueuedWords.length === 0) {
+            this.detailStreamTimer = null;
+            return;
+        }
+
+        this.detailVisibleWords.push(this.detailQueuedWords.shift());
+        this.detail.textContent = this.detailVisibleWords.join(' ');
+        this.detail.classList.add('has-content', 'is-streaming');
+        if (this.banner) {
+            this.banner.classList.add('has-content');
+        }
+
+        this.syncDetailScroll(true);
+
+        if (this.detailQueuedWords.length === 0) {
+            this.detailStreamTimer = null;
+            return;
+        }
+
+        const delay = this.detailQueuedWords.length > 10 ? 112 : 164;
+        this.detailStreamTimer = setTimeout(() => this.flushStreamQueue(), delay);
+    }
+
+    setStreamingDetail(message = '') {
+        if (!this.detail) {
+            return;
+        }
+
+        const value = String(message || '').trim();
+        if (!value) {
+            this.setDetail('');
+            return;
+        }
+
+        if (!value.startsWith(this.detailSourceText)) {
+            this.clearDetailStream();
+            this.detailSourceText = '';
+            this.detailQueuedWords = [];
+            this.detailVisibleWords = [];
+            this.detail.textContent = '';
+        }
+
+        const nextWords = value.split(/\s+/).filter(Boolean);
+        const knownWordCount = this.detailVisibleWords.length + this.detailQueuedWords.length;
+        const appendedWords = nextWords.slice(knownWordCount);
+
+        this.detailSourceText = value;
+
+        if (appendedWords.length > 0) {
+            this.detailQueuedWords.push(...appendedWords);
+            if (!this.detailStreamTimer) {
+                this.flushStreamQueue();
+            }
+            return;
+        }
+
+        if (this.detailVisibleWords.length === 0 && nextWords.length > 0) {
+            this.detailVisibleWords = nextWords.slice();
+            this.detail.textContent = this.detailVisibleWords.join(' ');
+        }
+
+        this.detail.classList.add('has-content', 'is-streaming');
+        if (this.banner) {
+            this.banner.classList.add('has-content');
+        }
+        this.syncDetailScroll(true);
     }
 
     setVoiceLevels(levels = []) {

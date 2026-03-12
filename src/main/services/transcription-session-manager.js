@@ -80,7 +80,7 @@ class TranscriptionSessionManager {
                 promptStyle: settings.promptStyle || 'Clean',
                 customPrompt: settings.customPrompt || '',
                 model: settings.model || 'whisper-large-v3-turbo',
-                enhanceText: true,
+                enhanceText: settings.enhanceText !== false,
                 autoPaste: settings.autoPaste !== false
             },
             segments: new Map(),
@@ -91,7 +91,9 @@ class TranscriptionSessionManager {
             failureError: null,
             pendingRetrySaved: false,
             committedRawParts: [],
-            committedRefinedParts: [],
+            finalRawText: '',
+            finalRefinementRequested: false,
+            finalRefinementPending: false,
             createdAt: Date.now()
         };
 
@@ -109,6 +111,14 @@ class TranscriptionSessionManager {
         }
 
         this.mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, status);
+    }
+
+    sendPreview(payload) {
+        if (!this.mainWindow || this.mainWindow.isDestroyed()) {
+            return;
+        }
+
+        this.mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_PREVIEW, payload);
     }
 
     sendComplete(payload) {
@@ -141,7 +151,6 @@ class TranscriptionSessionManager {
             status: 'queued',
             buffer: audioData.buffer,
             rawText: '',
-            refinedText: '',
             tempPath: null,
             error: null
         };
@@ -195,6 +204,16 @@ class TranscriptionSessionManager {
 
         if (message.type === 'segment-error') {
             await this.handleSegmentError(message);
+            return;
+        }
+
+        if (message.type === 'session-refined') {
+            await this.handleSessionRefined(message);
+            return;
+        }
+
+        if (message.type === 'session-refine-error') {
+            await this.handleSessionRefineError(message);
         }
     }
 
@@ -210,7 +229,6 @@ class TranscriptionSessionManager {
         }
 
         segment.rawText = String(message.rawText || '').trim();
-        segment.refinedText = String(message.refinedText || '').trim();
         segment.error = null;
         segment.status = message.empty ? 'empty' : 'ready';
 
@@ -240,7 +258,7 @@ class TranscriptionSessionManager {
                 sessionId: session.sessionId,
                 stage: 'warning',
                 label: 'Retry Needed Later',
-                detail: 'A segment failed. Keep talking. Retry after you stop if needed.'
+                detail: 'A chunk failed. Keep talking. Retry after you stop if needed.'
             });
             return;
         }
@@ -248,8 +266,39 @@ class TranscriptionSessionManager {
         await this.updatePostStopState(session);
     }
 
+    async handleSessionRefined(message) {
+        const session = this.sessions.get(message.sessionId);
+        if (!session || session.finalized) {
+            return;
+        }
+
+        session.finalRefinementPending = false;
+        await this.finalizeSuccessfulSession(session, String(message.refinedText || '').trim());
+    }
+
+    async handleSessionRefineError(message) {
+        const session = this.sessions.get(message.sessionId);
+        if (!session || session.finalized) {
+            return;
+        }
+
+        session.finalRefinementPending = false;
+        await this.finalizeWithRawFallback(session, String(message.error || 'Session refinement failed.'));
+    }
+
     getOrderedSequences(session) {
         return Array.from(session.segments.keys()).sort((left, right) => left - right);
+    }
+
+    getPreviewText(session) {
+        return joinTranscriptParts(session.committedRawParts);
+    }
+
+    emitPreview(session) {
+        this.sendPreview({
+            sessionId: session.sessionId,
+            text: this.getPreviewText(session)
+        });
     }
 
     async flushReadySegments(session) {
@@ -258,6 +307,7 @@ class TranscriptionSessionManager {
         }
 
         session.flushing = true;
+        let committedAny = false;
 
         try {
             while (true) {
@@ -274,17 +324,9 @@ class TranscriptionSessionManager {
                     break;
                 }
 
-                if (segment.status === 'ready') {
-                    if (segment.rawText) {
-                        session.committedRawParts.push(segment.rawText);
-                    }
-
-                    if (segment.refinedText) {
-                        session.committedRefinedParts.push(segment.refinedText);
-                        if (session.settings.autoPaste) {
-                            await autoPaste(segment.refinedText);
-                        }
-                    }
+                if (segment.status === 'ready' && segment.rawText) {
+                    session.committedRawParts.push(segment.rawText);
+                    committedAny = true;
                 }
 
                 segment.status = 'committed';
@@ -296,6 +338,10 @@ class TranscriptionSessionManager {
             }
         } finally {
             session.flushing = false;
+        }
+
+        if (committedAny) {
+            this.emitPreview(session);
         }
     }
 
@@ -348,13 +394,13 @@ class TranscriptionSessionManager {
 
         if (!this.isSessionSettled(session)) {
             const progress = counts.total > 0
-                ? Math.max(20, Math.min(96, Math.round((counts.committed / counts.total) * 100)))
-                : 30;
+                ? Math.max(20, Math.min(78, Math.round((counts.committed / counts.total) * 100)))
+                : 24;
 
             this.sendStatus({
                 sessionId: session.sessionId,
                 stage: 'processing',
-                label: 'Finalizing',
+                label: 'Finishing up',
                 progress
             });
             return;
@@ -365,27 +411,41 @@ class TranscriptionSessionManager {
             this.sendStatus({
                 sessionId: session.sessionId,
                 stage: 'error',
-                error: session.failureError || 'Some segments failed. Retry to finish the transcript.',
+                error: session.failureError || 'Some chunks failed. Retry to finish the transcript.',
+                detail: 'The last unsent recording is ready to resend.',
                 retryAvailable: true,
                 lingerMs: 6500
             });
             return;
         }
 
-        await this.finalizeSession(session);
+        await this.requestFinalRefinement(session);
     }
 
-    async finalizeSession(session) {
-        if (session.finalized) {
+    async requestFinalRefinement(session) {
+        if (session.finalRefinementPending) {
+            this.sendStatus({
+                sessionId: session.sessionId,
+                stage: 'refining',
+                label: 'Refining',
+                progress: 90
+            });
             return;
         }
 
-        session.finalized = true;
-        const rawText = joinTranscriptParts(session.committedRawParts);
-        const refinedText = joinTranscriptParts(session.committedRefinedParts);
+        if (session.finalRefinementRequested) {
+            return;
+        }
 
-        if (!rawText && !refinedText) {
+        const rawText = joinTranscriptParts(session.committedRawParts);
+        session.finalRawText = rawText;
+
+        if (!rawText) {
             pendingRetryService.clearPendingRetry();
+            this.sendPreview({
+                sessionId: session.sessionId,
+                text: ''
+            });
             this.sendStatus({
                 sessionId: session.sessionId,
                 stage: 'empty',
@@ -396,20 +456,116 @@ class TranscriptionSessionManager {
             return;
         }
 
-        writeToClipboard(refinedText || rawText);
+        if (!session.settings.enhanceText) {
+            await this.finalizeSuccessfulSession(session, rawText, false);
+            return;
+        }
+
+        session.finalRefinementRequested = true;
+        session.finalRefinementPending = true;
+        this.sendStatus({
+            sessionId: session.sessionId,
+            stage: 'refining',
+            label: 'Polishing',
+            progress: 90
+        });
+
+        this.worker.postMessage({
+            type: 'refine-session',
+            payload: {
+                sessionId: session.sessionId,
+                rawText,
+                options: session.settings
+            }
+        });
+    }
+
+    async finalizeSuccessfulSession(session, refinedText, isEnhanced = true) {
+        if (session.finalized) {
+            return;
+        }
+
+        session.finalized = true;
+        const rawText = session.finalRawText || joinTranscriptParts(session.committedRawParts);
+        const outputText = String(refinedText || '').trim() || rawText;
+
+        writeToClipboard(outputText);
+        if (session.settings.autoPaste) {
+            await autoPaste(outputText);
+        }
+
         historyService.addHistoryEntry({
             rawText,
-            refinedText: refinedText || rawText,
+            refinedText: outputText,
             language: session.settings.language || 'auto',
-            isLlamaEnhanced: true,
+            isLlamaEnhanced: isEnhanced,
             source: 'transcription'
         });
 
         pendingRetryService.clearPendingRetry();
         this.sendUsageStats();
+        this.sendPreview({
+            sessionId: session.sessionId,
+            text: ''
+        });
         this.sendComplete({
-            text: refinedText || rawText,
+            text: outputText,
             sessionId: session.sessionId
+        });
+        this.sessions.delete(session.sessionId);
+    }
+
+    async finalizeWithRawFallback(session, errorMessage) {
+        if (session.finalized) {
+            return;
+        }
+
+        session.finalized = true;
+        const rawText = session.finalRawText || joinTranscriptParts(session.committedRawParts);
+
+        if (!rawText) {
+            pendingRetryService.clearPendingRetry();
+            this.sendPreview({
+                sessionId: session.sessionId,
+                text: ''
+            });
+            this.sendStatus({
+                sessionId: session.sessionId,
+                stage: 'error',
+                error: errorMessage,
+                retryAvailable: false,
+                lingerMs: 4500
+            });
+            this.sessions.delete(session.sessionId);
+            return;
+        }
+
+        writeToClipboard(rawText);
+        if (session.settings.autoPaste) {
+            await autoPaste(rawText);
+        }
+
+        historyService.addHistoryEntry({
+            rawText,
+            refinedText: rawText,
+            language: session.settings.language || 'auto',
+            isLlamaEnhanced: false,
+            source: 'transcription'
+        });
+
+        pendingRetryService.clearPendingRetry();
+        this.sendUsageStats();
+        this.sendPreview({
+            sessionId: session.sessionId,
+            text: ''
+        });
+        this.sendStatus({
+            sessionId: session.sessionId,
+            stage: 'error',
+            error: errorMessage,
+            detail: 'Raw transcript pasted. Final session retry is available.',
+            retryAvailable: true,
+            lingerMs: 6500
         });
         this.sessions.delete(session.sessionId);
     }
@@ -428,8 +584,7 @@ class TranscriptionSessionManager {
             if (segment.status === 'committed' || segment.status === 'empty') {
                 committedSegments.push({
                     sequence: segment.sequence,
-                    rawText: segment.rawText || '',
-                    refinedText: segment.refinedText || ''
+                    rawText: segment.rawText || ''
                 });
                 continue;
             }
@@ -440,7 +595,6 @@ class TranscriptionSessionManager {
                 audioSeconds: segment.audioSeconds,
                 status: segment.status,
                 rawText: segment.status === 'ready' ? (segment.rawText || '') : '',
-                refinedText: segment.status === 'ready' ? (segment.refinedText || '') : '',
                 tempPath: segment.tempPath || null,
                 error: segment.error || null
             });
@@ -508,19 +662,15 @@ class TranscriptionSessionManager {
         session.settings = {
             ...session.settings,
             ...manifest.settings,
-            enhanceText: true
+            enhanceText: manifest.settings?.enhanceText !== false
         };
         session.nextSequenceToCommit = Number(manifest.nextSequenceToCommit || 0);
-        session.committedRawParts = manifest.committedSegments
+        session.committedRawParts = (manifest.committedSegments || [])
             .slice()
             .sort((left, right) => left.sequence - right.sequence)
             .map((segment) => segment.rawText || '')
             .filter(Boolean);
-        session.committedRefinedParts = manifest.committedSegments
-            .slice()
-            .sort((left, right) => left.sequence - right.sequence)
-            .map((segment) => segment.refinedText || '')
-            .filter(Boolean);
+        session.finalRawText = this.getPreviewText(session);
 
         for (const committed of manifest.committedSegments || []) {
             session.segments.set(committed.sequence, {
@@ -531,7 +681,6 @@ class TranscriptionSessionManager {
                 status: 'committed',
                 buffer: null,
                 rawText: committed.rawText || '',
-                refinedText: committed.refinedText || '',
                 tempPath: null,
                 error: null
             });
@@ -546,12 +695,12 @@ class TranscriptionSessionManager {
                 status: unresolved.status === 'ready' ? 'ready' : 'failed',
                 buffer: null,
                 rawText: unresolved.rawText || '',
-                refinedText: unresolved.refinedText || '',
                 tempPath: unresolved.tempPath || null,
                 error: unresolved.error || null
             });
         }
 
+        this.emitPreview(session);
         await this.retrySession(session, options);
         return {
             source: 'pending-session',
@@ -571,6 +720,8 @@ class TranscriptionSessionManager {
         }
 
         session.failureError = null;
+        session.finalRefinementRequested = false;
+        session.finalRefinementPending = false;
         this.sendStatus({
             sessionId: session.sessionId,
             stage: 'retrying',

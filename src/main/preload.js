@@ -52,6 +52,10 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.removeAllListeners(CHANNELS.TRANSCRIPTION_STATUS);
         ipcRenderer.on(CHANNELS.TRANSCRIPTION_STATUS, (event, status) => callback(status));
     },
+    onTranscriptionPreview: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.TRANSCRIPTION_PREVIEW);
+        ipcRenderer.on(CHANNELS.TRANSCRIPTION_PREVIEW, (event, payload) => callback(payload));
+    },
     onTranscriptionResult: (callback) => {
         ipcRenderer.removeAllListeners(CHANNELS.TRANSCRIPTION_RESULT);
         ipcRenderer.on(CHANNELS.TRANSCRIPTION_RESULT, (event, text) => callback({ text }));
