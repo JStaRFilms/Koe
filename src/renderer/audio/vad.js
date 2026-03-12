@@ -15,6 +15,7 @@ let recordingFrames = [];
 let currentSessionId = null;
 let deviceChangeLoggingAttached = false;
 let sessionDiagnostics = createSessionDiagnostics();
+const audioLevelListeners = new Set();
 
 const AUDIO_CONSTRAINTS = {
     channelCount: 1,
@@ -53,6 +54,56 @@ function createSessionDiagnostics(sessionId = null) {
         maxSpeechProbability: null,
         minSpeechProbability: null
     };
+}
+
+function notifyAudioLevelListeners(levels) {
+    for (const listener of audioLevelListeners) {
+        try {
+            listener(levels);
+        } catch (error) {
+            window.api?.log?.(`[Audio] Live level listener failed: ${error.message}`);
+        }
+    }
+}
+
+function normalizeChunkEnergy(chunkEnergy) {
+    if (!Number.isFinite(chunkEnergy) || chunkEnergy <= 0.003) {
+        return 0;
+    }
+
+    return Math.min(1, Math.pow(chunkEnergy * 18, 0.72));
+}
+
+function buildVisualizerLevels(frame, barCount = 7) {
+    if (!frame?.length) {
+        return Array.from({ length: barCount }, () => 0);
+    }
+
+    const chunkSize = Math.max(1, Math.floor(frame.length / barCount));
+    const levels = [];
+
+    for (let barIndex = 0; barIndex < barCount; barIndex += 1) {
+        const start = barIndex * chunkSize;
+        const end = barIndex === barCount - 1
+            ? frame.length
+            : Math.min(frame.length, start + chunkSize);
+
+        if (start >= frame.length) {
+            levels.push(0);
+            continue;
+        }
+
+        let sumSquares = 0;
+        for (let sampleIndex = start; sampleIndex < end; sampleIndex += 1) {
+            const sample = frame[sampleIndex];
+            sumSquares += sample * sample;
+        }
+
+        const rms = Math.sqrt(sumSquares / Math.max(1, end - start));
+        levels.push(normalizeChunkEnergy(rms));
+    }
+
+    return levels;
 }
 
 function resetSessionDiagnostics(sessionId = null) {
@@ -425,6 +476,7 @@ export async function initVAD() {
 
                 recordingFrames.push(new Float32Array(frame));
                 recordFrameDiagnostics(frame, probabilities);
+                notifyAudioLevelListeners(buildVisualizerLevels(frame));
             },
 
             onSpeechStart: () => {
@@ -461,6 +513,7 @@ export async function startListening(sessionId) {
     recordingFrames = [];
     resetSessionDiagnostics(currentSessionId);
     isListening = true;
+    notifyAudioLevelListeners(buildVisualizerLevels(null));
     await vad.start();
     window.api?.log?.(`VAD: Listening started for session ${currentSessionId}.`);
     logActiveVadRuntime(currentSessionId);
@@ -476,6 +529,7 @@ export function stopListening(sessionId = currentSessionId) {
 
     const finalSessionId = sessionId ?? currentSessionId;
     isListening = false;
+    notifyAudioLevelListeners(buildVisualizerLevels(null));
     vad.pause();
     window.api?.log?.(`VAD: Listening paused for session ${finalSessionId}.`);
 
@@ -510,6 +564,19 @@ export function stopListening(sessionId = currentSessionId) {
     currentSessionId = null;
     sendAudioChunk(merged, finalSessionId);
     return true;
+}
+
+export function subscribeAudioLevels(listener) {
+    if (typeof listener !== 'function') {
+        return () => {};
+    }
+
+    audioLevelListeners.add(listener);
+    listener(buildVisualizerLevels(null));
+
+    return () => {
+        audioLevelListeners.delete(listener);
+    };
 }
 
 function sendAudioChunk(audio, sessionId) {

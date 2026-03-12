@@ -4,6 +4,7 @@ const { getSetting } = require('./services/settings');
 const { setRecordingState } = require('./tray');
 const { toggleRecording } = require('./services/recording-state');
 const { retryAndPasteTranscript } = require('./services/retry-transcript');
+const pendingRetryService = require('./services/pending-retry');
 const { closeSettingsWindow } = require('./settings-window');
 
 const RETRY_LAST_HOTKEY = 'CommandOrControl+Shift+,';
@@ -12,6 +13,18 @@ let currentHotkey = null;
 
 function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function sendRetryStatus(mainWindow, status) {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+        return;
+    }
+
+    mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, {
+        ...status,
+        sessionId: status.sessionId,
+        forceDisplay: true
+    });
 }
 
 function handleRecordingToggle(mainWindow) {
@@ -28,15 +41,61 @@ function handleRecordingToggle(mainWindow) {
     }
 }
 
-async function handleRetryLastTranscript() {
+async function handleRetryLastTranscript(mainWindow) {
+    const retrySessionId = Date.now();
     closeSettingsWindow();
     await wait(200);
-    await retryAndPasteTranscript(null);
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.showInactive();
+    }
+
+    try {
+        const result = await retryAndPasteTranscript(null, {
+            onStatus: (status) => {
+                sendRetryStatus(mainWindow, {
+                    ...status,
+                    sessionId: retrySessionId
+                });
+            }
+        });
+
+        if (mainWindow && !mainWindow.isDestroyed()) {
+            if (result?.refinedText) {
+                mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, {
+                    text: result.refinedText,
+                    sessionId: retrySessionId,
+                    forceDisplay: true
+                });
+            } else if (result?.empty) {
+                sendRetryStatus(mainWindow, {
+                    stage: 'empty',
+                    label: 'No speech detected',
+                    detail: 'The saved recording did not produce any transcript.',
+                    sessionId: retrySessionId
+                });
+            }
+        }
+    } catch (error) {
+        const retryAvailable = Boolean(pendingRetryService.getPendingRetry());
+        const detail = retryAvailable
+            ? 'Retry could not be completed.'
+            : 'No retryable audio or transcript is available.';
+        sendRetryStatus(mainWindow, {
+            stage: 'error',
+            error: error.message,
+            detail,
+            retryAvailable,
+            sessionId: retrySessionId,
+            lingerMs: retryAvailable ? 6500 : 4500
+        });
+        throw error;
+    }
 }
 
-function registerRetryShortcut() {
+function registerRetryShortcut(mainWindow) {
     const registered = globalShortcut.register(RETRY_LAST_HOTKEY, () => {
-        handleRetryLastTranscript().catch((error) => {
+        handleRetryLastTranscript(mainWindow).catch((error) => {
             console.error(`[Retry] Failed to retry last transcript: ${error.message}`);
         });
     });
@@ -61,7 +120,7 @@ function registerShortcuts(mainWindow) {
         return false;
     }
 
-    registerRetryShortcut();
+    registerRetryShortcut(mainWindow);
 
     console.log(`Global shortcut ${hotkey} registered successfully.`);
     return true;
@@ -81,7 +140,7 @@ function updateHotkey(mainWindow, newHotkey) {
 
     if (registered) {
         currentHotkey = newHotkey;
-        registerRetryShortcut();
+        registerRetryShortcut(mainWindow);
         console.log(`Global shortcut updated to ${newHotkey}.`);
         return true;
     }

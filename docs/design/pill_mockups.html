@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koe UI Pill Mockups - 5 Vibes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0c0c0e;
+            --text-color: #ffffff;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            gap: 80px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            text-align: center;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 40px;
+            background: linear-gradient(135deg, #fff 0%, #666 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        section {
+            display: flex;
+            flex-direction: column;
+            gap: 40px;
+        }
+
+        .vibe-header {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .vibe-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #aaa;
+        }
+
+        .states-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            align-items: start;
+        }
+
+        .state-card {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .state-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* ─── BASE PILL STRUCTURE ────────────────────────── */
+        .pill-container {
+            width: 380px;
+            height: 52px;
+            border-radius: 26px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            position: relative;
+            cursor: default;
+            transition: all 0.3s ease;
+        }
+
+        .pill-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            gap: 12px;
+            z-index: 2;
+        }
+
+        .icon-box {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        .status-text {
+            flex: 1;
+            font-size: 14px;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .right-element {
+            min-width: 40px;
+            display: flex;
+            justify-content: flex-end;
+            font-size: 12px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Common Animation Base */
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.5; transform: scale(1); } 50% { opacity: 1; transform: scale(1.2); } }
+        @keyframes drawCheck { to { stroke-dashoffset: 0; } }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* VIBE 1: ECLIPSE (Original/HUD)                              */
+        /* ═══════════════════════════════════════════════════════════ */
+        .vibe-eclipse .pill-container {
+            background: rgba(12, 12, 18, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(12px);
+        }
+
+        .vibe-eclipse .status-text { color: #e8e8f0; font-family: 'JetBrains Mono', monospace; letter-spacing: -0.5px; }
+        .vibe-eclipse .right-element { color: #64647a; }
+
+        .vibe-eclipse .accent-primary { color: #00e5bf; }
+        .vibe-eclipse .accent-recording { color: #ff3b5c; }
+        .vibe-eclipse .accent-process { color: #7c6aff; }
+        .vibe-eclipse .accent-success { color: #00e676; }
+        .vibe-eclipse .accent-error { color: #f59e0b; }
+
+        .vibe-eclipse .progress-track {
+            position: absolute;
+            bottom: 0;
+            left: 20px;
+            right: 20px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 1px;
+        }
+
+        .vibe-eclipse .progress-fill {
+            height: 100%;
+            background: #7c6aff;
+            box-shadow: 0 0 10px rgba(124, 106, 255, 0.5);
+            transition: width 0.3s ease;
+        }
+
+        .vibe-eclipse .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #ff3b5c;
+            border-radius: 50%;
+            box-shadow: 0 0 12px rgba(255, 59, 92, 0.6);
+            animation: pulse 1.2s infinite;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* VIBE 2: SOLARIS (Light / Frosted)                           */
+        /* ═══════════════════════════════════════════════════════════ */
+        .vibe-solaris .pill-container {
+            background: rgba(255, 255, 255, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            backdrop-filter: blur(20px);
+        }
+
+        .vibe-solaris .status-text { color: #1a1a2e; font-family: 'Outfit', sans-serif; font-weight: 600; }
+        .vibe-solaris .right-element { color: #888; }
+
+        .vibe-solaris .accent-primary { color: #2563eb; }
+        .vibe-solaris .accent-recording { color: #ef4444; }
+        .vibe-solaris .accent-process { color: #8b5cf6; }
+        .vibe-solaris .accent-success { color: #10b981; }
+        .vibe-solaris .accent-error { color: #f59e0b; }
+
+        .vibe-solaris .progress-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: transparent;
+        }
+
+        .vibe-solaris .progress-fill {
+            height: 100%;
+            background: rgba(139, 92, 246, 0.1);
+            border-right: 2px solid #8b5cf6;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* VIBE 3: NEON DRIVE (Cyberpunk)                              */
+        /* ═══════════════════════════════════════════════════════════ */
+        .vibe-neon .pill-container {
+            background: #000;
+            border: 1px solid #333;
+            box-shadow: 
+                inset 0 0 10px rgba(0, 255, 255, 0.1),
+                0 0 20px rgba(0, 0, 0, 0.8);
+            overflow: visible;
+        }
+
+        .vibe-neon .pill-container::after {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 28px;
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            z-index: -1;
+            opacity: 0.3;
+            filter: blur(5px);
+        }
+
+        .vibe-neon .status-text { 
+            color: #fff; 
+            font-family: 'JetBrains Mono', monospace; 
+            text-transform: uppercase; 
+            font-size: 13px;
+            text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        .vibe-neon .accent-primary { color: #00ffff; }
+        .vibe-neon .accent-recording { color: #ff0055; }
+        .vibe-neon .accent-process { color: #bb00ff; }
+        .vibe-neon .accent-success { color: #00ffaa; }
+        .vibe-neon .accent-error { color: #ffff00; }
+
+        .vibe-neon .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #bb00ff, #ff00ff);
+            box-shadow: 0 0 15px #ff00ff;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* VIBE 4: MONOLITH (Slate / Minimal / Stealth)                */
+        /* ═══════════════════════════════════════════════════════════ */
+        .vibe-monolith .pill-container {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .vibe-monolith .status-text { color: #aaa; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .vibe-monolith .right-element { color: #444; }
+
+        .vibe-monolith .accent-primary { color: #eee; }
+        .vibe-monolith .accent-recording { color: #fff; }
+        .vibe-monolith .accent-process { color: #fff; }
+        .vibe-monolith .accent-success { color: #fff; }
+        .vibe-monolith .accent-error { color: #fff; }
+
+        .vibe-monolith .icon-box svg { opacity: 0.4; }
+        
+        .vibe-monolith .progress-track {
+            position: absolute;
+            left: 0; top: 0; bottom: 0; width: 4px;
+            background: #222;
+        }
+
+        .vibe-monolith .progress-fill {
+            width: 100%;
+            background: #fff;
+        }
+
+        /* ═══════════════════════════════════════════════════════════ */
+        /* VIBE 5: AURA (Glassmorphism Pro)                            */
+        /* ═══════════════════════════════════════════════════════════ */
+        .vibe-aura .pill-container {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(40px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .vibe-aura .pill-container::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 26px;
+            padding: 1px;
+            background: linear-gradient(to right, rgba(255,255,255,0.4), transparent, rgba(255,255,255,0.4));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        .vibe-aura .status-text { color: #fff; font-family: 'Outfit', sans-serif; letter-spacing: 0.5px; }
+        
+        .vibe-aura .accent-primary { color: #fff; }
+        .vibe-aura .accent-recording { color: #ff5e7d; }
+        .vibe-aura .accent-process { color: #9d8fff; }
+        .vibe-aura .accent-success { color: #73ffb6; }
+        .vibe-aura .accent-error { color: #ffd166; }
+
+        .vibe-aura .aura-glow {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--aura-color, #fff), transparent 70%);
+            opacity: 0.3;
+            filter: blur(10px);
+            left: -10px;
+            top: -10px;
+            pointer-events: none;
+        }
+
+        /* SVGs */
+        .svg-icon { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .spinner { animation: spin 1s linear infinite; }
+        .checkmark { stroke-dasharray: 24; stroke-dashoffset: 24; animation: drawCheck 0.4s ease-out forwards; }
+    </style>
+</head>
+<body>
+
+    <h1>Koe UI Pill Mockups</h1>
+
+    <!-- ─── VIBE 1: ECLIPSE ─── -->
+    <section class="vibe-eclipse">
+        <div class="vibe-header">
+            <span class="vibe-title">01. Eclipse (Original HUD)</span>
+        </div>
+        <div class="states-grid">
+            <!-- Idle -->
+            <div class="state-card">
+                <span class="state-label">Idle</span>
+                <div class="pill-container">
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+                        <span class="status-text">Ready</span>
+                        <div class="right-element"></div>
+                    </div>
+                </div>
+            </div>
+            <!-- Recording -->
+            <div class="state-card">
+                <span class="state-label">Recording</span>
+                <div class="pill-container" style="border-color: rgba(255, 59, 92, 0.3); box-shadow: 0 0 30px rgba(255, 59, 92, 0.15);">
+                    <div class="pill-content">
+                        <div class="icon-box"><div class="pulse-dot"></div></div>
+                        <span class="status-text accent-recording">Listening...</span>
+                        <div class="right-element">0:12</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Uploading -->
+            <div class="state-card">
+                <span class="state-label">Uploading (XYZ State)</span>
+                <div class="pill-container">
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon accent-process spinner"><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>
+                        <span class="status-text accent-process">Uploading Audio</span>
+                        <div class="right-element">12%</div>
+                    </div>
+                    <div class="progress-track"><div class="progress-fill" style="width: 12%"></div></div>
+                </div>
+            </div>
+            <!-- Done -->
+            <div class="state-card">
+                <span class="state-label">Done</span>
+                <div class="pill-container" style="border-color: rgba(0, 230, 118, 0.3);">
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon accent-success checkmark"><polyline points="20 6 9 17 4 12"/></svg></div>
+                        <span class="status-text accent-success">Transcription Pasted</span>
+                        <div class="right-element"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── VIBE 2: SOLARIS ─── -->
+    <section class="vibe-solaris">
+        <div class="vibe-header">
+            <span class="vibe-title">02. Solaris (Light / Frosted Glass)</span>
+        </div>
+        <div class="states-grid">
+            <!-- Idle -->
+            <div class="state-card">
+                <span class="state-label">Idle</span>
+                <div class="pill-container">
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></div>
+                        <span class="status-text">Koe Ready</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Recording -->
+            <div class="state-card">
+                <span class="state-label">Recording</span>
+                <div class="pill-container" style="background: rgba(255, 230, 230, 0.8);">
+                    <div class="pill-content">
+                        <div class="icon-box"><div class="pulse-dot" style="background: #ef4444; box-shadow: 0 0 10px rgba(239, 68, 68, 0.4);"></div></div>
+                        <span class="status-text accent-recording">Listening...</span>
+                        <div class="right-element">0:12</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Uploading -->
+            <div class="state-card">
+                <span class="state-label">Transcribing (XYZ State)</span>
+                <div class="pill-container">
+                    <div class="progress-track"><div class="progress-fill" style="width: 45%"></div></div>
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon accent-process spinner"><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>
+                        <span class="status-text accent-process">Transcribing...</span>
+                        <div class="right-element">Phase 2</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Error -->
+            <div class="state-card">
+                <span class="state-label">Error</span>
+                <div class="pill-container" style="background: rgba(255, 245, 230, 0.85); border-color: rgba(245, 158, 11, 0.4);">
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon accent-error"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+                        <span class="status-text accent-error">Network Unreachable</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── VIBE 3: NEON DRIVE ─── -->
+    <section class="vibe-neon">
+        <div class="vibe-header">
+            <span class="vibe-title">03. Neon Drive (Cyberpunk / Synthwave)</span>
+        </div>
+        <div class="states-grid">
+            <!-- Idle -->
+            <div class="state-card">
+                <span class="state-label">Idle</span>
+                <div class="pill-container">
+                    <div class="pill-content">
+                        <div class="icon-box accent-primary"><svg class="svg-icon"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+                        <span class="status-text">System IDLE</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Recording -->
+            <div class="state-card">
+                <span class="state-label">Recording</span>
+                <div class="pill-container" style="border-color: #ff0055; box-shadow: 0 0 15px rgba(255, 0, 85, 0.4);">
+                    <div class="pill-content">
+                        <div class="icon-box accent-recording"><div class="pulse-dot" style="background: #ff0055; animation: pulse 0.8s infinite;"></div></div>
+                        <span class="status-text accent-recording">Capturing_Audio</span>
+                        <div class="right-element">0:12s</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Processing -->
+            <div class="state-card">
+                <span class="state-label">Enhancing (XYZ State)</span>
+                <div class="pill-container" style="border-color: #bb00ff;">
+                    <div class="progress-track" style="height: 100%; opacity: 0.1;"><div class="progress-fill" style="width: 75%"></div></div>
+                    <div class="pill-content">
+                        <div class="icon-box accent-process spinner"><svg class="svg-icon"><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>
+                        <span class="status-text accent-process">Refining_Text_75%</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Success -->
+            <div class="state-card">
+                <span class="state-label">Done</span>
+                <div class="pill-container" style="border-color: #00ffaa; box-shadow: 0 0 15px rgba(0, 255, 170, 0.4);">
+                    <div class="pill-content">
+                        <div class="icon-box accent-success"><svg class="svg-icon checkmark"><polyline points="20 6 9 17 4 12"/></svg></div>
+                        <span class="status-text accent-success">Inject_Success</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── VIBE 4: MONOLITH ─── -->
+    <section class="vibe-monolith">
+        <div class="vibe-header">
+            <span class="vibe-title">04. Monolith (Slate / Stealth)</span>
+        </div>
+        <div class="states-grid">
+            <!-- Idle -->
+            <div class="state-card">
+                <span class="state-label">Idle</span>
+                <div class="pill-container">
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+                        <span class="status-text">Ready</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Recording -->
+            <div class="state-card">
+                <span class="state-label">Recording</span>
+                <div class="pill-container" style="border-color: #444;">
+                    <div class="pill-content">
+                        <div class="icon-box"><div style="width: 8px; height: 8px; background: #fff; border-radius: 50%; opacity: 0.8;"></div></div>
+                        <span class="status-text accent-recording">Listening</span>
+                        <div class="right-element">0:12</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Uploading -->
+            <div class="state-card">
+                <span class="state-label">Uploading (XYZ State)</span>
+                <div class="pill-container">
+                    <div class="progress-track"><div class="progress-fill" style="width: 30%"></div></div>
+                    <div class="pill-content" style="padding-left: 10px;">
+                        <div class="icon-box"><svg class="svg-icon spinner"><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>
+                        <span class="status-text">Uploading Audio</span>
+                        <div class="right-element">30%</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Done -->
+            <div class="state-card">
+                <span class="state-label">Done</span>
+                <div class="pill-container" style="border-color: #666;">
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon checkmark"><polyline points="20 6 9 17 4 12"/></svg></div>
+                        <span class="status-text">Complete</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ─── VIBE 5: AURA ─── -->
+    <section class="vibe-aura">
+        <div class="vibe-header">
+            <span class="vibe-title">05. Aura (Glassmorphism Pro)</span>
+        </div>
+        <div class="states-grid">
+            <!-- Idle -->
+            <div class="state-card">
+                <span class="state-label">Idle</span>
+                <div class="pill-container">
+                    <div class="aura-glow" style="--aura-color: #fff;"></div>
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+                        <span class="status-text">Ready to hear you</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Recording -->
+            <div class="state-card">
+                <span class="state-label">Recording</span>
+                <div class="pill-container">
+                    <div class="aura-glow" style="--aura-color: #ff5e7d;"></div>
+                    <div class="pill-content">
+                        <div class="icon-box"><div class="pulse-dot" style="background: #ff5e7d; box-shadow: 0 0 15px rgba(255, 94, 125, 0.4);"></div></div>
+                        <span class="status-text accent-recording">Listening...</span>
+                        <div class="right-element">0:12</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Processing -->
+            <div class="state-card">
+                <span class="state-label">Refining (XYZ State)</span>
+                <div class="pill-container">
+                    <div class="aura-glow" style="--aura-color: #9d8fff;"></div>
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon accent-process spinner"><path d="M12 2a10 10 0 0 1 10 10"/></svg></div>
+                        <span class="status-text accent-process">Polishing Transcription</span>
+                        <div class="right-element">Almost</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Done -->
+            <div class="state-card">
+                <span class="state-label">Done</span>
+                <div class="pill-container">
+                    <div class="aura-glow" style="--aura-color: #73ffb6;"></div>
+                    <div class="pill-content">
+                        <div class="icon-box"><svg class="svg-icon accent-success checkmark"><polyline points="20 6 9 17 4 12"/></svg></div>
+                        <span class="status-text accent-success">Pasted!</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</body>
+</html>

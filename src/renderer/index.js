@@ -1,10 +1,15 @@
-import { initVAD, startListening, stopListening, isVADReady } from './audio/vad.js';
+import { initVAD, startListening, stopListening, isVADReady, subscribeAudioLevels } from './audio/vad.js';
 import { PillUI } from './components/pill-ui.js';
 
 let isRecording = false;
 let activeSessionId = 0;
 let pill;
 let vadInitFailed = false;
+
+function formatRetryShortcut() {
+    const isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+    return isMac ? 'Cmd + Shift + ,' : 'Ctrl + Shift + ,';
+}
 
 function getErrorLabel(errorMsg) {
     const msg = (errorMsg || '').toLowerCase();
@@ -45,14 +50,59 @@ function normalizeStatusPayload(payload) {
     return {
         stage: payload?.stage,
         label: payload?.label,
+        detail: payload?.detail,
         progress: payload?.progress,
         sessionId: payload?.sessionId ?? activeSessionId,
-        error: payload?.error
+        error: payload?.error,
+        retryAvailable: payload?.retryAvailable === true,
+        forceDisplay: payload?.forceDisplay === true,
+        lingerMs: payload?.lingerMs
     };
+}
+
+function compactPillLabel(stage, label) {
+    const rawLabel = String(label || '').trim();
+    if (!rawLabel) {
+        if (stage === 'retrying') return 'Retrying';
+        if (stage === 'uploading') return 'Uploading';
+        if (stage === 'refining' || stage === 'enhancing') return 'Refining';
+        return 'Transcribing';
+    }
+
+    const simplifiedMap = new Map([
+        ['retrying failed audio', 'Retrying'],
+        ['retrying saved transcript', 'Retrying'],
+        ['retrying latest transcript', 'Retrying'],
+        ['uploading audio', 'Uploading'],
+        ['polishing transcription', 'Refining']
+    ]);
+
+    const normalized = rawLabel.toLowerCase();
+    if (simplifiedMap.has(normalized)) {
+        return simplifiedMap.get(normalized);
+    }
+
+    if (normalized.includes('retry')) {
+        return 'Retrying';
+    }
+    if (normalized.includes('upload')) {
+        return 'Uploading';
+    }
+    if (normalized.includes('refin') || normalized.includes('enhanc') || normalized.includes('polish')) {
+        return 'Refining';
+    }
+    if (normalized.includes('transcrib') || normalized.includes('process')) {
+        return 'Transcribing';
+    }
+
+    return rawLabel.length > 18 ? `${rawLabel.slice(0, 17).trimEnd()}…` : rawLabel;
 }
 
 async function init() {
     pill = new PillUI();
+    subscribeAudioLevels((levels) => {
+        pill.setVoiceLevels(levels);
+    });
 
     if (!window.api) {
         console.warn('API bridge not found. Preload script may not be configured.');
@@ -130,20 +180,57 @@ async function init() {
                 return;
             }
 
-            if (status.sessionId !== activeSessionId) {
+            if (status.forceDisplay && status.sessionId != null && status.sessionId !== activeSessionId) {
+                activeSessionId = status.sessionId;
+                pill.beginSession(activeSessionId);
+            }
+
+            if (!status.forceDisplay && status.sessionId !== activeSessionId) {
                 return;
             }
 
-            if (status.stage === 'uploading') {
-                pill.setProcessingStatus(status.label || 'Uploading', status.progress ?? 16, status.sessionId);
+            if (status.stage === 'retrying') {
+                pill.setProcessingStatus(
+                    compactPillLabel(status.stage, status.label),
+                    status.progress ?? 8,
+                    status.sessionId,
+                    status.detail || ''
+                );
+            } else if (status.stage === 'uploading') {
+                pill.setProcessingStatus(
+                    compactPillLabel(status.stage, status.label),
+                    status.progress ?? 16,
+                    status.sessionId,
+                    status.detail || ''
+                );
             } else if (status.stage === 'transcribing' || status.stage === 'processing') {
-                pill.setProcessingStatus(status.label || 'Transcribing', status.progress ?? 20, status.sessionId);
+                pill.setProcessingStatus(
+                    compactPillLabel(status.stage, status.label),
+                    status.progress ?? 20,
+                    status.sessionId,
+                    status.detail || ''
+                );
             } else if (status.stage === 'refining' || status.stage === 'enhancing') {
-                pill.setProcessingStatus(status.label || 'Refining', status.progress ?? 72, status.sessionId);
+                pill.setProcessingStatus(
+                    compactPillLabel(status.stage, status.label),
+                    status.progress ?? 72,
+                    status.sessionId,
+                    status.detail || ''
+                );
             } else if (status.stage === 'empty') {
-                pill.hideWithMessage(status.label || 'No speech detected', status.sessionId);
+                pill.hideWithMessage(status.label || 'No speech detected', status.sessionId, status.detail || '');
             } else if (status.stage === 'error' || status.error) {
-                pill.setError(getErrorLabel(status.error || ''), status.sessionId);
+                const errorLabel = getErrorLabel(status.error || '');
+                const detail = status.retryAvailable && errorLabel === 'Network Error'
+                    ? `Last unsent recording is ready. Retry? Press ${formatRetryShortcut()}`
+                    : (status.detail || '');
+
+                pill.setError(errorLabel, status.sessionId, {
+                    detail,
+                    lingerMs: status.retryAvailable && errorLabel === 'Network Error'
+                        ? Math.max(status.lingerMs || 0, 6500)
+                        : status.lingerMs
+                });
             }
         });
     }
@@ -151,10 +238,19 @@ async function init() {
     if (window.api.onTranscriptionComplete) {
         window.api.onTranscriptionComplete((payload) => {
             const completion = typeof payload === 'string'
-                ? { text: payload, sessionId: activeSessionId }
-                : { text: payload?.text, sessionId: payload?.sessionId ?? activeSessionId };
+                ? { text: payload, sessionId: activeSessionId, forceDisplay: false }
+                : {
+                    text: payload?.text,
+                    sessionId: payload?.sessionId ?? activeSessionId,
+                    forceDisplay: payload?.forceDisplay === true
+                };
 
-            if (completion.sessionId !== activeSessionId) {
+            if (completion.forceDisplay && completion.sessionId != null && completion.sessionId !== activeSessionId) {
+                activeSessionId = completion.sessionId;
+                pill.beginSession(activeSessionId);
+            }
+
+            if (!completion.forceDisplay && completion.sessionId !== activeSessionId) {
                 return;
             }
 

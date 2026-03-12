@@ -251,6 +251,7 @@ input[type="checkbox"] {
     display: flex;
     gap: 4px;
     align-items: center;
+    flex-wrap: wrap;
 }
 
 .shortcut-keys kbd {
@@ -261,6 +262,40 @@ input[type="checkbox"] {
     font-size: 11px;
     color: var(--koe-text-dim);
     font-family: monospace;
+}
+
+.shortcut-plus,
+.shortcut-separator {
+    color: var(--koe-text-muted);
+    font-size: 11px;
+}
+
+.shortcut-reference-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border-radius: 10px;
+    background: var(--koe-input-bg);
+    border: 1px solid var(--koe-border-highlight);
+}
+
+.shortcut-reference-item {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.shortcut-reference-item:not(:last-child) {
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--koe-border);
+}
+
+.shortcut-reference-title {
+    font-size: 12px;
+    color: var(--koe-text);
+    font-weight: 600;
 }
 
 .settings-footer {

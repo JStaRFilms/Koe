@@ -122,7 +122,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: flex-end;
-  padding: 0 0 6px 0;
+  padding: 0 10px 10px;
   -webkit-app-region: no-drag;
 }
 

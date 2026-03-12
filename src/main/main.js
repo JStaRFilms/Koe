@@ -15,8 +15,8 @@ function createWindow() {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width: screenW, height: screenH } = primaryDisplay.workAreaSize;
 
-    const pillWidth = 400;
-    const pillHeight = 68;
+    const pillWidth = 480;
+    const pillHeight = 160;
     const pillX = Math.round((screenW - pillWidth) / 2);
     const pillY = screenH - pillHeight - 16;
 

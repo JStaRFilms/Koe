@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koe Vibe 1 - Live Prototype</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #06060a;
+            --pill-bg: rgba(12, 12, 18, 0.95);
+            --text: #e8e8f0;
+            --text-muted: #64647a;
+            --text-dim: #3a3a50;
+            
+            --color-idle: #3a3a50;
+            --color-record: #ff3b5c;
+            --color-process: #00d2ff; /* New Blue/Cyan for processing */
+            --color-success: #00e676;
+            --color-warning: #f59e0b;
+            
+            --glow-record: rgba(255, 59, 92, 0.4);
+            --glow-process: rgba(0, 210, 255, 0.3);
+            --glow-success: rgba(0, 230, 118, 0.3);
+            
+            --font-mono: 'JetBrains Mono', monospace;
+            --font-sans: 'Outfit', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: var(--font-sans);
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(20, 20, 30, 1) 0%, rgba(6, 6, 10, 1) 100%);
+        }
+
+        .prototype-header {
+            position: absolute;
+            top: 40px;
+            text-align: center;
+        }
+
+        .prototype-header h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .prototype-header p {
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            margin-top: 8px;
+        }
+
+        /* ─── THE PILL ─── */
+        .pill-shell {
+            position: relative;
+            min-width: 320px;
+            max-width: 520px;
+            width: fit-content;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .pill {
+            height: 56px;
+            background: var(--pill-bg);
+            border-radius: 28px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            padding: 0 16px 0 20px;
+            gap: 12px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        /* Border Glow Ring */
+        .pill-glow {
+            position: absolute;
+            inset: -1px;
+            border-radius: 29px;
+            padding: 1px;
+            background: conic-gradient(from var(--angle, 0deg), 
+                transparent 70%, 
+                var(--active-color, var(--color-idle)) 100%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        @property --angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
+        @keyframes rotate { to { --angle: 360deg; } }
+
+        /* Left Section (Icons) */
+        .pill-left {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .icon {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.3s ease;
+        }
+
+        /* Live Visualizer */
+        .visualizer {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+            height: 20px;
+            opacity: 0;
+            margin-left: -4px; /* Pull closer to mic */
+            transition: opacity 0.3s ease;
+        }
+
+        .viz-bar {
+            width: 3px;
+            height: 4px;
+            background: var(--color-record);
+            border-radius: 2px;
+            transition: height 0.1s ease;
+        }
+
+        /* Center Section (Status) */
+        .pill-center {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .status-label {
+            font-size: 13px;
+            font-weight: 500;
+            font-family: var(--font-mono);
+            color: var(--text-muted);
+            transition: color 0.3s ease;
+        }
+
+        .status-detail {
+            font-size: 10px;
+            color: var(--text-dim);
+            letter-spacing: 0.3px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: all 0.3s ease;
+        }
+
+        /* Right Section (Timer/Spinner) */
+        .pill-right {
+            min-width: 40px;
+            margin-left: 8px;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+
+        .timer {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-muted);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Progress Bar */
+        .progress-track {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.03);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0%;
+            background: var(--color-process);
+            box-shadow: 0 0 10px var(--glow-process);
+            transition: width 0.3s ease;
+        }
+
+        /* ─── STATES ─── */
+        
+        /* State: Idle */
+        .state-idle .icon-mic { opacity: 0.4; transform: scale(1); }
+        .state-idle .status-label { color: var(--text-dim); }
+
+        /* State: Recording */
+        .state-recording { --active-color: var(--color-record); }
+        .state-recording .pill { border-color: rgba(255, 59, 92, 0.2); box-shadow: 0 0 30px var(--glow-record); }
+        .state-recording .icon-mic { opacity: 1; transform: scale(1); color: var(--color-record); }
+        .state-recording .visualizer { opacity: 1; }
+        .state-recording .status-label { color: var(--color-record); }
+        .state-recording .timer { opacity: 1; }
+        .state-recording .pill-glow { opacity: 0.6; animation: rotate 3s linear infinite; }
+
+        /* State: Processing (Base) */
+        .state-processing { --active-color: var(--color-process); }
+        .state-processing .pill { border-color: rgba(0, 210, 255, 0.2); }
+        .state-processing .icon-spinner { opacity: 1; transform: scale(1); color: var(--color-process); animation: spin 1s linear infinite; }
+        .state-processing .status-label { color: var(--color-process); }
+        .state-processing .status-detail { opacity: 1; transform: translateY(0); }
+        .state-processing .progress-track { opacity: 1; }
+        .state-processing .pill-glow { opacity: 0.4; animation: rotate 1.5s linear infinite; }
+
+        /* State: Done */
+        .state-done { --active-color: var(--color-success); }
+        .state-done .pill { border-color: rgba(0, 230, 118, 0.3); box-shadow: 0 0 40px var(--glow-success); }
+        .state-done .icon-check { opacity: 1; transform: scale(1); color: var(--color-success); border: none; stroke-dasharray: 24; stroke-dashoffset: 0; animation: drawCheck 0.4s ease-out; }
+        .state-done .status-label { color: var(--color-success); font-weight: 600; }
+        .state-done .pill-glow { opacity: 1; background: var(--color-success); }
+
+        /* State: Error */
+        .state-error { --active-color: var(--color-warning); }
+        .state-error .pill { border-color: rgba(245, 158, 11, 0.3); background: rgba(20, 15, 10, 0.95); }
+        .state-error .icon-alert { opacity: 1; transform: scale(1); color: var(--color-warning); }
+        .state-error .status-label { color: var(--color-warning); }
+        .state-error .status-detail { opacity: 1; transform: translateY(0); color: #8a5e1a; }
+
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes drawCheck { from { stroke-dashoffset: 24; } to { stroke-dashoffset: 0; } }
+
+        /* UI Controls (Top Right) */
+        .controls {
+            position: absolute;
+            bottom: 40px;
+            display: flex;
+            gap: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px 20px;
+            border-radius: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-family: var(--font-mono);
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .control-btn.active {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .control-btn:hover {
+            color: var(--text);
+        }
+
+        .loop-status {
+            position: absolute;
+            top: 70px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+            color: var(--color-process);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+    </style>
+</head>
+<body class="state-idle">
+
+    <div class="prototype-header">
+        <h1>Koe Pill v1</h1>
+        <p>Evolutionary HUD - Dynamic States Prototype</p>
+    </div>
+
+    <div class="loop-status" id="loop-indicator">Auto-Cycling Enabled</div>
+
+    <div class="pill-shell" id="shell">
+        <div class="pill-glow"></div>
+        <div class="pill">
+            <!-- Left -->
+            <div class="pill-left">
+                <!-- Icons for different states -->
+                <svg class="icon icon-mic" viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                <svg class="icon icon-spinner" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 1 10 10"/></svg>
+                <svg class="icon icon-check" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                <svg class="icon icon-alert" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+
+            <!-- Visualizer (Only show in recording) -->
+            <div class="visualizer" id="viz">
+                <div class="viz-bar" style="height: 4px"></div>
+                <div class="viz-bar" style="height: 8px"></div>
+                <div class="viz-bar" style="height: 12px"></div>
+                <div class="viz-bar" style="height: 6px"></div>
+                <div class="viz-bar" style="height: 14px"></div>
+                <div class="viz-bar" style="height: 8px"></div>
+                <div class="viz-bar" style="height: 4px"></div>
+            </div>
+
+            <!-- Center -->
+            <div class="pill-center">
+                <div class="status-label" id="label">Ready</div>
+                <div class="status-detail" id="detail">System Standby</div>
+            </div>
+
+            <!-- Right -->
+            <div class="pill-right">
+                <div class="timer" id="timer">0:00</div>
+            </div>
+
+            <!-- Bottom Progress -->
+            <div class="progress-track" id="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UI Controls for Manual Override / Testing -->
+    <div class="controls">
+        <button class="control-btn" onclick="setManual('idle')">Idle</button>
+        <button class="control-btn" onclick="setManual('recording')">Record</button>
+        <button class="control-btn" onclick="setManual('uploading')">Upload</button>
+        <button class="control-btn" onclick="setManual('transcribing')">Transcribe</button>
+        <button class="control-btn" onclick="setManual('refining')">Refine</button>
+        <button class="control-btn" onclick="setManual('enhancing')">Enhance</button>
+        <button class="control-btn" onclick="setManual('done')">Done</button>
+        <button class="control-btn" onclick="setManual('network_error')">Network Err</button>
+        <button class="control-btn" onclick="setManual('auth_error')">Auth Err</button>
+    </div>
+
+    <script>
+        const shell = document.getElementById('shell');
+        const label = document.getElementById('label');
+        const detail = document.getElementById('detail');
+        const timer = document.getElementById('timer');
+        const progressFill = document.getElementById('progress-fill');
+        const viz = document.getElementById('viz');
+        const bars = document.querySelectorAll('.viz-bar');
+        const loopIndicator = document.getElementById('loop-indicator');
+
+        function setManual(id) {
+            isAuto = false;
+            const loopIndicator = document.getElementById('loop-indicator');
+            loopIndicator.textContent = "Manual Mode";
+            loopIndicator.style.color = "var(--color-warning)";
+            const state = states.find(s => s.id === id);
+            if (state) updateState(state);
+        }
+
+        const isMac = /Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent || '');
+        const shortcutText = isMac ? 'Cmd + Shift + ,' : 'Ctrl + Shift + ,';
+
+        const states = [
+            { id: 'idle', label: 'Ready', detail: 'System Standby', progress: 0 },
+            { id: 'recording', label: 'Listening...', detail: 'Live Audio Capture', progress: 0 },
+            { id: 'uploading', label: 'Uploading', detail: 'Sending to Whisper Cloud', progress: 20 },
+            { id: 'transcribing', label: 'Transcribing', detail: 'Neural Network Processing', progress: 45 },
+            { id: 'refining', label: 'Refining', detail: 'Grammar & Context Correction', progress: 75 },
+            { id: 'enhancing', label: 'Finishing', detail: 'Injecting to Active Window', progress: 95 },
+            { id: 'done', label: 'Pasted!', detail: 'Workflow Complete', progress: 100 },
+            { id: 'network_error', label: 'Network Error', detail: `Recording ready. Retry? Press ${shortcutText}`, progress: 0, type: 'error' },
+            { id: 'auth_error', label: 'API Key Invalid', detail: 'Check Groq Settings in Tray', progress: 0, type: 'error' }
+        ];
+
+        function updateState(state) {
+            // Remove all state classes
+            document.body.className = '';
+            
+            const typeClass = (state.type === 'error' ? 'error' : 
+                               (state.id === 'uploading' || state.id === 'transcribing' || state.id === 'refining' || state.id === 'enhancing' ? 'processing' : state.id));
+            
+            document.body.classList.add(`state-${typeClass}`);
+            
+            label.textContent = state.label;
+            detail.textContent = state.detail;
+            progressFill.style.width = (state.progress || 0) + '%';
+
+            // Special logic for recording
+            if (state.id === 'recording') {
+                startTimer();
+                startViz();
+                viz.style.display = 'flex';
+            } else {
+                stopTimer();
+                stopViz();
+                viz.style.display = 'none';
+            }
+
+            // Highlight active button
+            document.querySelectorAll('.control-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.textContent.toLowerCase() === state.id);
+            });
+        }
+
+        function startTimer() {
+            timerVal = 0;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                timerVal++;
+                const s = timerVal % 60;
+                const m = Math.floor(timerVal / 60);
+                timer.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            timer.textContent = '0:00';
+        }
+
+        let vizInterval;
+        function startViz() {
+            vizInterval = setInterval(() => {
+                // Determine "loudness" randomly for simulation 
+                // OR use real Mic data if available
+                bars.forEach(bar => {
+                    const h = 4 + Math.random() * 20;
+                    bar.style.height = h + 'px';
+                });
+            }, 100);
+        }
+
+        function stopViz() {
+            clearInterval(vizInterval);
+        }
+
+        function setManual(id) {
+            isAuto = false;
+            loopIndicator.textContent = "Manual Mode";
+            loopIndicator.style.color = "var(--color-warning)";
+            const state = states.find(s => s.id === id);
+            updateState(state);
+        }
+
+        // Auto Cycle
+        function nextState() {
+            if (!isAuto) return;
+            currentStep = (currentStep + 1) % states.length;
+            updateState(states[currentStep]);
+            setTimeout(nextState, 2500); // 2.5 seconds per state
+        }
+
+        // Initial setup
+        updateState(states[0]);
+        setTimeout(nextState, 2000);
+
+        // EXTRA: Mic Audio Reactivity (Real Voice Waves)
+        async function initRealViz() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                const analyser = audioContext.createAnalyser();
+                analyser.fftSize = 32;
+                source.connect(analyser);
+
+                const dataArray = new Uint8Array(analyser.frequencyBinCount);
+                
+                function draw() {
+                    if (document.body.classList.contains('state-recording')) {
+                        analyser.getByteFrequencyData(dataArray);
+                        bars.forEach((bar, i) => {
+                            // Map frequency data to height
+                            // Average of frequency bands
+                            const val = dataArray[i % dataArray.length];
+                            const h = 4 + (val / 255) * 30;
+                            bar.style.height = h + 'px';
+                        });
+                    }
+                    requestAnimationFrame(draw);
+                }
+                
+                // Override the random startViz with this real one
+                clearInterval(vizInterval);
+                draw();
+                console.log("Real Mic Visualizer Active");
+            } catch (err) {
+                console.log("Mic access denied or unavailable - falling back to simulation.");
+            }
+        }
+
+        // Try to init real viz on first click (browsers require interaction)
+        document.body.addEventListener('click', () => {
+            initRealViz();
+        }, { once: true });
+
+    </script>
+</body>
+</html>

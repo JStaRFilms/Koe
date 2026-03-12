@@ -2,34 +2,59 @@
    KOE PILL — HUD-Style Floating Status Indicator
    ═══════════════════════════════════════════════════════════ */
 
-/* ─── Pill Container ────────────────────────────────── */
-.pill {
+/* ─── Pill Shell ────────────────────────────────────── */
+.pill-shell {
     position: relative;
-    width: 380px;
-    height: var(--pill-height);
-    border-radius: var(--pill-radius);
-    overflow: hidden;
-    cursor: default;
+    --pill-shell-width: 304px;
+    width: min(var(--pill-shell-width), calc(100vw - 20px));
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
 
     /* Entrance animation state */
     opacity: 0;
     transform: translateY(20px) scale(0.95);
     transition:
+        width 0.28s cubic-bezier(0.16, 1, 0.3, 1),
         opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
         transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: bottom center;
 }
 
-.pill.animate-in {
+.pill-shell.state-recording {
+    --pill-shell-width: 316px;
+}
+
+.pill-shell.state-processing,
+.pill-shell.state-error {
+    --pill-shell-width: 332px;
+}
+
+.pill-shell.state-done {
+    --pill-shell-width: 294px;
+}
+
+.pill-shell.animate-in {
     opacity: 1;
     transform: translateY(0) scale(1);
 }
 
-.pill.animate-out {
+.pill-shell.animate-out {
     opacity: 0;
     transform: translateY(12px) scale(0.97);
     transition:
         opacity 0.25s cubic-bezier(0.4, 0, 1, 1),
         transform 0.25s cubic-bezier(0.4, 0, 1, 1);
+}
+
+/* ─── Pill Container ────────────────────────────────── */
+.pill {
+    position: relative;
+    width: 100%;
+    height: var(--pill-height);
+    border-radius: var(--pill-radius);
+    overflow: hidden;
+    cursor: default;
 }
 
 /* ─── Glass Background ──────────────────────────────── */
@@ -39,6 +64,56 @@
     background: var(--koe-surface);
     border: 1px solid var(--koe-border);
     box-shadow: var(--shadow-pill);
+}
+
+.glass-pill::before,
+.glass-pill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+
+.glass-pill::before {
+    background:
+        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.2), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0));
+    opacity: 0.85;
+}
+
+.glass-pill::after {
+    inset: 1px;
+    border-radius: calc(var(--pill-radius) - 1px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    opacity: 0.75;
+}
+
+[data-theme="light"] .glass-pill {
+    backdrop-filter: blur(20px) saturate(1.15);
+    -webkit-backdrop-filter: blur(20px) saturate(1.15);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(244, 248, 255, 0.9)),
+        linear-gradient(135deg, rgba(209, 226, 255, 0.18), rgba(255, 255, 255, 0.12));
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    box-shadow:
+        0 20px 38px rgba(125, 139, 171, 0.24),
+        0 8px 18px rgba(84, 98, 129, 0.14),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        inset 0 -10px 22px rgba(213, 222, 241, 0.35);
+}
+
+[data-theme="light"] .glass-pill::before {
+    background:
+        radial-gradient(circle at 14% 16%, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.08) 32%, transparent 52%),
+        radial-gradient(circle at 82% 100%, rgba(193, 214, 255, 0.24), transparent 34%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.04) 54%, transparent 100%);
+    opacity: 1;
+}
+
+[data-theme="light"] .glass-pill::after {
+    border-top-color: rgba(255, 255, 255, 0.98);
+    border-bottom: 1px solid rgba(197, 207, 230, 0.46);
+    opacity: 1;
 }
 
 /* ─── Animated Gradient Border (the "magic ring") ──── */
@@ -88,8 +163,8 @@
     display: flex;
     align-items: center;
     height: 100%;
-    padding: 0 20px;
-    gap: 14px;
+    padding: 0 15px 0 16px;
+    gap: 10px;
 }
 
 /* ─── Left: Indicator ───────────────────────────────── */
@@ -101,16 +176,16 @@
 
 .pill__indicator {
     position: relative;
-    width: 28px;
-    height: 28px;
+    width: 24px;
+    height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .pill__icon {
-    width: 18px;
-    height: 18px;
+    width: 17px;
+    height: 17px;
     color: var(--koe-text-muted);
     transition: color 0.3s ease, opacity 0.3s ease;
 }
@@ -139,23 +214,25 @@
     flex-direction: column;
     justify-content: center;
     align-items: stretch;
-    gap: 6px;
+    gap: 4px;
     min-width: 0;
 }
 
 .pill__status-row {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 8px;
     min-width: 0;
 }
 
 .pill__status {
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 500;
-    letter-spacing: 0.4px;
+    letter-spacing: 0.2px;
     color: var(--koe-text-muted);
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: color 0.3s ease;
 }
 
@@ -163,23 +240,23 @@
 .pill__visualizer {
     display: flex;
     align-items: center;
-    gap: 3px;
-    height: 20px;
+    gap: 2px;
+    height: 18px;
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
 .viz-bar {
-    width: 3px;
+    width: 2px;
     height: 4px;
-    border-radius: 1.5px;
+    border-radius: 999px;
     background: var(--koe-danger);
-    transition: background 0.3s ease;
+    transition: height 0.12s ease, opacity 0.12s ease, background 0.3s ease;
 }
 
 .pill__progress {
     width: 100%;
-    height: 4px;
+    height: 3px;
     border-radius: 999px;
     background: rgba(255, 255, 255, 0.08);
     overflow: hidden;
@@ -198,36 +275,105 @@
     transition: width 0.25s ease;
 }
 
+.pill__detail {
+    font-size: 10.5px;
+    line-height: 1.4;
+    letter-spacing: 0.2px;
+    color: var(--koe-text-dim);
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.pill__banner {
+    position: relative;
+    margin-top: 0;
+    max-height: 0;
+    padding: 0 14px;
+    border-radius: 16px;
+    border: 1px solid transparent;
+    background: rgba(6, 6, 10, 0.88);
+    backdrop-filter: blur(24px) saturate(1.35);
+    -webkit-backdrop-filter: blur(24px) saturate(1.35);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(-6px);
+    transition:
+        max-height 0.25s ease,
+        opacity 0.25s ease,
+        transform 0.25s ease,
+        margin-top 0.25s ease,
+        padding 0.25s ease,
+        border-color 0.25s ease;
+}
+
+[data-theme="light"] .pill__banner {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(244, 248, 255, 0.9));
+    border-color: rgba(214, 223, 243, 0.9);
+    box-shadow:
+        0 16px 30px rgba(129, 142, 172, 0.18),
+        inset 0 1px 0 rgba(255, 255, 255, 0.92);
+}
+
+[data-theme="light"] .pill__banner::before {
+    background: rgba(119, 139, 190, 0.44);
+}
+
+.pill__banner::before {
+    content: '';
+    position: absolute;
+    top: 10px;
+    bottom: 10px;
+    left: 8px;
+    width: 2px;
+    border-radius: 999px;
+    background: var(--koe-border-highlight);
+}
+
+.pill__banner .pill__detail {
+    padding-left: 8px;
+}
+
+.pill__banner.has-content {
+    margin-top: 8px;
+    max-height: 84px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    border-color: var(--koe-border);
+    opacity: 1;
+    transform: translateY(0);
+}
+
 /* ─── Right: Timer / Spinner / Check ────────────────── */
 .pill__right {
     display: flex;
     align-items: center;
     flex-shrink: 0;
-    min-width: 50px;
+    min-width: 34px;
     justify-content: flex-end;
 }
 
 .pill__timer {
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 500;
     font-variant-numeric: tabular-nums;
     color: var(--koe-text-dim);
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
     opacity: 0;
     transition: opacity 0.3s ease, color 0.3s ease;
 }
 
 .pill__spinner {
-    width: 18px;
-    height: 18px;
+    width: 16px;
+    height: 16px;
     color: var(--koe-process);
     opacity: 0;
     transition: opacity 0.3s ease;
 }
 
 .pill__check {
-    width: 20px;
-    height: 20px;
+    width: 18px;
+    height: 18px;
     color: var(--koe-success);
     opacity: 0;
     transition: opacity 0.3s ease;
@@ -245,6 +391,10 @@
 }
 
 .state-idle .pill__status {
+    color: var(--koe-text-dim);
+}
+
+.state-idle .pill__detail {
     color: var(--koe-text-dim);
 }
 
@@ -282,8 +432,7 @@
 }
 
 .state-recording .viz-bar {
-    animation: viz-dance 0.6s ease-in-out infinite alternate;
-    animation-delay: calc(var(--i) * 0.08s);
+    box-shadow: 0 0 10px var(--koe-danger-dim);
 }
 
 .state-recording .pill__timer {
@@ -291,17 +440,28 @@
     color: var(--koe-text-muted);
 }
 
+.state-recording .pill__detail {
+    color: var(--koe-text-dim);
+}
+
 .state-recording .pill__progress {
     opacity: 0;
     transform: scaleX(0.98);
 }
 
-.state-recording .glass-pill,
-.state-recording.glass-pill {
+.state-recording .glass-pill {
     box-shadow:
         var(--shadow-pill),
         0 0 40px var(--koe-danger-dim),
         inset 0 0 30px var(--koe-danger-dim);
+}
+
+.state-recording .pill__banner {
+    background: rgba(22, 10, 16, 0.9);
+}
+
+.state-recording .pill__banner::before {
+    background: var(--koe-danger);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -343,16 +503,28 @@
     animation: spin 0.8s linear infinite;
 }
 
+.state-processing .pill__detail {
+    color: var(--koe-process);
+}
+
 .state-processing .pill__progress {
     opacity: 1;
     transform: scaleX(1);
 }
 
-.state-processing.glass-pill {
+.state-processing .glass-pill {
     box-shadow:
         var(--shadow-pill),
         0 0 40px var(--koe-process-dim),
         inset 0 0 20px var(--koe-process-dim);
+}
+
+.state-processing .pill__banner {
+    background: rgba(15, 12, 26, 0.92);
+}
+
+.state-processing .pill__banner::before {
+    background: var(--koe-process);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -383,6 +555,10 @@
     font-weight: 600;
 }
 
+.state-done .pill__detail {
+    color: var(--koe-success);
+}
+
 .state-done .pill__visualizer {
     opacity: 0;
 }
@@ -405,11 +581,19 @@
     animation: draw-check 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.state-done.glass-pill {
+.state-done .glass-pill {
     box-shadow:
         var(--shadow-pill),
         0 0 50px var(--koe-success-dim),
         inset 0 0 25px var(--koe-success-dim);
+}
+
+.state-done .pill__banner {
+    background: rgba(8, 20, 14, 0.9);
+}
+
+.state-done .pill__banner::before {
+    background: var(--koe-success);
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -447,6 +631,10 @@
     font-weight: 500;
 }
 
+.state-error .pill__detail {
+    color: #fbbf24;
+}
+
 .state-error .pill__visualizer {
     opacity: 0;
 }
@@ -463,11 +651,19 @@
     opacity: 0;
 }
 
-.state-error.glass-pill {
+.state-error .glass-pill {
     box-shadow:
         var(--shadow-pill),
         0 0 40px rgba(245, 158, 11, 0.15),
         inset 0 0 25px rgba(245, 158, 11, 0.08);
+}
+
+.state-error .pill__banner {
+    background: rgba(28, 16, 6, 0.94);
+}
+
+.state-error .pill__banner::before {
+    background: #f59e0b;
 }
 
 /* ═══════════════════════════════════════════════════════════

@@ -25,69 +25,75 @@
 </head>
 
 <body>
-  <!-- The Pill -->
-  <div id="pill" class="pill glass-pill state-idle">
-    <!-- Animated gradient border overlay -->
-    <div class="pill__border-glow"></div>
+  <div id="pill-shell" class="pill-shell state-idle">
+    <!-- The Pill -->
+    <div id="pill" class="pill glass-pill">
+      <!-- Animated gradient border overlay -->
+      <div class="pill__border-glow"></div>
 
-    <!-- Inner content -->
-    <div class="pill__content">
-      <!-- Left: Status indicator -->
-      <div class="pill__left">
-        <div class="pill__indicator" id="pill-indicator">
-          <!-- SVG mic icon for idle -->
-          <svg class="pill__icon pill__icon--mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
-            <line x1="12" y1="19" x2="12" y2="23" />
-            <line x1="8" y1="23" x2="16" y2="23" />
-          </svg>
-          <!-- Error/warning icon -->
-          <svg class="pill__icon pill__icon--error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-            <line x1="12" y1="9" x2="12" y2="13" />
-            <line x1="12" y1="17" x2="12.01" y2="17" />
-          </svg>
-          <!-- Recording pulse dot -->
-          <div class="pill__pulse-dot"></div>
-        </div>
-      </div>
-
-      <!-- Center: Status text + audio visualizer -->
-      <div class="pill__center">
-        <div class="pill__status-row">
-          <span class="pill__status" id="pill-status">Ready</span>
-          <div class="pill__visualizer" id="pill-visualizer">
-            <div class="viz-bar" style="--i:0"></div>
-            <div class="viz-bar" style="--i:1"></div>
-            <div class="viz-bar" style="--i:2"></div>
-            <div class="viz-bar" style="--i:3"></div>
-            <div class="viz-bar" style="--i:4"></div>
-            <div class="viz-bar" style="--i:5"></div>
-            <div class="viz-bar" style="--i:6"></div>
+      <!-- Inner content -->
+      <div class="pill__content">
+        <!-- Left: Status indicator -->
+        <div class="pill__left">
+          <div class="pill__indicator" id="pill-indicator">
+            <!-- SVG mic icon for idle -->
+            <svg class="pill__icon pill__icon--mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+              <line x1="12" y1="19" x2="12" y2="23" />
+              <line x1="8" y1="23" x2="16" y2="23" />
+            </svg>
+            <!-- Error/warning icon -->
+            <svg class="pill__icon pill__icon--error" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+              <line x1="12" y1="9" x2="12" y2="13" />
+              <line x1="12" y1="17" x2="12.01" y2="17" />
+            </svg>
+            <!-- Recording pulse dot -->
+            <div class="pill__pulse-dot"></div>
           </div>
         </div>
-        <div class="pill__progress" id="pill-progress">
-          <div class="pill__progress-bar" id="pill-progress-bar"></div>
+
+        <!-- Center: Status text + audio visualizer -->
+        <div class="pill__center">
+          <div class="pill__status-row">
+            <span class="pill__status" id="pill-status">Ready</span>
+            <div class="pill__visualizer" id="pill-visualizer">
+              <div class="viz-bar" style="--i:0"></div>
+              <div class="viz-bar" style="--i:1"></div>
+              <div class="viz-bar" style="--i:2"></div>
+              <div class="viz-bar" style="--i:3"></div>
+              <div class="viz-bar" style="--i:4"></div>
+              <div class="viz-bar" style="--i:5"></div>
+              <div class="viz-bar" style="--i:6"></div>
+            </div>
+          </div>
+          <div class="pill__progress" id="pill-progress">
+            <div class="pill__progress-bar" id="pill-progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- Right: Timer -->
+        <div class="pill__right">
+          <span class="pill__timer" id="pill-timer"></span>
+          <!-- Processing spinner -->
+          <svg class="pill__spinner" id="pill-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.5" stroke-linecap="round">
+            <path d="M12 2a10 10 0 0 1 10 10" />
+          </svg>
+          <!-- Done checkmark -->
+          <svg class="pill__check" id="pill-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
         </div>
       </div>
+    </div>
 
-      <!-- Right: Timer -->
-      <div class="pill__right">
-        <span class="pill__timer" id="pill-timer"></span>
-        <!-- Processing spinner -->
-        <svg class="pill__spinner" id="pill-spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="2.5" stroke-linecap="round">
-          <path d="M12 2a10 10 0 0 1 10 10" />
-        </svg>
-        <!-- Done checkmark -->
-        <svg class="pill__check" id="pill-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
-          stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      </div>
+    <div class="pill__banner" id="pill-banner">
+      <div class="pill__detail" id="pill-detail"></div>
     </div>
   </div>
 

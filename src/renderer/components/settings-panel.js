@@ -26,6 +26,10 @@ export class SettingsPanel {
         this.selTheme = document.getElementById('theme');
         this.inputHotkey = document.getElementById('hotkey');
         this.hotkeyError = document.getElementById('hotkey-error');
+        this.shortcutRecordToggle = document.getElementById('shortcut-record-toggle');
+        this.shortcutRetryLast = document.getElementById('shortcut-retry-last');
+        this.shortcutSettingsTabs = document.getElementById('shortcut-settings-tabs');
+        this.shortcutSettingsClose = document.getElementById('shortcut-settings-close');
 
         this.isRecordingHotkey = false;
         this.pendingHotkey = null;
@@ -102,6 +106,7 @@ export class SettingsPanel {
             this.inputHotkey.placeholder = 'Press key combination...';
             this.inputHotkey.value = '';
         }
+        this.renderShortcutReference();
         if (this.hotkeyError) {
             this.hotkeyError.classList.remove('show');
         }
@@ -150,6 +155,8 @@ export class SettingsPanel {
             this.inputHotkey.value = this.formatHotkeyForDisplay(accelerator);
         }
 
+        this.renderShortcutReference(accelerator);
+
         // Stop recording
         this.inputHotkey.blur();
     }
@@ -169,6 +176,69 @@ export class SettingsPanel {
             .replace('CommandOrControl', 'Ctrl')
             .replace('Super', 'Win')
             .replace(/\+/g, ' + ');
+    }
+
+    formatHotkeyToken(token) {
+        if (this.isMacPlatform()) {
+            return token
+                .replace('CommandOrControl', 'Cmd')
+                .replace('Command', 'Cmd')
+                .replace('Control', 'Ctrl')
+                .replace('Alt', 'Option')
+                .replace('Super', 'Cmd');
+        }
+
+        return token
+            .replace('CommandOrControl', 'Ctrl')
+            .replace('Super', 'Win');
+    }
+
+    renderShortcutSequence(container, sequences) {
+        if (!container) {
+            return;
+        }
+
+        const normalizedSequences = Array.isArray(sequences?.[0]) ? sequences : [sequences];
+        container.replaceChildren();
+
+        normalizedSequences.forEach((sequence, sequenceIndex) => {
+            if (sequenceIndex > 0) {
+                const separator = document.createElement('span');
+                separator.className = 'shortcut-separator';
+                separator.textContent = '/';
+                container.appendChild(separator);
+            }
+
+            sequence.forEach((token, tokenIndex) => {
+                if (tokenIndex > 0) {
+                    const plus = document.createElement('span');
+                    plus.className = 'shortcut-plus';
+                    plus.textContent = '+';
+                    container.appendChild(plus);
+                }
+
+                const keyEl = document.createElement('kbd');
+                keyEl.textContent = this.formatHotkeyToken(token);
+                container.appendChild(keyEl);
+            });
+        });
+    }
+
+    renderShortcutReference(currentHotkey = null) {
+        const activeHotkey = currentHotkey
+            || this.pendingHotkey
+            || this.parseHotkeyFromDisplay(this.inputHotkey?.value)
+            || 'CommandOrControl+Shift+Space';
+        const modifier = this.isMacPlatform() ? 'Command' : 'CommandOrControl';
+
+        this.renderShortcutSequence(this.shortcutRecordToggle, activeHotkey.split('+'));
+        this.renderShortcutSequence(this.shortcutRetryLast, ['CommandOrControl', 'Shift', ',']);
+        this.renderShortcutSequence(this.shortcutSettingsTabs, [
+            [modifier, '1'],
+            [modifier, '2'],
+            [modifier, '3']
+        ]);
+        this.renderShortcutSequence(this.shortcutSettingsClose, ['Esc']);
     }
 
     applyThemePreview(theme) {
@@ -241,6 +311,7 @@ export class SettingsPanel {
                 if (this.inputHotkey) {
                     this.inputHotkey.value = this.formatHotkeyForDisplay(settings.hotkey || 'CommandOrControl+Shift+Space');
                 }
+                this.renderShortcutReference(settings.hotkey || 'CommandOrControl+Shift+Space');
 
                 // Trigger change to update style group opacity
                 this.updateCloudProcessingControls();

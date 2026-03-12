@@ -6,6 +6,7 @@ const rateLimiter = require('./services/rate-limiter');
 const { autoPaste } = require('./services/clipboard');
 const historyService = require('./services/history');
 const { retryAndPasteTranscript } = require('./services/retry-transcript');
+const pendingRetryService = require('./services/pending-retry');
 const { closeSettingsWindow } = require('./settings-window');
 const { updateHotkey } = require('./shortcuts');
 const { applyLaunchOnStartupPreference } = require('./services/startup');
@@ -56,6 +57,14 @@ async function processAudioChunk(audioData) {
     const { buffer, audioSeconds, sessionId } = audioData;
     const settings = getSettings();
 
+    pendingRetryService.savePendingRetry(audioData, {
+        language: settings.language || 'auto',
+        enhanceText: settings.enhanceText !== false,
+        promptStyle: settings.promptStyle || 'Clean',
+        customPrompt: settings.customPrompt || '',
+        model: settings.model || 'whisper-large-v3-turbo'
+    });
+
     logger.info(`[Pipeline] Received audio chunk for session ${sessionId}: ${buffer?.byteLength || 'N/A'} bytes, ${audioSeconds?.toFixed(1)}s`);
     logger.info(
         `[Pipeline] Session ${sessionId} settings: model=${settings.model || 'whisper-large-v3-turbo'}, ` +
@@ -89,6 +98,7 @@ async function processAudioChunk(audioData) {
     const rawText = result?.rawText || '';
 
     if (!rawText) {
+        pendingRetryService.clearPendingRetry();
         sendTranscriptionStatus({
             sessionId,
             stage: 'empty',
@@ -123,6 +133,8 @@ async function processAudioChunk(audioData) {
         isLlamaEnhanced: settings.enhanceText && !!refinedText,
         source: 'transcription'
     });
+
+    pendingRetryService.clearPendingRetry();
 
     return { rawText, refinedText, sessionId };
 }
@@ -225,10 +237,14 @@ function setupIpcHandlers(mainWindow) {
             logger.info('[Pipeline] Done.');
         } catch (error) {
             logger.error('[Pipeline] Transcription error:', error);
+            pendingRetryService.markPendingRetryError(error.message);
+            const retryAvailable = Boolean(pendingRetryService.getPendingRetry());
             sendTranscriptionStatus({
                 sessionId: audioData?.sessionId,
                 stage: 'error',
-                error: error.message
+                error: error.message,
+                retryAvailable,
+                lingerMs: retryAvailable ? 6500 : 3500
             });
 
             if (mainWindowRef && !mainWindowRef.isDestroyed()) {
