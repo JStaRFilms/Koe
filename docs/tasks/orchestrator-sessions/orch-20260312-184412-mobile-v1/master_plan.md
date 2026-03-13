@@ -3,7 +3,7 @@
 **Session ID:** orch-20260312-184412-mobile-v1  
 **Created:** 2026-03-12T17:44:12Z  
 **Source:** User request for a cross-platform mobile version, Takomi orchestrator session  
-**Status:** Pending
+**Status:** In Progress
 
 ## Overview
 
@@ -64,9 +64,9 @@ The current repo is a production-oriented Electron desktop app. The mobile work 
 
 | # | Task File | Status | Mode | Skills | Description |
 |---|---|---|---|---|---|
-| 01 | `01_workspace_foundation.task.md` | Pending | vibe-code | takomi, monorepo-management, context7 | Add workspace structure without breaking desktop |
-| 02 | `02_shared_core_extraction.task.md` | Pending | vibe-code | takomi, context7 | Extract portable transcription/session logic |
-| 03 | `03_mobile_app_scaffold.task.md` | Pending | vibe-code | takomi, building-native-ui, upgrading-expo, context7 | Create Expo mobile shell and navigation |
+| 01 | `01_workspace_foundation.task.md` | Completed | vibe-code | takomi, monorepo-management, context7 | Add workspace structure without breaking desktop |
+| 02 | `02_shared_core_extraction.task.md` | Completed | vibe-code | takomi, context7 | Extract portable transcription/session logic |
+| 03 | `03_mobile_app_scaffold.task.md` | In Progress | vibe-code | takomi, building-native-ui, upgrading-expo, context7 | Create Expo mobile shell and navigation |
 | 04 | `04_mobile_recording_pipeline.task.md` | Pending | vibe-code | takomi, building-native-ui, context7 | Implement recording, segmentation, provider calls, retry |
 | 05 | `05_mobile_product_shell.task.md` | Pending | vibe-code | takomi, building-native-ui, context7 | Build recorder UX, history, settings, clipboard flow |
 | 06 | `06_release_hardening_review.task.md` | Pending | vibe-review | takomi, security-audit, context7 | Verify security, build, and device readiness |

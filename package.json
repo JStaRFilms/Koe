@@ -1,6 +1,6 @@
 {
   "name": "koe",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Koe — Voice Dictation Desktop App",
   "main": "src/main/main.js",
   "scripts": {
@@ -43,6 +43,7 @@
     "vite-plugin-static-copy": "^3.2.0"
   },
   "dependencies": {
+    "@koe/core": "workspace:*",
     "@ricky0123/vad-web": "^0.0.30",
     "electron-store": "^11.0.2",
     "electron-updater": "^6.8.3",

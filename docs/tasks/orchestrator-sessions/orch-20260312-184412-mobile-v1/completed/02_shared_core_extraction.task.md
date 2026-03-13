@@ -122,12 +122,12 @@ Define and implement these boundaries in `packages/koe-core`:
 
 ## Definition Of Done
 
-- [ ] `packages/koe-core` exports a stable shared API
-- [ ] Desktop reuses the extracted logic without feature regression
-- [ ] No Electron-only code leaks into the shared package
-- [ ] Provider/session contracts are usable by a future Expo app
-- [ ] Existing desktop behavior for ordering, retry, and transcript cleanup is preserved
-- [ ] The package can be imported cleanly from both desktop and mobile workspaces
+- [x] `packages/koe-core` exports a stable shared API ✅ Completed
+- [x] Desktop reuses the extracted logic without feature regression ✅ Completed
+- [x] No Electron-only code leaks into the shared package ✅ Completed
+- [x] Provider/session contracts are usable by a future Expo app ✅ Completed
+- [x] Existing desktop behavior for ordering, retry, and transcript cleanup is preserved ✅ Completed
+- [x] The package can be imported cleanly from both desktop and mobile workspaces ✅ Completed
 
 ## Expected Artifacts
 
