@@ -14,6 +14,7 @@
     "@expo/metro-runtime": "~6.1.2",
     "@koe/core": "workspace:*",
     "expo": "54.0.33",
+    "expo-audio": "^1.1.1",
     "expo-clipboard": "^8.0.8",
     "expo-constants": "~18.0.13",
     "expo-haptics": "^15.0.8",

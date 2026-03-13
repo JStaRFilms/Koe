@@ -8,14 +8,28 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.jstar.koe"
+      "bundleIdentifier": "com.jstar.koe",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Koe needs access to your microphone to transcribe your voice."
+      }
     },
     "android": {
-      "package": "com.jstar.koe"
+      "package": "com.jstar.koe",
+      "permissions": [
+        "RECORD_AUDIO"
+      ]
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Koe needs access to your microphone to transcribe your voice.",
+          "recordAudioAndroid": true,
+          "enableBackgroundRecording": true
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

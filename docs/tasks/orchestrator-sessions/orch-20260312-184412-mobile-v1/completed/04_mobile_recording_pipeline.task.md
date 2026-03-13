@@ -112,12 +112,12 @@ Implement the first functional mobile recording pipeline: capture audio, segment
 
 ## Definition Of Done
 
-- [ ] User can grant mic permission and record a session
-- [ ] Captured audio can be transcribed and refined with a local Groq key
-- [ ] Success, empty, and failure states are surfaced clearly
-- [ ] Failed work can be retried without rearchitecting the app
-- [ ] Long recordings do not lose ordering or finalization state
-- [ ] Shared core is actually used, not bypassed
+- [x] User can grant mic permission and record a session  ✅ Completed
+- [x] Captured audio can be transcribed and refined with a local Groq key  ✅ Completed
+- [x] Success, empty, and failure states are surfaced clearly  ✅ Completed
+- [x] Failed work can be retried without rearchitecting the app  ✅ Completed
+- [x] Long recordings do not lose ordering or finalization state  ✅ Completed
+- [x] Shared core is actually used, not bypassed  ✅ Completed
 
 ## Expected Artifacts
 
