@@ -116,12 +116,12 @@ If route groups improve structure, use them, but keep the resulting navigation s
 
 ## Definition Of Done
 
-- [ ] Mobile app boots with Expo Router
-- [ ] iOS and Android routes are in place
-- [ ] Recorder, history, and settings screens render
-- [ ] App styling and navigation are coherent, not placeholder-only junk
-- [ ] Build configuration is ready for later recording and native-permission work
-- [ ] No business logic assumptions block Tasks 04 and 05
+- [x] Mobile app boots with Expo Router
+- [x] iOS and Android routes are in place
+- [x] Recorder, history, and settings screens render
+- [x] App styling and navigation are coherent, not placeholder-only junk
+- [x] Build configuration is ready for later recording and native-permission work
+- [x] No business logic assumptions block Tasks 04 and 05
 
 ## Expected Artifacts
 
