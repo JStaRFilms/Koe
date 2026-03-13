@@ -29,7 +29,7 @@
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `building-native-ui` | `C:/Users/johno/.codex/skills/building-native-ui/SKILL.md` | Native-feeling UI and route behavior |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify platform APIs used by the shell |
+> | ` | Verify platform APIs used by the shell |
 
 ### Check Additional Skills
 > Scan the available skills list and load anything clearly relevant before editing.

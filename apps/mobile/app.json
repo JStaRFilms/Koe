@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Koe",
+    "slug": "koe-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "koe",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jstar.koe"
+    },
+    "android": {
+      "package": "com.jstar.koe"
+    },
+    "plugins": ["expo-router"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

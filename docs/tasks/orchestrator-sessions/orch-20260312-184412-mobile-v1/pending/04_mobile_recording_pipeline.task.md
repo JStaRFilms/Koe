@@ -29,7 +29,7 @@
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `building-native-ui` | `C:/Users/johno/.codex/skills/building-native-ui/SKILL.md` | Expo audio and native app behavior |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify current Expo audio/background docs |
+> | ` | Verify current Expo audio/background docs |
 
 ### Check Additional Skills
 > Scan the available skills list and load anything clearly relevant before editing.

@@ -29,7 +29,7 @@
 > | Skill | Path | Why |
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify current package/export guidance |
+> | ` | Verify current package/export guidance |
 
 ### Check Additional Skills
 > Scan the available skills list and load anything clearly relevant before editing.

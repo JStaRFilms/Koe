@@ -29,7 +29,7 @@
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `building-native-ui` | `C:/Users/johno/.codex/skills/building-native-ui/SKILL.md` | Expo Router and native UI guidance |
 > | `upgrading-expo` | `C:/Users/johno/.codex/skills/upgrading-expo/SKILL.md` | Expo dependency and config hygiene |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify current Expo docs and APIs |
+> | ` | Verify current Expo docs and APIs |
 
 ### Check Additional Skills
 > Scan the available skills list and load anything clearly relevant before editing.

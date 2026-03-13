@@ -29,7 +29,7 @@
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `monorepo-management` | `C:/Users/johno/.codex/skills/monorepo-management/SKILL.md` | Add workspace structure safely |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify current pnpm and Expo monorepo guidance |
+> | ` | Verify current pnpm and Expo monorepo guidance |
 
 ### Check Additional Skills
 > Scan the available skills list and load anything clearly relevant before editing.

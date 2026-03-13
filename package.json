@@ -5,10 +5,15 @@
   "main": "src/main/main.js",
   "scripts": {
     "dev": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
+    "dev:desktop": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
+    "dev:mobile": "pnpm --filter koe-mobile start",
     "build": "vite build && electron-builder",
+    "build:desktop": "vite build && electron-builder",
+    "build:core": "pnpm --filter @koe/core build",
     "build:mac": "vite build && electron-builder --mac dmg zip --universal",
     "build:ci": "vite build && electron-builder --publish never",
-    "build:mac:ci": "vite build && electron-builder --mac dmg zip --universal --publish never"
+    "build:mac:ci": "vite build && electron-builder --mac dmg zip --universal --publish never",
+    "type-check": "pnpm -r type-check"
   },
   "repository": {
     "type": "git",

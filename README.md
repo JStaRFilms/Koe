@@ -261,24 +261,37 @@ pnpm install
 pnpm dev
 ```
 
+### Monorepo Structure
+
+Koe is transitioning to a monorepo to support multiple platforms:
+
+- **Root**: Legacy Electron Desktop app and shared workspace configuration
+- **`apps/mobile`**: Expo-based mobile client (iOS/Android)
+- **`packages/koe-core`**: Shared business logic, types, and API services
+
+### Development Commands
+
+| Target | Command | Description |
+|--------|---------|-------------|
+| **Desktop** | `pnpm dev` | Start the Electron app in dev mode |
+| **Mobile** | `pnpm dev:mobile` | Start the Expo development server |
+| **Core** | `pnpm build:core` | Build the shared logic package |
+| **All** | `pnpm type-check` | Run type-checking across all packages |
+
 ### Project Structure
 
 ```text
 Koe/
-├── src/
+├── apps/               # Application projects
+│   └── mobile/        # Expo mobile app
+├── packages/           # Shared logic
+│   └── koe-core/      # Core services (Whisper, Sessions)
+├── src/                # Legacy Desktop source
 │   ├── main/           # Electron main process
-│   │   ├── main.js     # Entry point
-│   │   ├── ipc.js      # IPC handlers
-│   │   ├── services/   # Session coordinator, worker, settings, retry
-│   │   └── ...
-│   ├── renderer/       # UI code
-│   │   ├── components/ # Pill UI, panels
-│   │   ├── audio/      # VAD, segmentation, encoding
-│   │   └── ...
-│   └── shared/         # Constants
-├── docs/               # Documentation, tasks
-├── public/             # Static assets
-└── release/            # Build output
+│   └── renderer/       # UI code
+├── docs/               # Documentation & Tasks
+├── pnpm-workspace.yaml # Workspace config
+└── package.json        # Root manifest & scripts
 ```
 
 ---
