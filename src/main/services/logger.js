@@ -64,6 +64,33 @@ class Logger {
         fs.renameSync(this.logFile, `${this.logFile}.1`);
     }
 
+    sanitize(obj, seen = new WeakSet()) {
+        if (!obj || typeof obj !== 'object' || seen.has(obj)) {
+            return obj;
+        }
+
+        seen.add(obj);
+
+        if (Array.isArray(obj)) {
+            return obj.map((item) => this.sanitize(item, seen));
+        }
+
+        const sanitized = {};
+        const sensitiveKeys = ['groqApiKey', 'apiKey', 'token', 'secret', 'password', 'authorization'];
+
+        for (const [key, value] of Object.entries(obj)) {
+            if (sensitiveKeys.some((s) => key.toLowerCase().includes(s.toLowerCase()))) {
+                sanitized[key] = '[REDACTED]';
+            } else if (typeof value === 'object') {
+                sanitized[key] = this.sanitize(value, seen);
+            } else {
+                sanitized[key] = value;
+            }
+        }
+
+        return sanitized;
+    }
+
     formatArgs(args) {
         return args.map((arg) => {
             if (arg instanceof Error) {
@@ -72,7 +99,8 @@ class Logger {
 
             if (typeof arg === 'object') {
                 try {
-                    return JSON.stringify(arg);
+                    const sanitized = this.sanitize(arg);
+                    return JSON.stringify(sanitized);
                 } catch (error) {
                     return '[Object]';
                 }
@@ -93,10 +121,10 @@ class Logger {
             : level === 'WARN'
                 ? console.warn
                 : level === 'DEBUG'
-                    ? console.debug
-                    : console.log;
+                ? console.debug
+                : console.log;
 
-        consoleMethod(`[${level}]`, ...args);
+        consoleMethod(logLine.trimEnd());
         this.stream.write(logLine);
     }
 

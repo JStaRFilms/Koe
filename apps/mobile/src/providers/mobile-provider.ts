@@ -115,7 +115,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: options.model || 'moonshotai/kimi-k2-instruct-0905',
+        model: options.model || 'llama-3.3-70b-versatile',
         messages: [
           { role: 'system', content: prompt },
           { role: 'user', content: trimmed },

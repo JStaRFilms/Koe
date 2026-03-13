@@ -29,7 +29,7 @@
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `security-audit` | `C:/Users/johno/.codex/skills/security-audit/SKILL.md` | Deep mobile and supply-chain review |
-> | ` | Verify current package/platform guidance |
+> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify current package/platform guidance |
 
 ### Check Additional Skills
 > Scan the available skills list and load anything clearly relevant before reviewing.
@@ -95,12 +95,11 @@ Perform the hardening pass for the new workspace and mobile implementation befor
 | code files with blocking defects | Modify only if necessary | Close P0/P1 issues discovered during review |
 
 ## Definition Of Done
-
-- [ ] Security and reliability review is complete
-- [ ] Build/test status is documented
-- [ ] Blocking issues are fixed or clearly listed
-- [ ] Desktop regression status is explicit
-- [ ] Mobile release risk is explicit
+- [x] Security and reliability review is complete
+- [x] Build/test status is documented
+- [x] Blocking issues are fixed or clearly listed
+- [x] Desktop regression status is explicit
+- [x] Mobile release risk is explicit
 
 ## Constraints
 

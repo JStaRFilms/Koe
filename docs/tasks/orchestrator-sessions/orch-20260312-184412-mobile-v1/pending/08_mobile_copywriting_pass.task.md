@@ -1,0 +1,148 @@
+# Task 08: Write Real Product Copy For Mobile
+
+**Session ID:** orch-20260312-184412-mobile-v1  
+**Source:** Takomi mobile orchestrator  
+**Priority:** P1  
+**Dependencies:** Task 07  
+**Created At:** 2026-03-13T11:28:00Z
+
+---
+
+## Agent Setup (DO THIS FIRST)
+
+### Workflow to Follow
+> Read and follow:
+> - `C:/Users/johno/.codex/skills/takomi/workflows/vibe-build.md`
+> - `C:/Users/johno/.codex/skills/takomi/workflows/vibe-primeAgent.md`
+
+### Prime Agent Context
+> MANDATORY: run the Takomi prime-agent workflow first.  
+> Then read:
+> - `docs/tasks/orchestrator-sessions/orch-20260312-184412-mobile-v1/master_plan.md`
+> - outputs from Tasks 05 and 07
+> - copy and brand references from the website:
+>   - `koe-website/app/page.tsx`
+>   - `koe-website/components/sections/Hero.tsx`
+>   - `koe-website/components/Navbar.tsx`
+>   - `koe-website/public/logo.svg`
+
+### Required Skills
+> Load these skills before editing:
+>
+> | Skill | Path | Why |
+> |---|---|---|
+> | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
+> | `copywriting` | `C:/Users/johno/.codex/skills/copywriting/SKILL.md` | Write real product copy instead of placeholder UI text |
+
+### Check Additional Skills
+> Scan the available skills list and load anything clearly relevant before editing.
+
+---
+
+## Objective
+
+Replace placeholder or generic mobile UI text with real product copy that matches Koe's brand and actual behavior.
+
+## Scope
+
+**In scope:**
+- recorder screen copy
+- history screen copy
+- settings screen copy
+- onboarding screen copy
+- short helper/error/success text
+- CTA labels and microcopy
+
+**Out of scope:**
+- website marketing rewrite
+- long-form docs
+- feature changes unrelated to copy
+
+## Copy Direction To Respect
+
+- Use the `声` brand mark from the website in the main app where it fits.
+- Do not use generic AI-app language.
+- Do not use cliché purple-neon, hacker-slop, or synthetic “future of productivity” copy.
+- Do not overclaim. Match the actual product:
+  - manual start/stop
+  - BYOK processing
+  - clipboard-first output
+  - retryable failure handling
+- Remove product-wide references to Groq.
+- The only place `Groq` may appear in the app is around the API key field or a small adjacent helper or tooltip explaining how to get that key.
+- Outside that API-key surface, write as if the user only needs to understand the product behavior, not the provider name.
+- Replace technical jargon with plain human language. For example, do not ship copy like `pipeline notes`.
+- Keep the tone confident, sparse, and useful.
+
+## Content Requirements
+
+### Recorder
+
+- Rewrite headline, support text, helper text, and state messages.
+- Make success copy feel satisfying without sounding cheesy.
+- Error and retry copy should be calm and actionable.
+
+### History
+
+- Rewrite empty state and list affordances.
+- Copy-again actions should feel deliberate, not boilerplate.
+
+### Settings
+
+- Clarify what is stored locally and what is sent out for processing, without repeatedly naming the provider.
+- Make BYOK language trustworthy and direct.
+- Make preference labels feel product-quality, not dev-console-ish.
+- If the API key field needs provider-specific text, keep it tightly contained there.
+
+### Onboarding
+
+- Teach the product shape quickly:
+  - save key
+  - record
+  - receive refined text
+  - paste anywhere
+- Keep it short enough for a first-run mobile flow.
+- Do not mention Groq in onboarding.
+
+## Technical Requirements
+
+- Update only user-facing text unless a tiny structural tweak is required to support better copy.
+- Preserve type safety and existing behavior.
+- Keep copy centralized where that improves maintainability; extract constants if the same wording appears in multiple places.
+
+## Files To Create Or Modify
+
+| File | Action | Purpose |
+|---|---|---|
+| `apps/mobile/app/index.tsx` | Modify | Recorder copy |
+| `apps/mobile/app/history.tsx` | Modify | History copy |
+| `apps/mobile/app/settings.tsx` | Modify | Settings copy |
+| `apps/mobile/app/onboarding.tsx` | Modify | Onboarding copy |
+| `apps/mobile/src/constants/RecorderStates.ts` | Modify if needed | Centralize state messaging |
+| `apps/mobile/src/constants/*` | Create/Modify if needed | Shared copy constants |
+
+## Definition Of Done
+
+- [ ] Placeholder-feeling text is gone
+- [ ] Main app brand usage includes `声` where appropriate
+- [ ] Copy matches real behavior and constraints
+- [ ] Tone feels intentional and non-generic
+- [ ] No purple-neon AI cliché language remains
+
+## Constraints
+
+- No fake promises about privacy, background behavior, or local-only processing
+- No hype copy that conflicts with actual UX
+- Do not bloat the UI with too much text
+- No provider-name repetition outside the API key area.
+- No internal engineering jargon in user-facing copy.
+
+## Verification
+
+- `pnpm --filter koe-mobile type-check`
+- Manual pass for copy on recorder, history, settings, onboarding
+- Confirm all changed strings still fit mobile layouts reasonably
+
+---
+
+*Generated by Takomi orchestrator | Session: orch-20260312-184412-mobile-v1*

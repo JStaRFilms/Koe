@@ -32,11 +32,13 @@ The current repo is a production-oriented Electron desktop app. The mobile work 
 | `takomi` | Yes | All tasks | Orchestration workflow and mode selection |
 | `spawn-task` | Yes | This session | Task prompt generation format |
 | `monorepo-management` | Yes | Tasks 01-03 | Add workspace structure safely |
-| `building-native-ui` | Yes | Tasks 03-05 | Expo Router and native UI guidance |
+| `building-native-ui` | Yes | Tasks 03-07 | Expo Router and native UI guidance |
+| `frontend-design` | Yes | Task 07 | Distinctive branded mobile UI redesign |
+| `copywriting` | Yes | Task 08 | Replace placeholder mobile copy with real product language |
 | `context7` | Yes | Tasks 01-06 | Current Expo and library docs |
 | `upgrading-expo` | Yes | Task 03 | Expo setup and dependency hygiene |
 | `security-audit` | Yes | Task 06 | Mobile security and release review |
-| `sync-docs` | Yes | Task 07 | Keep docs aligned with the new mobile architecture |
+| `sync-docs` | Yes | Task 09 | Keep docs aligned with the new mobile architecture |
 
 ## Workflow Registry
 
@@ -69,8 +71,10 @@ The current repo is a production-oriented Electron desktop app. The mobile work 
 | 03 | `03_mobile_app_scaffold.task.md` | Completed | vibe-code | takomi, building-native-ui, upgrading-expo, context7 | Create Expo mobile shell and navigation |
 | 04 | `04_mobile_recording_pipeline.task.md` | Completed | vibe-code | takomi, building-native-ui, context7 | Implement recording, segmentation, provider calls, retry |
 | 05 | `05_mobile_product_shell.task.md` | Completed | vibe-code | takomi, building-native-ui, context7 | Build recorder UX, history, settings, clipboard flow |
-| 06 | `06_release_hardening_review.task.md` | In Progress | vibe-review | takomi, security-audit, context7 | Verify security, build, and device readiness |
-| 07 | `07_docs_handoff.task.md` | Pending | vibe-code | takomi, sync-docs | Update docs and handoff materials |
+| 06 | `06_release_hardening_review.task.md` | Completed | vibe-review | takomi, security-audit, context7 | Verify security, build, and device readiness |
+| 07 | `07_mobile_ui_redesign.task.md` | In Progress | vibe-code | takomi, frontend-design, building-native-ui | Redesign the mobile UI shell to match the Koe brand |
+| 08 | `08_mobile_copywriting_pass.task.md` | Pending | vibe-code | takomi, copywriting | Replace placeholder mobile text with real product copy |
+| 09 | `09_docs_handoff.task.md` | Pending | vibe-code | takomi, sync-docs | Update docs and handoff materials |
 
 ## Dependency Graph
 
@@ -91,8 +95,18 @@ Task 01 Workspace Foundation
                               v
                   Task 06 Release Hardening Review
                               |
+                              +--> Task 09 Docs Handoff
+
+                  Task 05 Mobile Product Shell
+                              |
                               v
-                      Task 07 Docs Handoff
+                   Task 07 Mobile UI Redesign
+                              |
+                              v
+                 Task 08 Mobile Copywriting Pass
+                              |
+                              v
+                      Task 09 Docs Handoff
 ```
 
 ## Delivery Milestones

@@ -1,3 +1,12 @@
+# Sensitive patterns
+.env.local
+.env.*.local
+*.pem
+*.key
+.koe-key
+.jstar/
+*.log
+
 # --- System ---
 .DS_Store
 Thumbs.db
@@ -42,4 +51,4 @@ android/
 *.p8
 *.p12
 *.key
-*.mobileprovision
+*.mobileprovision

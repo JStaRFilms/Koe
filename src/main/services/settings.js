@@ -165,5 +165,6 @@ module.exports = {
     getSetting,
     setSettings,
     setSetting,
+    getEncryptionKey,
     get store() { return initStore(); }
 };

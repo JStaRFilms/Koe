@@ -3,12 +3,15 @@ const path = require('path');
 const { app } = require('electron');
 const Store = require('electron-store').default || require('electron-store');
 
+const { getEncryptionKey } = require('./settings');
+
 let pendingRetryStore = null;
 
 function getStore() {
     if (!pendingRetryStore) {
         pendingRetryStore = new Store({
-            name: 'pending-retry'
+            name: 'pending-retry',
+            encryptionKey: getEncryptionKey()
         });
     }
 

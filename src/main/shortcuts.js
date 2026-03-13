@@ -7,6 +7,7 @@ const { retryAndPasteTranscript } = require('./services/retry-transcript');
 const historyService = require('./services/history');
 const pendingRetryService = require('./services/pending-retry');
 const { closeSettingsWindow } = require('./settings-window');
+const logger = require('./services/logger');
 
 const RETRY_LAST_HOTKEY = 'CommandOrControl+Shift+,';
 
@@ -30,7 +31,7 @@ function sendRetryStatus(mainWindow, status, fallbackSessionId = null) {
 
 function handleRecordingToggle(mainWindow) {
     const recordingState = toggleRecording();
-    console.log(`Global hotkey triggered. Recording state: ${recordingState.isRecording} (session ${recordingState.sessionId})`);
+    logger.info(`Global hotkey triggered. Recording state: ${recordingState.isRecording} (session ${recordingState.sessionId})`);
 
     setRecordingState(recordingState.isRecording, mainWindow);
 
@@ -107,14 +108,14 @@ async function handleRetryLastTranscript(mainWindow) {
 function registerRetryShortcut(mainWindow) {
     const registered = globalShortcut.register(RETRY_LAST_HOTKEY, () => {
         handleRetryLastTranscript(mainWindow).catch((error) => {
-            console.error(`[Retry] Failed to retry last transcript: ${error.message}`);
+            logger.error(`[Retry] Failed to retry last transcript: ${error.message}`);
         });
     });
 
     if (!registered) {
-        console.warn(`Retry shortcut ${RETRY_LAST_HOTKEY} failed to register.`);
+        logger.warn(`Retry shortcut ${RETRY_LAST_HOTKEY} failed to register.`);
     } else {
-        console.log(`Retry shortcut ${RETRY_LAST_HOTKEY} registered successfully.`);
+        logger.info(`Retry shortcut ${RETRY_LAST_HOTKEY} registered successfully.`);
     }
 }
 
@@ -127,13 +128,13 @@ function registerShortcuts(mainWindow) {
     });
 
     if (!registered) {
-        console.error(`Global shortcut ${hotkey} failed to register.`);
+        logger.error(`Global shortcut ${hotkey} failed to register.`);
         return false;
     }
 
     registerRetryShortcut(mainWindow);
 
-    console.log(`Global shortcut ${hotkey} registered successfully.`);
+    logger.info(`Global shortcut ${hotkey} registered successfully.`);
     return true;
 }
 
@@ -152,11 +153,11 @@ function updateHotkey(mainWindow, newHotkey) {
     if (registered) {
         currentHotkey = newHotkey;
         registerRetryShortcut(mainWindow);
-        console.log(`Global shortcut updated to ${newHotkey}.`);
+        logger.info(`Global shortcut updated to ${newHotkey}.`);
         return true;
     }
 
-    console.error(`Failed to register new hotkey ${newHotkey}.`);
+    logger.error(`Failed to register new hotkey ${newHotkey}.`);
     registerShortcuts(mainWindow);
     return false;
 }

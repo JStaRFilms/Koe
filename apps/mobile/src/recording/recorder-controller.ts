@@ -47,10 +47,10 @@ export async function configureRecordingAudioMode(): Promise<void> {
   await setAudioModeAsync({
     allowsRecording: true,
     allowsBackgroundRecording: true,
-    interruptionMode: 'doNotMix',
     playsInSilentMode: true,
     shouldPlayInBackground: true,
     shouldRouteThroughEarpiece: false,
+    ...(process.env.EXPO_OS === 'ios' ? { interruptionMode: 'doNotMix' as const } : {}),
   });
 }
 
@@ -58,10 +58,10 @@ export async function resetRecordingAudioMode(): Promise<void> {
   await setAudioModeAsync({
     allowsRecording: false,
     allowsBackgroundRecording: false,
-    interruptionMode: 'mixWithOthers',
     playsInSilentMode: true,
     shouldPlayInBackground: false,
     shouldRouteThroughEarpiece: false,
+    ...(process.env.EXPO_OS === 'ios' ? { interruptionMode: 'mixWithOthers' as const } : {}),
   });
 }
 
