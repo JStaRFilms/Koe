@@ -1,6 +1,7 @@
 import { Text, View, StyleSheet, TouchableOpacity, useColorScheme, ScrollView } from 'react-native';
 import { Colors, Spacing } from '../src/constants/Theme';
 import { useRouter } from 'expo-router';
+import { loadAppSettings, saveAppSettings } from '../src/storage/settings-storage';
 
 export default function OnboardingScreen() {
   const colorScheme = useColorScheme() || 'dark';
@@ -35,24 +36,28 @@ export default function OnboardingScreen() {
           <Step 
             marker="1" 
             title="Press to Speak" 
-            description="Tap the mic button and start talking. We'll handle the rest."
+            description="Tap the mic button and start talking. Koe records locally, then sends audio directly to Groq with your saved key."
           />
           <Step 
             marker="2" 
             title="Instant Copied" 
-            description="Your text is automatically copied to your clipboard as soon as you stop."
+            description="Koe is clipboard-first. Your refined text is copied to your clipboard automatically."
           />
           <Step 
             marker="3" 
             title="AI Enhanced" 
-            description="Whisper + Llama ensure your text is perfect and ready to use."
+            description="Whisper + Llama ensure your text is perfect and ready to paste anywhere."
           />
         </View>
       </View>
 
       <View style={styles.footer}>
         <TouchableOpacity 
-          onPress={() => router.replace('/')}
+          onPress={async () => {
+             const settings = await loadAppSettings();
+             await saveAppSettings({ ...settings, hasSeenOnboarding: true });
+             router.replace('/');
+          }}
           style={[styles.button, { backgroundColor: theme.accent }]}
         >
           <Text style={[styles.buttonText, { color: theme.background }]}>Get Started</Text>

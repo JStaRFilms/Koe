@@ -22,6 +22,8 @@ import {
   type PersistedRetryState,
 } from '../storage/pipeline-storage';
 import { getGroqApiKey } from '../storage/secure-storage';
+import { loadAppSettings } from '../storage/settings-storage';
+import { addToHistory } from '../storage/history-storage';
 
 export type RecordingStage = 'idle' | 'recording' | 'processing' | 'copied' | 'empty' | 'error';
 
@@ -160,10 +162,18 @@ export function useRecordingPipeline() {
   }, []);
 
   const finalizeSuccess = useCallback(
-    async (text: string, durationMillis: number) => {
-      await Clipboard.setStringAsync(text);
+    async (rawText: string, finalText: string, durationMillis: number) => {
+      await Clipboard.setStringAsync(finalText);
       await persistUsage(durationMillis);
       await clearRetryState();
+      
+      await addToHistory({
+        id: `mobile-${Date.now()}`,
+        timestamp: Date.now(),
+        rawText,
+        refinedText: finalText !== rawText ? finalText : null,
+        durationMillis,
+      });
 
       retryStateRef.current = null;
       setHasPendingRetry(false);
@@ -177,7 +187,7 @@ export function useRecordingPipeline() {
       setStatus({
         stage: 'copied',
         label: 'Copied to clipboard',
-        transcript: text,
+        transcript: finalText,
         progress: 100,
       });
       scheduleReturnToIdle();
@@ -201,6 +211,9 @@ export function useRecordingPipeline() {
       await saveRetryState(currentRetryState);
 
       try {
+        const settings = await loadAppSettings();
+        const apiKey = await getGroqApiKey() || '';
+
         setStatus({
           stage: 'processing',
           label: 'Uploading audio to Groq...',
@@ -210,7 +223,8 @@ export function useRecordingPipeline() {
 
         if (!rawText) {
           rawText = await mobileProvider.transcribeSegment(currentRetryState.audioUri, {
-            apiKey: '',
+            apiKey,
+            language: settings.language === 'auto' ? undefined : settings.language,
             onStage: (nextStage) =>
               setStatus({
                 stage: 'processing',
@@ -243,19 +257,22 @@ export function useRecordingPipeline() {
         retryStateRef.current = currentRetryState;
         await saveRetryState(currentRetryState);
 
-        const refinedText = await mobileProvider.refineTranscript(rawText, {
-          apiKey: '',
-          enhanceText: true,
-          onStage: (nextStage) =>
-            setStatus({
-              stage: 'processing',
-              label: nextStage.label,
-              transcript: rawText,
-              progress: nextStage.progress ?? 82,
-            }),
-        });
+        const refinedText = settings.enhanceText 
+          ? await mobileProvider.refineTranscript(rawText, {
+            apiKey,
+            promptStyle: settings.promptStyle,
+            model: settings.model,
+            onStage: (nextStage) =>
+              setStatus({
+                stage: 'processing',
+                label: nextStage.label,
+                transcript: rawText,
+                progress: nextStage.progress ?? 82,
+              }),
+          })
+          : rawText;
 
-        await finalizeSuccess(refinedText, currentRetryState.durationMillis);
+        await finalizeSuccess(rawText, refinedText, currentRetryState.durationMillis);
       } catch (error) {
         const message = getErrorMessage(error);
         const failedState: PersistedRetryState = {
@@ -319,6 +336,11 @@ export function useRecordingPipeline() {
 
     try {
       await startRecorder(recorder);
+      try {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      } catch {
+        // Optional.
+      }
       setStatus({
         stage: 'recording',
         label: 'Listening...',
@@ -337,6 +359,11 @@ export function useRecordingPipeline() {
   const stopAndProcess = useCallback(async () => {
     try {
       const completed = await stopRecorder(recorder);
+      try {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch {
+        // Optional.
+      }
       if (!completed.uri) {
         setStatus({
           stage: 'empty',

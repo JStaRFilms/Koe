@@ -1,69 +1,10 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, useColorScheme } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View, useColorScheme, Animated, Easing } from 'react-native';
+import { Mic, Square, Loader2, Check, RefreshCw } from 'lucide-react-native';
+import { useEffect, useRef } from 'react';
 import { Colors, Spacing } from '../src/constants/Theme';
+import { RECORDER_STATES, type ScreenStage } from '../src/constants/RecorderStates';
 import { useRecordingPipeline } from '../src/hooks/use-recording-pipeline';
-
-type ScreenStage = 'idle' | 'recording' | 'processing' | 'copied' | 'empty' | 'error';
-
-const RECORDER_STATES: Record<
-  ScreenStage,
-  {
-    headline: string;
-    description: string;
-    detail: string;
-    actionLabel: string;
-    toneColor: string;
-    ringColor: string;
-  }
-> = {
-  idle: {
-    headline: 'Ready when you are',
-    description: 'Manual start and stop recording is active. Save your Groq key in Settings, then tap to begin.',
-    detail: 'Your transcript will be copied to the clipboard after Groq transcription and refinement complete.',
-    actionLabel: 'Tap to start recording',
-    toneColor: Colors.dark.accent,
-    ringColor: Colors.dark.accentGlow,
-  },
-  recording: {
-    headline: 'Listening...',
-    description: 'Koe is capturing a single manual recording session with interruption-safe state.',
-    detail: 'Tap again to stop. If the OS interrupts recording, Koe will surface that failure when you return.',
-    actionLabel: 'Tap to stop and process',
-    toneColor: Colors.dark.danger,
-    ringColor: Colors.dark.dangerGlow,
-  },
-  processing: {
-    headline: 'Processing through Groq',
-    description: 'The saved recording is being transcribed and refined. Retry data stays on-device if something fails.',
-    detail: 'This path favors reliability over live partial transcription in V1.',
-    actionLabel: 'Processing...',
-    toneColor: Colors.dark.process,
-    ringColor: Colors.dark.processGlow,
-  },
-  copied: {
-    headline: 'Copied to clipboard',
-    description: 'Your refined transcript is ready to paste anywhere on mobile.',
-    detail: 'A successful run clears the saved retry state and updates local usage stats.',
-    actionLabel: 'Tap to record again',
-    toneColor: Colors.dark.success,
-    ringColor: Colors.dark.successGlow,
-  },
-  empty: {
-    headline: 'No speech detected',
-    description: 'The recording finished, but Groq did not return spoken text.',
-    detail: 'Try again in a quieter environment or speak closer to the microphone.',
-    actionLabel: 'Tap to try again',
-    toneColor: Colors.dark.process,
-    ringColor: Colors.dark.processGlow,
-  },
-  error: {
-    headline: 'Recovery path available',
-    description: 'Koe keeps failed work available for retry instead of discarding captured speech.',
-    detail: 'Retry the saved recording or discard it intentionally before starting a new session.',
-    actionLabel: 'Retry saved recording',
-    toneColor: Colors.dark.danger,
-    ringColor: Colors.dark.dangerGlow,
-  },
-};
+import { StatusCard } from '../src/components/StatusCard';
 
 export default function RecorderScreen() {
   const colorScheme = useColorScheme() || 'dark';
@@ -85,30 +26,52 @@ export default function RecorderScreen() {
   const stage = status.stage as ScreenStage;
   const stateMeta = RECORDER_STATES[stage];
 
-  const handlePrimaryPress = async () => {
-    if (status.stage === 'recording') {
-      await stopAndProcess();
-      return;
-    }
+  const spinValue = useRef(new Animated.Value(0)).current;
 
+  useEffect(() => {
     if (status.stage === 'processing') {
-      return;
+      Animated.loop(
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 1500,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinValue.setValue(0);
     }
+  }, [status.stage]);
 
-    if (status.stage === 'error' && hasPendingRetry) {
-      await retryLastSession();
-      return;
-    }
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
 
-    if (status.stage === 'error') {
-      reset();
-      return;
-    }
-
+  const handlePrimaryPress = async () => {
+    if (status.stage === 'recording') return await stopAndProcess();
+    if (status.stage === 'processing') return;
+    if (status.stage === 'error' && hasPendingRetry) return await retryLastSession();
+    if (status.stage === 'error') return reset();
     await startRecording();
   };
 
   const durationSeconds = Math.max(0, Math.round(durationMillis / 1000));
+
+  const renderIcon = () => {
+    const iconProps = { size: 42, color: theme.background };
+    if (status.stage === 'recording') return <Square fill={theme.background} {...iconProps} />;
+    if (status.stage === 'processing') {
+      return (
+        <Animated.View style={{ transform: [{ rotate: spin }] }}>
+          <Loader2 {...iconProps} />
+        </Animated.View>
+      );
+    }
+    if (status.stage === 'copied') return <Check {...iconProps} />;
+    if (status.stage === 'error') return <RefreshCw {...iconProps} />;
+    return <Mic {...iconProps} />;
+  };
 
   return (
     <ScrollView
@@ -117,24 +80,20 @@ export default function RecorderScreen() {
       contentContainerStyle={styles.content}
     >
       <View style={styles.hero}>
-        <Text style={[styles.eyebrow, { color: theme.textMuted }]}>Task 4 pipeline</Text>
+        <Text style={[styles.eyebrow, { color: theme.textMuted }]}>Manual Mode</Text>
         <Text style={[styles.title, { color: theme.text }]}>{stateMeta.headline}</Text>
         <Text selectable style={[styles.subtitle, { color: theme.textMuted }]}>
           {stateMeta.description}
         </Text>
       </View>
 
-      <View style={[styles.statusCard, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
-        <Text style={[styles.statusLabel, { color: stateMeta.toneColor }]}>{status.label}</Text>
-        <Text selectable style={[styles.statusCopy, { color: theme.text }]}>
-          {status.error || status.transcript || stateMeta.detail}
-        </Text>
-        {typeof status.progress === 'number' && (
-          <Text selectable style={[styles.progressText, { color: theme.textMuted }]}>
-            Progress: {status.progress}%
-          </Text>
-        )}
-      </View>
+      <StatusCard 
+        label={isRecording ? `${status.label} • ${durationSeconds}s` : status.label}
+        detail={status.error || status.transcript || stateMeta.detail}
+        toneColor={stateMeta.toneColor}
+        progress={status.progress}
+        theme={theme}
+      />
 
       <View style={styles.recorderContainer}>
         <TouchableOpacity
@@ -146,20 +105,12 @@ export default function RecorderScreen() {
             {
               backgroundColor: stateMeta.ringColor,
               borderColor: stateMeta.toneColor,
-              opacity: status.stage === 'processing' ? 0.55 : 1,
+              opacity: status.stage === 'processing' ? 0.7 : 1,
             },
           ]}
         >
           <View style={[styles.recordButtonInner, { backgroundColor: stateMeta.toneColor }]}>
-            {status.stage === 'recording' ? (
-              <View style={[styles.stopSquare, { backgroundColor: theme.background }]} />
-            ) : status.stage === 'processing' ? (
-              <Text style={[styles.recordGlyph, { color: theme.background }]}>...</Text>
-            ) : status.stage === 'error' && hasPendingRetry ? (
-              <Text style={[styles.recordGlyph, { color: theme.background }]}>R</Text>
-            ) : (
-              <Text style={[styles.recordGlyph, { color: theme.background }]}>O</Text>
-            )}
+            {renderIcon()}
           </View>
         </TouchableOpacity>
 
@@ -218,7 +169,7 @@ const styles = StyleSheet.create({
     gap: Spacing.xl,
   },
   hero: {
-    gap: Spacing.sm,
+    gap: Spacing.xs,
   },
   eyebrow: {
     fontSize: 14,
@@ -235,71 +186,44 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
   },
-  statusCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: Spacing.xl,
-    gap: Spacing.sm,
-  },
-  statusLabel: {
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  statusCopy: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  progressText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
   recorderContainer: {
     alignItems: 'center',
-    gap: Spacing.md,
+    gap: Spacing.lg,
+    paddingVertical: Spacing.xl,
   },
   recordButton: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    borderWidth: 2,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    borderWidth: 3,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 10,
+    padding: 12,
   },
   recordButtonInner: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  stopSquare: {
-    width: 32,
-    height: 32,
-    borderRadius: 4,
-  },
-  recordGlyph: {
-    fontSize: 36,
-    fontWeight: '800',
-    lineHeight: 40,
-  },
   statusText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '700',
   },
   helperText: {
     fontSize: 14,
     lineHeight: 20,
     textAlign: 'center',
+    maxWidth: '80%',
   },
   secondaryActions: {
     width: '100%',
     gap: Spacing.sm,
+    marginTop: Spacing.md,
   },
   secondaryButton: {
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.lg,
@@ -307,7 +231,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   secondaryButtonText: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '600',
   },
   footer: {
@@ -315,7 +239,7 @@ const styles = StyleSheet.create({
   },
   infoCard: {
     padding: Spacing.lg,
-    borderRadius: 16,
+    borderRadius: 20,
     borderWidth: 1,
     alignItems: 'center',
   },

@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Switch,
   useColorScheme,
 } from 'react-native';
 import { Colors, Spacing } from '../src/constants/Theme';
@@ -14,6 +15,22 @@ import {
   getGroqApiKey,
   saveGroqApiKey,
 } from '../src/storage/secure-storage';
+import { loadAppSettings, saveAppSettings, type AppSettings } from '../src/storage/settings-storage';
+
+const PROMPT_STYLE_OPTIONS = [
+  { label: 'Clean', value: 'Clean' },
+  { label: 'Formal', value: 'Formal' },
+  { label: 'Casual', value: 'Casual' },
+  { label: 'Concise', value: 'Concise' },
+] as const;
+
+const LANGUAGE_OPTIONS = [
+  { label: 'EN', value: 'en' },
+  { label: 'Auto', value: 'auto' },
+  { label: 'ES', value: 'es' },
+  { label: 'FR', value: 'fr' },
+  { label: 'DE', value: 'de' },
+] as const;
 
 function maskKey(value: string | null): string {
   if (!value) {
@@ -34,23 +51,30 @@ export default function SettingsScreen() {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [savedKeyLabel, setSavedKeyLabel] = useState('Loading...');
   const [statusMessage, setStatusMessage] = useState('Your Groq key stays on-device in secure storage.');
+  const [settings, setSettings] = useState<AppSettings | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
-    const loadKey = async () => {
-      const existingKey = await getGroqApiKey();
+    const loadData = async () => {
+      const [existingKey, loadedSettings] = await Promise.all([
+        getGroqApiKey(),
+        loadAppSettings()
+      ]);
+      
       if (cancelled) {
         return;
       }
 
       setSavedKeyLabel(maskKey(existingKey));
+      setSettings(loadedSettings);
+      
       if (!existingKey) {
         setStatusMessage('Save a Groq API key here before you try the mobile recorder.');
       }
     };
 
-    void loadKey();
+    void loadData();
 
     return () => {
       cancelled = true;
@@ -76,6 +100,21 @@ export default function SettingsScreen() {
     setApiKeyInput('');
     setStatusMessage('Saved Groq API key removed from secure storage.');
   };
+
+  const updateSetting = async (key: keyof AppSettings, value: string | boolean) => {
+    if (!settings) return;
+    const updated = { ...settings, [key]: value };
+    setSettings(updated);
+    await saveAppSettings(updated);
+  };
+
+  if (!settings) {
+    return (
+      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Text style={{ color: theme.textMuted }}>Loading settings...</Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView
@@ -136,13 +175,81 @@ export default function SettingsScreen() {
         </Text>
       </View>
 
+      <View style={[styles.card, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
+        <Text style={[styles.eyebrow, { color: theme.textMuted }]}>Preferences</Text>
+        
+        <View style={styles.settingRow}>
+          <View style={styles.settingText}>
+            <Text style={[styles.settingLabel, { color: theme.text }]}>AI Enhancement</Text>
+            <Text style={[styles.settingDesc, { color: theme.textMuted }]}>Clean up filler words and grammar</Text>
+          </View>
+          <Switch
+            value={settings.enhanceText}
+            onValueChange={(val) => updateSetting('enhanceText', val)}
+            trackColor={{ false: theme.border, true: theme.accent }}
+          />
+        </View>
+
+        {settings.enhanceText && (
+          <>
+            <View style={styles.divider} />
+            <Text style={[styles.label, { color: theme.textMuted, marginBottom: 4 }]}>Prompt Style</Text>
+            <View style={styles.optionGrid}>
+              {PROMPT_STYLE_OPTIONS.map((style) => (
+                <TouchableOpacity
+                  key={style.value}
+                  onPress={() => updateSetting('promptStyle', style.value)}
+                  style={[
+                    styles.optionButton,
+                    { borderColor: theme.border },
+                    settings.promptStyle === style.value && { backgroundColor: theme.accentDim, borderColor: theme.accent }
+                  ]}
+                >
+                  <Text style={[
+                    styles.optionText,
+                    { color: theme.textMuted },
+                    settings.promptStyle === style.value && { color: theme.accent, fontWeight: '700' }
+                  ]}>
+                    {style.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </>
+        )}
+
+        <View style={styles.divider} />
+        <Text style={[styles.label, { color: theme.textMuted, marginBottom: 4 }]}>Transcription Language</Text>
+        <View style={styles.optionGrid}>
+          {LANGUAGE_OPTIONS.map((lang) => (
+            <TouchableOpacity
+              key={lang.value}
+              onPress={() => updateSetting('language', lang.value)}
+              style={[
+                styles.optionButton,
+                { borderColor: theme.border },
+                settings.language === lang.value && { backgroundColor: theme.accentDim, borderColor: theme.accent }
+              ]}
+            >
+              <Text style={[
+                styles.optionText,
+                { color: theme.textMuted },
+                settings.language === lang.value && { color: theme.accent, fontWeight: '700' }
+              ]}>
+                {lang.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
       <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
         <Text style={[styles.label, { color: theme.textMuted }]}>Pipeline notes</Text>
         <Text selectable style={[styles.note, { color: theme.text }]}>
           Failed mobile recordings stay available for retry until you process or explicitly discard them.
         </Text>
         <Text selectable style={[styles.note, { color: theme.text }]}>
-          If the OS suspends the app while processing, Koe will surface that interruption on resume instead of pretending the job finished.
+          If the OS suspends the app while processing, Koe will surface that interruption on resume.
         </Text>
       </View>
     </ScrollView>
@@ -155,6 +262,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.xl,
+    paddingBottom: 60,
     gap: Spacing.lg,
   },
   card: {
@@ -225,6 +333,46 @@ const styles = StyleSheet.create({
   statusMessage: {
     fontSize: 13,
     lineHeight: 19,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.md,
+  },
+  settingText: {
+    flex: 1,
+  },
+  settingLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  settingDesc: {
+    fontSize: 13,
+    marginTop: 2,
+  },
+  divider: {
+    height: 1,
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    marginVertical: 4,
+  },
+  optionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.sm,
+  },
+  optionButton: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    minHeight: 38,
+    justifyContent: 'center',
+  },
+  optionText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   note: {
     fontSize: 14,
