@@ -31,7 +31,7 @@ export const RECORDER_STATES: Record<ScreenStage, StateMeta> = {
   processing: {
     headline: 'Refining thoughts',
     description: 'AI is transcribing and polishing your speech into perfect text.',
-    detail: 'This favors quality and reliability. Work remains on-device until sent to Groq.',
+    detail: 'This favors quality and reliability. Your recording stays on-device until it is sent for processing.',
     actionLabel: 'Processing...',
     toneColor: Colors.dark.process,
     ringColor: Colors.dark.processGlow,

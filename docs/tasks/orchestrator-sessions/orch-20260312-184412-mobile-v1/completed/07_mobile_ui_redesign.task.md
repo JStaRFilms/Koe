@@ -144,12 +144,12 @@ Replace the current placeholder-feeling mobile shell with a deliberate product U
 
 ## Definition Of Done
 
-- [ ] The mobile shell no longer looks like a scaffold
-- [ ] The `声` brand mark is used intentionally where appropriate
-- [ ] The visual system feels related to the website, without copying web layout literally
-- [ ] The design avoids cliché purple-neon AI styling
-- [ ] Recorder, history, settings, and onboarding all feel coherent
-- [ ] Existing Task 05 functionality still works
+- [x] The mobile shell no longer looks like a scaffold
+- [x] The `声` brand mark is used intentionally where appropriate
+- [x] The visual system feels related to the website, without copying web layout literally
+- [x] The design avoids cliché purple-neon AI styling
+- [x] Recorder, history, settings, and onboarding all feel coherent
+- [x] Existing Task 05 functionality still works
 
 ## Constraints
 

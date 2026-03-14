@@ -4,18 +4,21 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
   Switch,
   useColorScheme,
+  Dimensions,
 } from 'react-native';
-import { Colors, Spacing } from '../src/constants/Theme';
-import {
-  deleteGroqApiKey,
-  getGroqApiKey,
-  saveGroqApiKey,
-} from '../src/storage/secure-storage';
+import * as Haptics from 'expo-haptics';
+import { Colors, Spacing, Typography } from '../src/constants/Theme';
+import { deleteGroqApiKey, getGroqApiKey, saveGroqApiKey } from '../src/storage/secure-storage';
 import { loadAppSettings, saveAppSettings, type AppSettings } from '../src/storage/settings-storage';
+import { GridBackground } from '../src/components/GridBackground';
+import { ScanlineOverlay } from '../src/components/ScanlineOverlay';
+import { BrutalCard } from '../src/components/BrutalCard';
+import { BrutalButton } from '../src/components/BrutalButton';
+
+const { width } = Dimensions.get('window');
 
 const PROMPT_STYLE_OPTIONS = [
   { label: 'Clean', value: 'Clean' },
@@ -25,11 +28,10 @@ const PROMPT_STYLE_OPTIONS = [
 ] as const;
 
 const LANGUAGE_OPTIONS = [
-  { label: 'EN', value: 'en' },
+  { label: 'English', value: 'en' },
   { label: 'Auto', value: 'auto' },
-  { label: 'ES', value: 'es' },
-  { label: 'FR', value: 'fr' },
-  { label: 'DE', value: 'de' },
+  { label: 'Spanish', value: 'es' },
+  { label: 'French', value: 'fr' },
 ] as const;
 
 function maskKey(value: string | null): string {
@@ -38,7 +40,7 @@ function maskKey(value: string | null): string {
   }
 
   if (value.length <= 8) {
-    return 'Saved securely';
+    return 'Saved on this device';
   }
 
   return `${value.slice(0, 4)}...${value.slice(-4)}`;
@@ -50,32 +52,22 @@ export default function SettingsScreen() {
 
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [savedKeyLabel, setSavedKeyLabel] = useState('Loading...');
-  const [statusMessage, setStatusMessage] = useState('Your Groq key stays on-device in secure storage.');
   const [settings, setSettings] = useState<AppSettings | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadData = async () => {
-      const [existingKey, loadedSettings] = await Promise.all([
-        getGroqApiKey(),
-        loadAppSettings()
-      ]);
-      
+      const [existingKey, loadedSettings] = await Promise.all([getGroqApiKey(), loadAppSettings()]);
       if (cancelled) {
         return;
       }
 
       setSavedKeyLabel(maskKey(existingKey));
       setSettings(loadedSettings);
-      
-      if (!existingKey) {
-        setStatusMessage('Save a Groq API key here before you try the mobile recorder.');
-      }
     };
 
     void loadData();
-
     return () => {
       cancelled = true;
     };
@@ -84,298 +76,193 @@ export default function SettingsScreen() {
   const saveKey = async () => {
     const trimmed = apiKeyInput.trim();
     if (!trimmed) {
-      setStatusMessage('Enter a Groq API key before saving.');
       return;
     }
 
     await saveGroqApiKey(trimmed);
     setSavedKeyLabel(maskKey(trimmed));
     setApiKeyInput('');
-    setStatusMessage('Groq API key saved securely on this device.');
+    try {
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      // Haptics are optional.
+    }
   };
 
   const clearKey = async () => {
     await deleteGroqApiKey();
     setSavedKeyLabel(maskKey(null));
     setApiKeyInput('');
-    setStatusMessage('Saved Groq API key removed from secure storage.');
+    try {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch {
+      // Haptics are optional.
+    }
   };
 
   const updateSetting = async (key: keyof AppSettings, value: string | boolean) => {
-    if (!settings) return;
+    if (!settings) {
+      return;
+    }
+
     const updated = { ...settings, [key]: value };
     setSettings(updated);
     await saveAppSettings(updated);
+    try {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {
+      // Haptics are optional.
+    }
   };
 
   if (!settings) {
-    return (
-      <View style={[styles.container, { backgroundColor: theme.background, justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: theme.textMuted }}>Loading settings...</Text>
-      </View>
-    );
+    return null;
   }
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={styles.content}
-    >
-      <View style={[styles.card, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
-        <Text style={[styles.eyebrow, { color: theme.textMuted }]}>BYOK</Text>
-        <Text style={[styles.title, { color: theme.text }]}>Groq key storage</Text>
-        <Text selectable style={[styles.body, { color: theme.textMuted }]}>
-          Mobile V1 sends audio straight to Groq with your locally stored key. Nothing is proxied through a Koe backend.
-        </Text>
+    <View style={styles.outer}>
+      <GridBackground />
+      <ScanlineOverlay />
+      <View style={styles.kanjiContainer} pointerEvents="none">
+        <Text style={[styles.kanji, { color: theme.border, opacity: 0.1 }]}>{'\u58F0'}</Text>
       </View>
 
-      <View style={[styles.card, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
-        <Text style={[styles.label, { color: theme.textMuted }]}>Saved key</Text>
-        <Text selectable style={[styles.savedKey, { color: theme.text }]}>{savedKeyLabel}</Text>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        <BrutalCard headerTitle="API key">
+          <View style={styles.itemBody}>
+            <Text style={[styles.label, { color: theme.textDim }]}>Saved key</Text>
+            <Text selectable style={[styles.savedKey, { color: theme.accent, fontFamily: Typography.fonts.mono }]}>
+              {savedKeyLabel}
+            </Text>
 
-        <TextInput
-          value={apiKeyInput}
-          onChangeText={setApiKeyInput}
-          placeholder="Paste your Groq API key"
-          placeholderTextColor={theme.textDim}
-          autoCapitalize="none"
-          autoCorrect={false}
-          secureTextEntry
-          style={[
-            styles.input,
-            {
-              backgroundColor: theme.surface,
-              borderColor: theme.border,
-              color: theme.text,
-            },
-          ]}
-        />
+            <TextInput
+              value={apiKeyInput}
+              onChangeText={setApiKeyInput}
+              placeholder="Paste your Groq API key"
+              placeholderTextColor={theme.textDim}
+              secureTextEntry
+              style={[
+                styles.input,
+                { backgroundColor: theme.surfaceElevated, borderColor: theme.border, color: theme.text },
+              ]}
+            />
 
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={saveKey}
-            style={[styles.primaryButton, { backgroundColor: theme.accent }]}
-          >
-            <Text style={[styles.primaryButtonText, { color: theme.background }]}>Save key</Text>
-          </TouchableOpacity>
+            <View style={styles.actionRow}>
+              <BrutalButton onPress={saveKey} title="Save key" style={{ flex: 1 }} />
+              <BrutalButton onPress={clearKey} title="Clear" variant="danger" />
+            </View>
 
-          <TouchableOpacity
-            activeOpacity={0.8}
-            onPress={clearKey}
-            style={[styles.secondaryButton, { borderColor: theme.border }]}
-          >
-            <Text style={[styles.secondaryButtonText, { color: theme.text }]}>Clear</Text>
-          </TouchableOpacity>
-        </View>
-
-        <Text selectable style={[styles.statusMessage, { color: theme.textMuted }]}>
-          {statusMessage}
-        </Text>
-      </View>
-
-      <View style={[styles.card, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}>
-        <Text style={[styles.eyebrow, { color: theme.textMuted }]}>Preferences</Text>
-        
-        <View style={styles.settingRow}>
-          <View style={styles.settingText}>
-            <Text style={[styles.settingLabel, { color: theme.text }]}>AI Enhancement</Text>
-            <Text style={[styles.settingDesc, { color: theme.textMuted }]}>Clean up filler words and grammar</Text>
+            <Text style={[styles.statusMsg, { color: theme.textDim }]}>
+              Saved securely on this device. Need a key? Get one from Groq, then paste it here.
+            </Text>
           </View>
-          <Switch
-            value={settings.enhanceText}
-            onValueChange={(val) => updateSetting('enhanceText', val)}
-            trackColor={{ false: theme.border, true: theme.accent }}
-          />
-        </View>
+        </BrutalCard>
 
-        {settings.enhanceText && (
-          <>
+        <BrutalCard headerTitle="Preferences">
+          <View style={styles.itemBody}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingText}>
+                <Text style={[styles.settingLabel, { color: theme.text }]}>Enhance text</Text>
+                <Text style={[styles.settingDesc, { color: theme.textDim }]}>
+                  Clean up filler words, punctuation, and grammar
+                </Text>
+              </View>
+              <Switch
+                value={settings.enhanceText}
+                onValueChange={(value) => updateSetting('enhanceText', value)}
+                trackColor={{ false: theme.border, true: theme.accent }}
+              />
+            </View>
+
+            {settings.enhanceText && (
+              <>
+                <Text style={[styles.subLabel, { color: theme.textDim, marginTop: Spacing.sm }]}>Style</Text>
+                <View style={styles.optionGrid}>
+                  {PROMPT_STYLE_OPTIONS.map((option) => (
+                    <BrutalButton
+                      key={option.value}
+                      onPress={() => updateSetting('promptStyle', option.value)}
+                      title={option.label}
+                      variant={settings.promptStyle === option.value ? 'primary' : 'outline'}
+                      small
+                    />
+                  ))}
+                </View>
+              </>
+            )}
+
             <View style={styles.divider} />
-            <Text style={[styles.label, { color: theme.textMuted, marginBottom: 4 }]}>Prompt Style</Text>
+
+            <Text style={[styles.subLabel, { color: theme.textDim, marginTop: Spacing.sm }]}>Language</Text>
             <View style={styles.optionGrid}>
-              {PROMPT_STYLE_OPTIONS.map((style) => (
-                <TouchableOpacity
-                  key={style.value}
-                  onPress={() => updateSetting('promptStyle', style.value)}
-                  style={[
-                    styles.optionButton,
-                    { borderColor: theme.border },
-                    settings.promptStyle === style.value && { backgroundColor: theme.accentDim, borderColor: theme.accent }
-                  ]}
-                >
-                  <Text style={[
-                    styles.optionText,
-                    { color: theme.textMuted },
-                    settings.promptStyle === style.value && { color: theme.accent, fontWeight: '700' }
-                  ]}>
-                    {style.label}
-                  </Text>
-                </TouchableOpacity>
+              {LANGUAGE_OPTIONS.map((language) => (
+                <BrutalButton
+                  key={language.value}
+                  onPress={() => updateSetting('language', language.value)}
+                  title={language.label}
+                  variant={settings.language === language.value ? 'primary' : 'outline'}
+                  small
+                />
               ))}
             </View>
-          </>
-        )}
-
-        <View style={styles.divider} />
-        <Text style={[styles.label, { color: theme.textMuted, marginBottom: 4 }]}>Transcription Language</Text>
-        <View style={styles.optionGrid}>
-          {LANGUAGE_OPTIONS.map((lang) => (
-            <TouchableOpacity
-              key={lang.value}
-              onPress={() => updateSetting('language', lang.value)}
-              style={[
-                styles.optionButton,
-                { borderColor: theme.border },
-                settings.language === lang.value && { backgroundColor: theme.accentDim, borderColor: theme.accent }
-              ]}
-            >
-              <Text style={[
-                styles.optionText,
-                { color: theme.textMuted },
-                settings.language === lang.value && { color: theme.accent, fontWeight: '700' }
-              ]}>
-                {lang.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-        <Text style={[styles.label, { color: theme.textMuted }]}>Pipeline notes</Text>
-        <Text selectable style={[styles.note, { color: theme.text }]}>
-          Failed mobile recordings stay available for retry until you process or explicitly discard them.
-        </Text>
-        <Text selectable style={[styles.note, { color: theme.text }]}>
-          If the OS suspends the app while processing, Koe will surface that interruption on resume.
-        </Text>
-      </View>
-    </ScrollView>
+          </View>
+        </BrutalCard>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  outer: { flex: 1 },
+  container: { flex: 1 },
+  kanjiContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  kanji: { fontSize: width * 0.8 },
   content: {
     padding: Spacing.xl,
-    paddingBottom: 60,
-    gap: Spacing.lg,
+    paddingTop: Spacing.xxl,
+    gap: Spacing.xl,
   },
-  card: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: Spacing.xl,
-    gap: Spacing.md,
-  },
-  eyebrow: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  body: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  savedKey: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  itemBody: { gap: Spacing.md },
+  label: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
+  subLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
+  savedKey: { fontSize: Typography.sizes.md, fontWeight: '700' },
   input: {
     borderWidth: 1,
-    borderRadius: 14,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    fontSize: 16,
+    padding: Spacing.md,
+    fontSize: Typography.sizes.md,
+    fontFamily: Typography.fonts.mono,
   },
-  actionRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  primaryButton: {
-    flex: 1,
-    borderRadius: 14,
-    paddingVertical: Spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryButtonText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  secondaryButton: {
-    minWidth: 88,
-    borderRadius: 14,
-    borderWidth: 1,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  statusMessage: {
-    fontSize: 13,
-    lineHeight: 19,
-  },
+  actionRow: { flexDirection: 'row', gap: Spacing.sm },
+  statusMsg: { fontSize: Typography.sizes.xs, lineHeight: 18 },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: Spacing.md,
   },
-  settingText: {
-    flex: 1,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  settingDesc: {
-    fontSize: 13,
-    marginTop: 2,
-  },
+  settingLabel: { fontSize: Typography.sizes.md, fontWeight: '700' },
+  settingDesc: { fontSize: Typography.sizes.xs, marginTop: 2, lineHeight: 18 },
   divider: {
     height: 1,
-    width: '100%',
     backgroundColor: 'rgba(255,255,255,0.05)',
-    marginVertical: 4,
+    marginVertical: Spacing.xs,
   },
   optionGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: Spacing.sm,
   },
-  optionButton: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 8,
-    borderRadius: 10,
-    borderWidth: 1,
-    minHeight: 38,
-    justifyContent: 'center',
-  },
-  optionText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  note: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
+  settingText: { flex: 1 },
 });

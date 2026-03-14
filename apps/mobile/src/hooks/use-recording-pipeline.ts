@@ -216,7 +216,7 @@ export function useRecordingPipeline() {
 
         setStatus({
           stage: 'processing',
-          label: 'Uploading audio to Groq...',
+          label: 'Uploading audio...',
           transcript: rawText || undefined,
           progress: 18,
         });
@@ -316,8 +316,8 @@ export function useRecordingPipeline() {
     if (!apiKey?.trim()) {
       setStatus({
         stage: 'error',
-        label: 'Groq key required',
-        error: 'Open Settings and save your Groq API key before recording.',
+        label: 'API key required',
+        error: 'Open Settings and save your API key before recording.',
         progress: 0,
       });
       return;

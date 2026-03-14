@@ -1,141 +1,137 @@
-import { Text, View, StyleSheet, TouchableOpacity, useColorScheme, ScrollView } from 'react-native';
-import { Colors, Spacing } from '../src/constants/Theme';
+import { Text, View, StyleSheet, useColorScheme, ScrollView, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Colors, Spacing, Typography } from '../src/constants/Theme';
 import { loadAppSettings, saveAppSettings } from '../src/storage/settings-storage';
+import { GridBackground } from '../src/components/GridBackground';
+import { ScanlineOverlay } from '../src/components/ScanlineOverlay';
+import { BrutalButton } from '../src/components/BrutalButton';
+
+const { width } = Dimensions.get('window');
 
 export default function OnboardingScreen() {
   const colorScheme = useColorScheme() || 'dark';
   const theme = Colors[colorScheme as keyof typeof Colors];
   const router = useRouter();
 
-  const Step = ({ marker, title, description }: { marker: string; title: string; description: string }) => (
-    <View style={styles.step}>
-      <View style={[styles.iconBox, { backgroundColor: theme.accentDim }]}>
-        <Text style={[styles.iconMarker, { color: theme.accent }]}>{marker}</Text>
-      </View>
-      <View style={styles.stepText}>
-        <Text style={[styles.stepTitle, { color: theme.text }]}>{title}</Text>
-        <Text style={[styles.stepDesc, { color: theme.textMuted }]}>{description}</Text>
-      </View>
-    </View>
-  );
+  const handleFinish = async () => {
+    const settings = await loadAppSettings();
+    await saveAppSettings({ ...settings, hasSeenOnboarding: true });
+    router.replace('/');
+  };
 
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={styles.scrollContent}
-    >
-      <View style={styles.content}>
-        <View style={styles.hero}>
-          <Text style={[styles.title, { color: theme.text }]}>Welcome to Koe</Text>
-          <Text style={[styles.subtitle, { color: theme.textMuted }]}>Voice dictation that works for you.</Text>
-        </View>
+    <View style={styles.outer}>
+      <GridBackground />
+      <ScanlineOverlay />
 
-        <View style={styles.steps}>
-          <Step 
-            marker="1" 
-            title="Press to Speak" 
-            description="Tap the mic button and start talking. Koe records locally, then sends audio directly to Groq with your saved key."
-          />
-          <Step 
-            marker="2" 
-            title="Instant Copied" 
-            description="Koe is clipboard-first. Your refined text is copied to your clipboard automatically."
-          />
-          <Step 
-            marker="3" 
-            title="AI Enhanced" 
-            description="Whisper + Llama ensure your text is perfect and ready to paste anywhere."
-          />
-        </View>
+      <View style={styles.kanjiContainer} pointerEvents="none">
+        <Text style={[styles.kanji, { color: theme.border, opacity: 0.15 }]}>{'\u58F0'}</Text>
       </View>
 
-      <View style={styles.footer}>
-        <TouchableOpacity 
-          onPress={async () => {
-             const settings = await loadAppSettings();
-             await saveAppSettings({ ...settings, hasSeenOnboarding: true });
-             router.replace('/');
-          }}
-          style={[styles.button, { backgroundColor: theme.accent }]}
-        >
-          <Text style={[styles.buttonText, { color: theme.background }]}>Get Started</Text>
-        </TouchableOpacity>
-      </View>
-    </ScrollView>
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+      >
+        <View style={styles.content}>
+          <View style={styles.hero}>
+            <View style={[styles.badge, { borderColor: theme.border }]}>
+              <Text style={[styles.badgeText, { color: theme.textMuted }]}>First run</Text>
+            </View>
+            <Text style={[styles.title, { color: theme.text, fontFamily: Typography.fonts.deco }]}>Koe</Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+              Turn speech into paste-ready text
+            </Text>
+          </View>
+
+          <View style={styles.cardContainer}>
+            <View style={[styles.infoBlock, { borderColor: theme.border }]}>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>Bring your own key</Text>
+              <Text style={[styles.infoDesc, { color: theme.textDim }]}>
+                Add your API key in Settings. Koe saves it on this device.
+              </Text>
+            </View>
+
+            <View style={[styles.infoBlock, { borderColor: theme.border }]}>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>Record, then paste</Text>
+              <Text style={[styles.infoDesc, { color: theme.textDim }]}>
+                Start recording, stop when you are done, and your text is copied when processing finishes.
+              </Text>
+            </View>
+
+            <View style={[styles.infoBlock, { borderColor: theme.border }]}>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>Retry if needed</Text>
+              <Text style={[styles.infoDesc, { color: theme.textDim }]}>
+                If processing fails, Koe keeps the last recording so you can retry or discard it.
+              </Text>
+            </View>
+          </View>
+
+          <Text style={[styles.helpText, { color: theme.textDim }]}>
+            You can add your API key from Settings after this screen.
+          </Text>
+        </View>
+
+        <View style={styles.footer}>
+          <BrutalButton onPress={handleFinish} title="Open Koe" style={{ width: '100%' }} />
+          <Text style={[styles.footerNote, { color: theme.textDim }]}>Clipboard-first on mobile</Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  outer: { flex: 1 },
+  container: { flex: 1 },
+  kanjiContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  scrollContent: {
-    flexGrow: 1,
-  },
+  kanji: { fontSize: width * 1.2 },
+  scrollContent: { flexGrow: 1 },
   content: {
     flex: 1,
     padding: Spacing.xl,
+    paddingTop: 80,
     justifyContent: 'center',
+    gap: 40,
   },
   hero: {
     alignItems: 'center',
-    marginBottom: 60,
+    gap: Spacing.sm,
   },
-  title: {
-    fontSize: 40,
-    fontWeight: '900',
-    letterSpacing: -1.5,
+  badge: {
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: 2,
   },
-  subtitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginTop: 8,
+  badgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
+  title: { fontSize: 48, fontWeight: '800', letterSpacing: -1 },
+  subtitle: { fontSize: Typography.sizes.sm, letterSpacing: 1, textAlign: 'center' },
+  cardContainer: { gap: Spacing.lg },
+  infoBlock: {
+    borderLeftWidth: 4,
+    paddingLeft: Spacing.xl,
+    paddingVertical: Spacing.sm,
+  },
+  infoTitle: { fontSize: 16, fontWeight: '800', letterSpacing: 1 },
+  infoDesc: { fontSize: 13, lineHeight: 20, marginTop: 4 },
+  helpText: {
+    fontSize: Typography.sizes.xs,
     textAlign: 'center',
-  },
-  steps: {
-    gap: Spacing.xl,
-  },
-  step: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  iconBox: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: Spacing.lg,
-  },
-  iconMarker: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  stepText: {
-    flex: 1,
-  },
-  stepTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  stepDesc: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 4,
+    lineHeight: 18,
   },
   footer: {
     padding: Spacing.xl,
-  },
-  button: {
-    height: 56,
-    borderRadius: 16,
-    justifyContent: 'center',
+    paddingBottom: 60,
+    gap: Spacing.md,
     alignItems: 'center',
   },
-  buttonText: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
+  footerNote: { fontSize: Typography.sizes.xs },
 });

@@ -1,23 +1,31 @@
 import { useCallback, useState } from 'react';
-import { 
-  Text, 
-  View, 
-  StyleSheet, 
-  useColorScheme, 
-  ScrollView, 
+import {
+  Text,
+  View,
+  StyleSheet,
+  useColorScheme,
+  ScrollView,
   TouchableOpacity,
-  Alert
+  Alert,
+  Dimensions,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
-import { Colors, Spacing } from '../src/constants/Theme';
+import { Trash2, Copy, Eye, EyeOff } from 'lucide-react-native';
+import { Colors, Spacing, Typography } from '../src/constants/Theme';
 import { loadHistory, clearHistory, type HistoryItem } from '../src/storage/history-storage';
+import { GridBackground } from '../src/components/GridBackground';
+import { ScanlineOverlay } from '../src/components/ScanlineOverlay';
+import { BrutalCard } from '../src/components/BrutalCard';
+
+const { width } = Dimensions.get('window');
 
 export default function HistoryScreen() {
   const colorScheme = useColorScheme() || 'dark';
   const theme = Colors[colorScheme as keyof typeof Colors];
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [showRawOverrides, setShowRawOverrides] = useState<Record<string, boolean>>({});
 
   useFocusEffect(
     useCallback(() => {
@@ -31,106 +39,142 @@ export default function HistoryScreen() {
       };
 
       void load();
-
       return () => {
         cancelled = true;
       };
     }, [])
   );
 
+  const toggleRaw = (id: string) => {
+    try {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {
+      // Haptics are optional.
+    }
+
+    setShowRawOverrides((previous) => ({ ...previous, [id]: !previous[id] }));
+  };
+
   const handleCopy = async (text: string) => {
     await Clipboard.setStringAsync(text);
     try {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch {}
-    Alert.alert('Copied', 'Transcript copied to clipboard.');
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch {
+      // Haptics are optional.
+    }
+    Alert.alert('Copied', 'Transcript copied to your clipboard.');
   };
 
   const handleClearHistory = () => {
-    Alert.alert(
-      'Clear History',
-      'Are you sure you want to delete all recent transcriptions?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Clear All', 
-          style: 'destructive', 
-          onPress: async () => {
-            await clearHistory();
-            setHistory([]);
-          } 
+    Alert.alert('Clear history', 'Delete all saved transcripts from this device?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Clear',
+        style: 'destructive',
+        onPress: async () => {
+          await clearHistory();
+          setHistory([]);
         },
-      ]
-    );
+      },
+    ]);
   };
 
-  const formatTime = (ts: number) => {
-    const d = new Date(ts);
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
   };
 
-  const formatDate = (ts: number) => {
-    const d = new Date(ts);
-    return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  const formatDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date
+      .getDate()
+      .toString()
+      .padStart(2, '0')}`;
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
+    <View style={styles.outer}>
+      <GridBackground />
+      <ScanlineOverlay />
+
+      <View style={styles.kanjiContainer} pointerEvents="none">
+        <Text style={[styles.kanji, { color: theme.border, opacity: 0.1 }]}>{'\u58F0'}</Text>
+      </View>
+
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
-        style={styles.scrollView}
+        style={styles.container}
         contentContainerStyle={styles.content}
       >
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
-          <Text style={[styles.eyebrow, { color: theme.textMuted }]}>Recent output</Text>
+        <View style={styles.header}>
+          <View>
+            <Text style={[styles.title, { color: theme.text, fontFamily: Typography.fonts.deco }]}>
+              History
+            </Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Your recent transcripts</Text>
+          </View>
           {history.length > 0 && (
-            <TouchableOpacity onPress={handleClearHistory}>
-              <Text style={[styles.clearText, { color: theme.danger }]}>Clear all</Text>
+            <TouchableOpacity onPress={handleClearHistory} style={[styles.purgeBtn, { borderColor: theme.danger }]}>
+              <Trash2 size={16} color={theme.danger} />
             </TouchableOpacity>
           )}
         </View>
 
         {history.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={[styles.emptyGlyph, { color: theme.textDim }]}>◷</Text>
-            <Text style={[styles.emptyText, { color: theme.textMuted }]}>No transcriptions yet</Text>
-            <Text selectable style={[styles.emptyHint, { color: theme.textDim }]}>
-              Completed transcripts will land here with timestamps, raw/refined text, and quick copy actions.
-            </Text>
+            <Text style={[styles.emptyGlyph, { color: theme.border }]}>{'\u58F0'}</Text>
+            <Text style={[styles.emptyText, { color: theme.textMuted }]}>No transcripts yet</Text>
           </View>
         ) : (
           <View style={styles.list}>
-            {history.map((item) => (
-              <View 
-                key={item.id} 
-                style={[styles.itemCard, { backgroundColor: theme.surfaceElevated, borderColor: theme.border }]}
-              >
-                <View style={styles.itemHeader}>
-                  <Text style={[styles.itemDate, { color: theme.textMuted }]}>
-                    {formatDate(item.timestamp)} • {formatTime(item.timestamp)}
-                  </Text>
-                  <Text style={[styles.itemDuration, { color: theme.textDim }]}>
-                    {Math.round(item.durationMillis / 1000)}s
-                  </Text>
-                </View>
-                
-                <Text selectable style={[styles.itemText, { color: theme.text }]}>
-                  {item.refinedText || item.rawText}
-                </Text>
-                {item.refinedText && item.refinedText !== item.rawText && (
-                  <Text selectable style={[styles.rawText, { color: theme.textDim }]}>
-                    Raw: {item.rawText}
-                  </Text>
-                )}
+            {history.map((item) => {
+              const isRaw = showRawOverrides[item.id] ?? false;
+              const hasRefined = !!item.refinedText && item.refinedText !== item.rawText;
+              const displayText = isRaw ? item.rawText : item.refinedText || item.rawText;
 
-                <TouchableOpacity 
-                  onPress={() => handleCopy(item.refinedText || item.rawText)}
-                  style={[styles.copyButton, { borderColor: theme.border }]}
-                >
-                  <Text style={[styles.copyButtonText, { color: theme.accent }]}>Copy again</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+              return (
+                <BrutalCard key={item.id} headerTitle={`${formatDate(item.timestamp)} // ${formatTime(item.timestamp)}`}>
+                  <View style={styles.itemBody}>
+                    <Text selectable style={[styles.itemText, { color: theme.text }]}>
+                      {displayText}
+                    </Text>
+
+                    <View style={styles.itemFooter}>
+                      <View style={styles.itemMeta}>
+                        <Text style={[styles.metaText, { color: theme.textDim }]}>
+                          {Math.round(item.durationMillis / 1000)} sec
+                        </Text>
+                      </View>
+
+                      <View style={styles.actions}>
+                        {hasRefined && (
+                          <TouchableOpacity
+                            onPress={() => toggleRaw(item.id)}
+                            style={[styles.miniAction, { borderColor: theme.border }]}
+                          >
+                            {isRaw ? (
+                              <Eye size={14} color={theme.accent} />
+                            ) : (
+                              <EyeOff size={14} color={theme.textDim} />
+                            )}
+                            <Text style={[styles.miniActionText, { color: isRaw ? theme.accent : theme.textDim }]}>
+                              {isRaw ? 'Show refined' : 'Show original'}
+                            </Text>
+                          </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                          onPress={() => handleCopy(displayText)}
+                          style={[styles.miniAction, { borderColor: theme.border, backgroundColor: theme.surfaceElevated }]}
+                        >
+                          <Copy size={14} color={theme.accent} />
+                          <Text style={[styles.miniActionText, { color: theme.text }]}>Copy</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                </BrutalCard>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -139,89 +183,69 @@ export default function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  outer: { flex: 1 },
+  container: { flex: 1 },
+  kanjiContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  scrollView: {
-    flex: 1,
-  },
+  kanji: { fontSize: width * 0.8 },
   content: {
     padding: Spacing.xl,
-    paddingBottom: 40,
-    gap: Spacing.lg,
+    paddingTop: Spacing.xxl,
+    gap: Spacing.xl,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: Spacing.sm,
+    marginBottom: Spacing.md,
   },
-  eyebrow: {
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
-  },
-  clearText: {
-    fontSize: 13,
-    fontWeight: '600',
+  title: { fontSize: Typography.sizes.xl, fontWeight: '800' },
+  subtitle: { fontSize: Typography.sizes.xs },
+  purgeBtn: {
+    borderWidth: 1,
+    padding: Spacing.sm,
+    backgroundColor: 'rgba(138, 3, 3, 0.05)',
   },
   emptyContainer: {
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 400,
-    gap: Spacing.sm,
+    paddingTop: 100,
   },
-  emptyText: {
-    fontSize: 16,
-    fontWeight: '700',
+  emptyGlyph: { fontSize: 80, opacity: 0.2 },
+  emptyText: { fontSize: Typography.sizes.sm, marginTop: Spacing.lg },
+  list: { gap: Spacing.md },
+  itemBody: { gap: Spacing.md },
+  itemText: {
+    fontSize: Typography.sizes.md,
+    lineHeight: 22,
+    fontFamily: Typography.fonts.regular,
   },
-  emptyGlyph: {
-    fontSize: 42,
-    lineHeight: 46,
-  },
-  emptyHint: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  list: {
-    gap: Spacing.md,
-  },
-  itemCard: {
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: Spacing.lg,
-    gap: Spacing.md,
-  },
-  itemHeader: {
+  itemFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
+    paddingTop: Spacing.sm,
   },
-  itemDate: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  itemDuration: {
-    fontSize: 12,
-  },
-  itemText: {
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  rawText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  copyButton: {
-    alignSelf: 'flex-start',
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
+  itemMeta: { flexDirection: 'row' },
+  metaText: { fontSize: 9, fontWeight: '700', fontFamily: Typography.fonts.mono },
+  actions: { flexDirection: 'row', gap: Spacing.sm },
+  miniAction: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
   },
-  copyButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
+  miniActionText: { fontSize: 9, fontWeight: '700', fontFamily: Typography.fonts.mono },
 });

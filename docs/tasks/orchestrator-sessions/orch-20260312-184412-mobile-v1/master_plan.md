@@ -72,8 +72,8 @@ The current repo is a production-oriented Electron desktop app. The mobile work 
 | 04 | `04_mobile_recording_pipeline.task.md` | Completed | vibe-code | takomi, building-native-ui, context7 | Implement recording, segmentation, provider calls, retry |
 | 05 | `05_mobile_product_shell.task.md` | Completed | vibe-code | takomi, building-native-ui, context7 | Build recorder UX, history, settings, clipboard flow |
 | 06 | `06_release_hardening_review.task.md` | Completed | vibe-review | takomi, security-audit, context7 | Verify security, build, and device readiness |
-| 07 | `07_mobile_ui_redesign.task.md` | In Progress | vibe-code | takomi, frontend-design, building-native-ui | Redesign the mobile UI shell to match the Koe brand |
-| 08 | `08_mobile_copywriting_pass.task.md` | Pending | vibe-code | takomi, copywriting | Replace placeholder mobile text with real product copy |
+| 07 | `07_mobile_ui_redesign.task.md` | Completed | vibe-code | takomi, frontend-design, building-native-ui | Redesign the mobile UI shell to match the Koe brand |
+| 08 | `08_mobile_copywriting_pass.task.md` | In Progress | vibe-code | takomi, copywriting | Replace placeholder mobile text with real product copy |
 | 09 | `09_docs_handoff.task.md` | Pending | vibe-code | takomi, sync-docs | Update docs and handoff materials |
 
 ## Dependency Graph

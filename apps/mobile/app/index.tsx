@@ -1,10 +1,23 @@
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, useColorScheme, Animated, Easing } from 'react-native';
-import { Mic, Square, Loader2, Check, RefreshCw } from 'lucide-react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useColorScheme,
+  Animated,
+  Easing,
+  Dimensions,
+} from 'react-native';
 import { useEffect, useRef } from 'react';
-import { Colors, Spacing } from '../src/constants/Theme';
+import { Colors, Spacing, Typography } from '../src/constants/Theme';
 import { RECORDER_STATES, type ScreenStage } from '../src/constants/RecorderStates';
 import { useRecordingPipeline } from '../src/hooks/use-recording-pipeline';
 import { StatusCard } from '../src/components/StatusCard';
+import { GridBackground } from '../src/components/GridBackground';
+import { ScanlineOverlay } from '../src/components/ScanlineOverlay';
+import { BrutalButton } from '../src/components/BrutalButton';
+
+const { width } = Dimensions.get('window');
 
 export default function RecorderScreen() {
   const colorScheme = useColorScheme() || 'dark';
@@ -25,227 +38,249 @@ export default function RecorderScreen() {
 
   const stage = status.stage as ScreenStage;
   const stateMeta = RECORDER_STATES[stage];
-
-  const spinValue = useRef(new Animated.Value(0)).current;
+  const pulseValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (status.stage === 'processing') {
+    if (isRecording) {
       Animated.loop(
-        Animated.timing(spinValue, {
-          toValue: 1,
-          duration: 1500,
-          easing: Easing.linear,
-          useNativeDriver: true,
-        })
+        Animated.sequence([
+          Animated.timing(pulseValue, {
+            toValue: 1,
+            duration: 600,
+            easing: Easing.ease,
+            useNativeDriver: false,
+          }),
+          Animated.timing(pulseValue, {
+            toValue: 0,
+            duration: 600,
+            easing: Easing.ease,
+            useNativeDriver: false,
+          }),
+        ])
       ).start();
-    } else {
-      spinValue.setValue(0);
+      return;
     }
-  }, [status.stage]);
 
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+    pulseValue.setValue(0);
+  }, [isRecording, pulseValue]);
 
   const handlePrimaryPress = async () => {
-    if (status.stage === 'recording') return await stopAndProcess();
-    if (status.stage === 'processing') return;
-    if (status.stage === 'error' && hasPendingRetry) return await retryLastSession();
-    if (status.stage === 'error') return reset();
+    if (status.stage === 'recording') {
+      await stopAndProcess();
+      return;
+    }
+
+    if (status.stage === 'processing') {
+      return;
+    }
+
+    if (status.stage === 'error' && hasPendingRetry) {
+      await retryLastSession();
+      return;
+    }
+
+    if (status.stage === 'error') {
+      reset();
+      return;
+    }
+
     await startRecording();
   };
 
   const durationSeconds = Math.max(0, Math.round(durationMillis / 1000));
 
-  const renderIcon = () => {
-    const iconProps = { size: 42, color: theme.background };
-    if (status.stage === 'recording') return <Square fill={theme.background} {...iconProps} />;
-    if (status.stage === 'processing') {
-      return (
-        <Animated.View style={{ transform: [{ rotate: spin }] }}>
-          <Loader2 {...iconProps} />
-        </Animated.View>
-      );
-    }
-    if (status.stage === 'copied') return <Check {...iconProps} />;
-    if (status.stage === 'error') return <RefreshCw {...iconProps} />;
-    return <Mic {...iconProps} />;
-  };
-
   return (
-    <ScrollView
-      contentInsetAdjustmentBehavior="automatic"
-      style={[styles.container, { backgroundColor: theme.background }]}
-      contentContainerStyle={styles.content}
-    >
-      <View style={styles.hero}>
-        <Text style={[styles.eyebrow, { color: theme.textMuted }]}>Manual Mode</Text>
-        <Text style={[styles.title, { color: theme.text }]}>{stateMeta.headline}</Text>
-        <Text selectable style={[styles.subtitle, { color: theme.textMuted }]}>
-          {stateMeta.description}
+    <View style={styles.outer}>
+      <GridBackground />
+      <ScanlineOverlay />
+
+      <View style={styles.kanjiContainer} pointerEvents="none">
+        <Text style={[styles.kanji, { color: theme.border, opacity: 0.15 }]}>
+          {'\u58F0'}
         </Text>
       </View>
 
-      <StatusCard 
-        label={isRecording ? `${status.label} • ${durationSeconds}s` : status.label}
-        detail={status.error || status.transcript || stateMeta.detail}
-        toneColor={stateMeta.toneColor}
-        progress={status.progress}
-        theme={theme}
-      />
-
-      <View style={styles.recorderContainer}>
-        <TouchableOpacity
-          activeOpacity={0.75}
-          onPress={handlePrimaryPress}
-          disabled={status.stage === 'processing'}
-          style={[
-            styles.recordButton,
-            {
-              backgroundColor: stateMeta.ringColor,
-              borderColor: stateMeta.toneColor,
-              opacity: status.stage === 'processing' ? 0.7 : 1,
-            },
-          ]}
-        >
-          <View style={[styles.recordButtonInner, { backgroundColor: stateMeta.toneColor }]}>
-            {renderIcon()}
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        style={styles.container}
+        contentContainerStyle={styles.content}
+      >
+        <View style={styles.hero}>
+          <View style={[styles.badge, { borderColor: theme.border }]}>
+            <Text style={[styles.badgeText, { color: theme.textMuted }]}>Ready</Text>
           </View>
-        </TouchableOpacity>
-
-        <Text style={[styles.statusText, { color: theme.text }]}>{stateMeta.actionLabel}</Text>
-        <Text selectable style={[styles.helperText, { color: theme.textMuted }]}>
-          {isRecording
-            ? `Recording now. Duration: ${durationSeconds}s`
-            : hasPendingRetry
-              ? 'A failed recording is saved locally and ready to retry.'
-              : 'Clipboard-first output. No backend proxy involved.'}
-        </Text>
-
-        {(isRecording || hasPendingRetry) && (
-          <View style={styles.secondaryActions}>
-            {isRecording && (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={cancelActiveRecording}
-                style={[styles.secondaryButton, { borderColor: theme.border }]}
-              >
-                <Text style={[styles.secondaryButtonText, { color: theme.text }]}>Cancel recording</Text>
-              </TouchableOpacity>
-            )}
-            {hasPendingRetry && (
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={discardRetrySession}
-                style={[styles.secondaryButton, { borderColor: theme.border }]}
-              >
-                <Text style={[styles.secondaryButtonText, { color: theme.text }]}>Discard saved recording</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-      </View>
-
-      <View style={styles.footer}>
-        <View style={[styles.infoCard, { backgroundColor: theme.surface, borderColor: theme.border }]}>
-          <Text selectable style={[styles.infoText, { color: theme.textMuted }]}>
-            {usageStats
-              ? `Today: ${usageStats.requestCount} requests, ${usageStats.audioSecondsUsed}s processed.`
-              : 'No usage recorded yet.'}
+          <Text style={[styles.title, { color: theme.text, fontFamily: Typography.fonts.deco }]}>
+            Koe <Text style={{ color: theme.accent }}>{'\u58F0'}</Text>
+          </Text>
+          <Text style={[styles.subtitle, { color: theme.textMuted }]}>
+            Record, refine, copy
           </Text>
         </View>
-      </View>
-    </ScrollView>
+
+        <View style={styles.visualizationContainer}>
+          <View style={styles.waveformContainer}>
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((index) => (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.waveBar,
+                  {
+                    backgroundColor: theme.accent,
+                    height: pulseValue.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [12, 12 + (index % 3 + 1) * 20],
+                    }),
+                    opacity: isRecording ? 0.6 : 0.12,
+                  },
+                ]}
+              />
+            ))}
+          </View>
+        </View>
+
+        <StatusCard
+          label={isRecording ? `Recording ${durationSeconds}s` : status.label}
+          detail={status.error || status.transcript || stateMeta.detail}
+          toneColor={stateMeta.toneColor}
+          progress={status.progress}
+        />
+
+        <View style={styles.actionSection}>
+          <BrutalButton
+            onPress={handlePrimaryPress}
+            title={stateMeta.actionLabel}
+            variant={status.stage === 'recording' ? 'danger' : 'primary'}
+            disabled={status.stage === 'processing'}
+            style={{ width: '100%' }}
+          />
+
+          <View style={styles.helperSection}>
+            <Text style={[styles.helperText, { color: theme.textMuted }]}>
+              {status.stage === 'recording'
+                ? 'Listening. Tap to stop when you are done.'
+                : 'Clipboard-first output with fast retry if processing fails.'}
+            </Text>
+          </View>
+
+          {(isRecording || hasPendingRetry) && (
+            <View style={styles.secondaryActions}>
+              {isRecording && (
+                <BrutalButton
+                  onPress={cancelActiveRecording}
+                  title="Cancel"
+                  variant="outline"
+                  style={{ width: '100%' }}
+                />
+              )}
+              {hasPendingRetry && (
+                <BrutalButton
+                  onPress={discardRetrySession}
+                  title="Discard saved recording"
+                  variant="danger"
+                  style={{ width: '100%' }}
+                />
+              )}
+            </View>
+          )}
+        </View>
+
+        <View style={styles.footer}>
+          <Text style={[styles.usageText, { color: theme.textDim }]}>
+            {usageStats
+              ? `Today: ${usageStats.requestCount} sessions, ${usageStats.audioSecondsUsed}s recorded`
+              : 'Usage updates after your first recording.'}
+          </Text>
+        </View>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outer: {
+    flex: 1,
+  },
+  kanjiContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  kanji: {
+    fontSize: width * 1.2,
+    fontFamily: 'System',
+  },
   container: {
     flex: 1,
   },
   content: {
     padding: Spacing.xl,
+    paddingTop: Spacing.xxl,
     gap: Spacing.xl,
   },
   hero: {
-    gap: Spacing.xs,
+    alignItems: 'center',
+    gap: Spacing.sm,
   },
-  eyebrow: {
-    fontSize: 14,
-    fontWeight: '600',
-    letterSpacing: 2,
-    textTransform: 'uppercase',
+  badge: {
+    borderWidth: 1,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xxs,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   title: {
-    fontSize: 34,
+    fontSize: Typography.sizes.xxxl,
     fontWeight: '800',
-    letterSpacing: -1.2,
+    letterSpacing: -1,
   },
   subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: Typography.sizes.sm,
+    letterSpacing: 1,
   },
-  recorderContainer: {
-    alignItems: 'center',
-    gap: Spacing.lg,
-    paddingVertical: Spacing.xl,
-  },
-  recordButton: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    borderWidth: 3,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 12,
-  },
-  recordButtonInner: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
+  visualizationContainer: {
+    height: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  statusText: {
-    fontSize: 18,
-    fontWeight: '700',
+  waveformContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  waveBar: {
+    width: 2,
+    borderRadius: 1,
+  },
+  actionSection: {
+    paddingTop: Spacing.md,
+  },
+  helperSection: {
+    alignItems: 'center',
+    paddingVertical: Spacing.md,
   },
   helperText: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: Typography.sizes.xs,
+    lineHeight: 18,
     textAlign: 'center',
-    maxWidth: '80%',
   },
   secondaryActions: {
-    width: '100%',
-    gap: Spacing.sm,
+    gap: Spacing.md,
     marginTop: Spacing.md,
   },
-  secondaryButton: {
-    borderRadius: 16,
-    borderWidth: 1,
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
   footer: {
-    paddingBottom: Spacing.xxl,
-  },
-  infoCard: {
-    padding: Spacing.lg,
-    borderRadius: 20,
-    borderWidth: 1,
+    paddingVertical: Spacing.xl,
     alignItems: 'center',
   },
-  infoText: {
-    fontSize: 13,
-    lineHeight: 20,
+  usageText: {
+    fontSize: Typography.sizes.xs,
     textAlign: 'center',
   },
 });

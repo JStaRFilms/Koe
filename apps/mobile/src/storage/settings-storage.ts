@@ -7,6 +7,7 @@ export interface AppSettings {
   promptStyle: string;
   model: string;
   enhanceText: boolean;
+  autoPaste: boolean;
   hasSeenOnboarding: boolean;
 }
 
@@ -15,8 +16,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   promptStyle: 'Clean',
   model: 'llama-3.3-70b-versatile',
   enhanceText: true,
+  autoPaste: true,
   hasSeenOnboarding: false,
 };
+
 
 async function saveJson(key: string, value: unknown): Promise<void> {
   await SecureStore.setItemAsync(key, JSON.stringify(value));

@@ -10,11 +10,11 @@ function normalizeApiError(status: number, payload: unknown, fallback: string): 
   const parsed = parseErrorMessage(payload, fallback);
 
   if (status === 401 || status === 403) {
-    return new Error('Your Groq API key was rejected. Check the saved key and try again.');
+    return new Error('Your API key was rejected. Check the saved key and try again.');
   }
 
   if (status >= 500) {
-    return new Error('Groq is unavailable right now. Retry in a moment.');
+    return new Error('The processing service is unavailable right now. Retry in a moment.');
   }
 
   return new Error(parsed);
@@ -52,7 +52,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
   async transcribeSegment(audioUri: string, options: ProviderOptions): Promise<string> {
     const apiKey = options.apiKey || (await getGroqApiKey());
     if (!apiKey) {
-      throw new Error('No Groq API key is saved on this device.');
+      throw new Error('No API key is saved on this device.');
     }
 
     const formData = new FormData();
@@ -65,7 +65,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
 
     options.onStage?.({
       stage: 'transcribing',
-      label: 'Sending audio to Groq...',
+      label: 'Sending audio for transcription...',
       progress: 35,
     });
 
@@ -97,7 +97,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
 
     const apiKey = options.apiKey || (await getGroqApiKey());
     if (!apiKey) {
-      throw new Error('No Groq API key is saved on this device.');
+      throw new Error('No API key is saved on this device.');
     }
 
     const prompt = resolveEnhancementPrompt(options.promptStyle, options.customPrompt);
