@@ -152,11 +152,7 @@ Look for:
 - `artifacts.buildUrl`
 - `artifacts.applicationArchiveUrl`
 
-That APK URL is what the website should use for:
-
-```bash
-NEXT_PUBLIC_KOE_ANDROID_URL=<finished Expo Android build/install URL>
-```
+For the public website, prefer attaching that APK to the matching GitHub release. The download page can then pull the Android asset directly from GitHub Releases without a separate Android environment variable.
 
 ### Production Store Submissions
 1. Ensure `app.json` has the correct `version` and platform build numbers.

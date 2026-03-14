@@ -4,7 +4,7 @@ import { Footer } from "@/components/sections/Footer";
 import { DownloadButton } from "@/components/DownloadButton";
 import { Github, Monitor, Cpu, Wifi, Mic, ExternalLink, KeyRound, Settings, Keyboard, CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
-import { getAndroidReleaseTarget, getIosReleaseTarget } from "@/lib/release-targets";
+import { getIosReleaseTarget } from "@/lib/release-targets";
 
 export const metadata: Metadata = {
     title: "Download",
@@ -16,7 +16,6 @@ export const metadata: Metadata = {
 
 export default function DownloadPage() {
     const iosReleaseTarget = getIosReleaseTarget();
-    const androidReleaseTarget = getAndroidReleaseTarget();
 
     const requirements = [
         {
@@ -191,25 +190,12 @@ export default function DownloadPage() {
                                 <div className="border-raw p-5 bg-void">
                                     <p className="text-amber font-bold text-xs mb-2">ANDROID</p>
                                     <p className="text-bone text-base mb-2">
-                                        {androidReleaseTarget ? "Android install is ready." : "Android install is Coming Soon.."}
+                                        Android installs ship through the latest GitHub release.
                                     </p>
                                     <p className="text-muted normal-case text-sm mb-4">
-                                        {androidReleaseTarget
-                                            ? "Use the Android link from your phone or desktop to install the latest build."
-                                            : "Android can ship through the Play Store or a signed direct install link. GitHub desktop assets are separate."}
+                                        Attach the signed APK to the current GitHub release and Android users will get the direct install package automatically from the main download button.
                                     </p>
-                                    {androidReleaseTarget ? (
-                                        <a
-                                            href={androidReleaseTarget.url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="btn-brutal inline-flex text-sm"
-                                        >
-                                            OPEN ANDROID BUILD
-                                        </a>
-                                    ) : (
-                                        <div className="text-xs text-muted">Set `NEXT_PUBLIC_KOE_ANDROID_URL` when the Android build is published.</div>
-                                    )}
+                                    <div className="text-xs text-muted">No separate Android environment variable is needed once the APK is attached to the release.</div>
                                 </div>
                             </div>
                         </div>

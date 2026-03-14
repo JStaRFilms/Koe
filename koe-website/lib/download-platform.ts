@@ -1,4 +1,4 @@
-import { getAndroidReleaseTarget, getIosReleaseTarget, type MobileReleaseTarget } from "@/lib/release-targets";
+import { getIosReleaseTarget, type MobileReleaseTarget } from "@/lib/release-targets";
 
 export type ClientPlatform = "mac" | "windows" | "ios" | "android" | "other";
 
@@ -87,6 +87,10 @@ export function getDownloadCtaLabel(platform: ClientPlatform, mode: "full" | "co
 }
 
 export function getPreferredAsset(assets: GitHubAsset[], platform: ClientPlatform) {
+    if (platform === "android") {
+        return assets.find((asset) => asset.name.endsWith(".apk"));
+    }
+
     if (platform === "mac") {
         const macAssetPreferences = [
             (asset: GitHubAsset) => asset.name.includes("universal") && asset.name.endsWith(".dmg"),
@@ -152,6 +156,15 @@ function buildWindowsOption(asset: GitHubAsset): DownloadOption {
     };
 }
 
+function buildAndroidOption(asset: GitHubAsset): DownloadOption {
+    return {
+        key: `android-${asset.name}`,
+        label: "Android APK",
+        description: "Direct install package",
+        url: asset.browser_download_url,
+    };
+}
+
 export function getDownloadOptions(assets: GitHubAsset[], releaseUrl: string) {
     const options: DownloadOption[] = [];
     const seen = new Set<string>();
@@ -170,9 +183,11 @@ export function getDownloadOptions(assets: GitHubAsset[], releaseUrl: string) {
         asset.name.includes("universal") && asset.name.endsWith(".zip")
     ) || assets.find((asset) => asset.name.endsWith(".zip"));
     const windowsInstaller = getPreferredAsset(assets, "windows");
+    const androidInstaller = getPreferredAsset(assets, "android");
 
     pushOption(macDmg ? buildMacOption(macDmg, "dmg") : undefined);
     pushOption(windowsInstaller ? buildWindowsOption(windowsInstaller) : undefined);
+    pushOption(androidInstaller ? buildAndroidOption(androidInstaller) : undefined);
     pushOption(macZip ? buildMacOption(macZip, "zip") : undefined);
     pushOption({
         key: "all-releases",
@@ -213,10 +228,6 @@ function buildMobileAction(
 export function getPlatformAction(platform: ClientPlatform): PlatformAction | null {
     if (platform === "ios") {
         return buildMobileAction("ios", getIosReleaseTarget());
-    }
-
-    if (platform === "android") {
-        return buildMobileAction("android", getAndroidReleaseTarget());
     }
 
     return null;
