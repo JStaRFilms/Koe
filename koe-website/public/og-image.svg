@@ -32,7 +32,7 @@
     <text x="0" y="-50" text-anchor="middle" font-family="Courier New, monospace" font-size="120" font-weight="bold" fill="#f59e0b" filter="url(#glow)" letter-spacing="-4">Koe</text>
     
     <!-- Tagline -->
-    <text x="0" y="30" text-anchor="middle" font-family="Courier New, monospace" font-size="36" fill="#e8e4dc" letter-spacing="2">Free Voice Dictation for Windows</text>
+    <text x="0" y="30" text-anchor="middle" font-family="Courier New, monospace" font-size="36" fill="#e8e4dc" letter-spacing="2">Free Voice Dictation for Desktop and Mobile</text>
     
     <!-- Badge -->
     <g transform="translate(0, 90)">
