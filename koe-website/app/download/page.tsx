@@ -4,16 +4,20 @@ import { Footer } from "@/components/sections/Footer";
 import { DownloadButton } from "@/components/DownloadButton";
 import { Github, Monitor, Cpu, Wifi, Mic, ExternalLink, KeyRound, Settings, Keyboard, CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
+import { getAndroidReleaseTarget, getIosReleaseTarget } from "@/lib/release-targets";
 
 export const metadata: Metadata = {
     title: "Download",
-    description: "Download Koe for your desktop. Free voice dictation app with AI-powered transcription.",
+    description: "Download Koe for desktop and check current iPhone or Android availability.",
     alternates: {
         canonical: "/download/",
     },
 };
 
 export default function DownloadPage() {
+    const iosReleaseTarget = getIosReleaseTarget();
+    const androidReleaseTarget = getAndroidReleaseTarget();
+
     const requirements = [
         {
             icon: Monitor,
@@ -154,6 +158,59 @@ export default function DownloadPage() {
                                         <Github className="w-4 h-4" />
                                     </div>
                                 </a>
+                            </div>
+                        </div>
+
+                        <div id="mobile" className="border-raw p-6 md:p-8 mb-10 bg-zinc/10 relative overflow-hidden">
+                            <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
+                            <div className="grid md:grid-cols-2 gap-4 relative z-10">
+                                <div className="border-raw p-5 bg-void">
+                                    <p className="text-amber font-bold text-xs mb-2">IPHONE</p>
+                                    <p className="text-bone text-base mb-2">
+                                        {iosReleaseTarget ? "TestFlight is ready." : "TestFlight is Coming Soon.."}
+                                    </p>
+                                    <p className="text-muted normal-case text-sm mb-4">
+                                        {iosReleaseTarget
+                                            ? "Use the iPhone link from a phone or Mac already signed into the right Apple account."
+                                            : "iPhone builds need TestFlight or the App Store. They do not ship as GitHub release downloads."}
+                                    </p>
+                                    {iosReleaseTarget ? (
+                                        <a
+                                            href={iosReleaseTarget.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-brutal inline-flex text-sm"
+                                        >
+                                            OPEN IPHONE BUILD
+                                        </a>
+                                    ) : (
+                                        <div className="text-xs text-muted">Set `NEXT_PUBLIC_KOE_IOS_URL` when TestFlight is live.</div>
+                                    )}
+                                </div>
+
+                                <div className="border-raw p-5 bg-void">
+                                    <p className="text-amber font-bold text-xs mb-2">ANDROID</p>
+                                    <p className="text-bone text-base mb-2">
+                                        {androidReleaseTarget ? "Android install is ready." : "Android install is Coming Soon.."}
+                                    </p>
+                                    <p className="text-muted normal-case text-sm mb-4">
+                                        {androidReleaseTarget
+                                            ? "Use the Android link from your phone or desktop to install the latest build."
+                                            : "Android can ship through the Play Store or a signed direct install link. GitHub desktop assets are separate."}
+                                    </p>
+                                    {androidReleaseTarget ? (
+                                        <a
+                                            href={androidReleaseTarget.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="btn-brutal inline-flex text-sm"
+                                        >
+                                            OPEN ANDROID BUILD
+                                        </a>
+                                    ) : (
+                                        <div className="text-xs text-muted">Set `NEXT_PUBLIC_KOE_ANDROID_URL` when the Android build is published.</div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 

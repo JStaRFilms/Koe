@@ -7,6 +7,7 @@ import {
     detectClientPlatform,
     getDownloadCtaLabel,
     getDownloadOptions,
+    getPlatformAction,
     getPreferredAsset,
     type DownloadOption,
 } from "@/lib/download-platform";
@@ -21,6 +22,8 @@ interface ReleaseInfo {
     downloadUrl: string;
     publishedAt: string;
     buttonLabel: string;
+    buttonDescription?: string;
+    external?: boolean;
     options: DownloadOption[];
 }
 
@@ -34,9 +37,7 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
     useEffect(() => {
         async function fetchRelease() {
             try {
-                const response = await fetch(
-                    "https://api.github.com/repos/JStaRFilms/Koe/releases/latest"
-                );
+                const response = await fetch("https://api.github.com/repos/JStaRFilms/Koe/releases/latest");
 
                 if (!response.ok) {
                     throw new Error("Failed to fetch release");
@@ -44,18 +45,21 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
 
                 const data = await response.json();
                 const platform = detectClientPlatform();
-
+                const platformAction = getPlatformAction(platform);
                 const preferredAsset = getPreferredAsset(data.assets, platform);
                 const windowsInstaller = getPreferredAsset(data.assets, "windows");
-                const fallbackUrl = platform === "windows"
-                    ? windowsInstaller?.browser_download_url || data.html_url
-                    : data.html_url;
+                const fallbackUrl =
+                    platform === "windows"
+                        ? windowsInstaller?.browser_download_url || data.html_url
+                        : data.html_url;
 
                 setRelease({
                     version: data.tag_name,
-                    downloadUrl: preferredAsset?.browser_download_url || fallbackUrl,
+                    downloadUrl: platformAction?.href || preferredAsset?.browser_download_url || fallbackUrl,
                     publishedAt: data.published_at,
-                    buttonLabel: getDownloadCtaLabel(platform),
+                    buttonLabel: platformAction?.label || getDownloadCtaLabel(platform),
+                    buttonDescription: platformAction?.description,
+                    external: platformAction?.external,
                     options: getDownloadOptions(data.assets, data.html_url),
                 });
             } catch (err) {
@@ -66,7 +70,7 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
             }
         }
 
-        fetchRelease();
+        void fetchRelease();
     }, []);
 
     useEffect(() => {
@@ -95,10 +99,7 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
 
     if (loading) {
         return (
-            <button
-                disabled
-                className={`btn-brutal cursor-not-allowed opacity-50 ${className}`}
-            >
+            <button disabled className={`btn-brutal cursor-not-allowed opacity-50 ${className}`}>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 LOADING...
             </button>
@@ -126,6 +127,8 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
                     <a
                         href={release.downloadUrl}
                         className="btn-brutal flex-1 justify-center"
+                        target={release.external ? "_blank" : undefined}
+                        rel={release.external ? "noopener noreferrer" : undefined}
                     >
                         <Download className="w-4 h-4" />
                         {release.buttonLabel}
@@ -169,8 +172,8 @@ export function DownloadButton({ className = "", showVersion = true }: DownloadB
                 )}
             </div>
             {showVersion && (
-                <span className="text-xs text-muted">
-                    {release.version} • {new Date(release.publishedAt).toLocaleDateString()}
+                <span className="text-xs text-muted text-center">
+                    {release.buttonDescription || `${release.version} | ${new Date(release.publishedAt).toLocaleDateString()}`}
                 </span>
             )}
         </div>

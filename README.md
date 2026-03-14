@@ -79,7 +79,7 @@ pnpm dev:mobile
 ### Release Builds
 
 - Real release artifacts should be built on GitHub Actions, not locally
-- Push a matching version tag such as `v1.0.5` after updating `package.json`
+- Push a matching version tag such as `v1.1.0` after updating `package.json`
 - The release workflow will build Windows and macOS and attach artifacts to that GitHub Release
 - See [docs/release-process.md](docs/release-process.md)
 

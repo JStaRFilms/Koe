@@ -1,4 +1,6 @@
-export type ClientPlatform = "mac" | "windows" | "other";
+import { getAndroidReleaseTarget, getIosReleaseTarget, type MobileReleaseTarget } from "@/lib/release-targets";
+
+export type ClientPlatform = "mac" | "windows" | "ios" | "android" | "other";
 
 export interface GitHubAsset {
     name: string;
@@ -12,6 +14,14 @@ export interface DownloadOption {
     url: string;
 }
 
+export interface PlatformAction {
+    href: string;
+    label: string;
+    description: string;
+    external: boolean;
+    available: boolean;
+}
+
 export function detectClientPlatform(): ClientPlatform {
     if (typeof navigator === "undefined") {
         return "other";
@@ -23,7 +33,15 @@ export function detectClientPlatform(): ClientPlatform {
     const platform = userAgentData.userAgentData?.platform || navigator.platform || "";
     const userAgent = navigator.userAgent || "";
 
-    if (userAgentData.userAgentData?.mobile || /android|iphone|ipad|ipod/i.test(userAgent)) {
+    if (/android/i.test(userAgent)) {
+        return "android";
+    }
+
+    if (/iphone|ipad|ipod/i.test(userAgent)) {
+        return "ios";
+    }
+
+    if (userAgentData.userAgentData?.mobile) {
         return "other";
     }
 
@@ -45,6 +63,10 @@ export function getDownloadCtaLabel(platform: ClientPlatform, mode: "full" | "co
                 return "MAC DOWNLOAD";
             case "windows":
                 return "WINDOWS DOWNLOAD";
+            case "ios":
+                return "IPHONE DOWNLOAD";
+            case "android":
+                return "ANDROID DOWNLOAD";
             default:
                 return "DESKTOP DOWNLOADS";
         }
@@ -55,6 +77,10 @@ export function getDownloadCtaLabel(platform: ClientPlatform, mode: "full" | "co
             return "DOWNLOAD FOR YOUR MAC";
         case "windows":
             return "DOWNLOAD FOR WINDOWS";
+        case "ios":
+            return "DOWNLOAD FOR IPHONE";
+        case "android":
+            return "DOWNLOAD FOR ANDROID";
         default:
             return "VIEW DESKTOP DOWNLOADS";
     }
@@ -156,4 +182,42 @@ export function getDownloadOptions(assets: GitHubAsset[], releaseUrl: string) {
     });
 
     return options;
+}
+
+function buildMobileAction(
+    platform: "ios" | "android",
+    target: MobileReleaseTarget | null
+): PlatformAction {
+    if (target) {
+        return {
+            href: target.url,
+            label: platform === "ios" ? "Download for iPhone" : "Download for Android",
+            description: target.description,
+            external: true,
+            available: true,
+        };
+    }
+
+    return {
+        href: "/download/#mobile",
+        label: platform === "ios" ? "iPhone beta soon" : "Android build soon",
+        description:
+            platform === "ios"
+                ? "Desktop is live. iPhone distribution will appear here once TestFlight is configured."
+                : "Desktop is live. Android distribution will appear here once the installable build is published.",
+        external: false,
+        available: false,
+    };
+}
+
+export function getPlatformAction(platform: ClientPlatform): PlatformAction | null {
+    if (platform === "ios") {
+        return buildMobileAction("ios", getIosReleaseTarget());
+    }
+
+    if (platform === "android") {
+        return buildMobileAction("android", getAndroidReleaseTarget());
+    }
+
+    return null;
 }
