@@ -16,6 +16,7 @@ export interface CompletedRecording {
 
 export const DEFAULT_RECORDING_OPTIONS: RecordingOptions = {
   ...RecordingPresets.HIGH_QUALITY,
+  isMeteringEnabled: true,
   extension: '.m4a',
   sampleRate: 16000,
   numberOfChannels: 1,
@@ -72,13 +73,14 @@ export async function startRecorder(recorder: AudioRecorder): Promise<void> {
 }
 
 export async function stopRecorder(recorder: AudioRecorder): Promise<CompletedRecording> {
+  const preStopState = recorder.getStatus();
   await recorder.stop();
   const state = recorder.getStatus();
   await resetRecordingAudioMode();
 
   return {
-    uri: recorder.uri ?? state.url,
-    durationMillis: state.durationMillis,
+    uri: recorder.uri ?? state.url ?? preStopState.url,
+    durationMillis: Math.max(preStopState.durationMillis, state.durationMillis),
   };
 }
 

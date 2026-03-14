@@ -2,12 +2,14 @@ import { Tabs, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useColorScheme } from 'react-native';
 import { Mic, List, Settings } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Colors } from '../src/constants/Theme';
 import { loadAppSettings } from '../src/storage/settings-storage';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme() || 'dark';
   const theme = Colors[colorScheme as keyof typeof Colors];
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const segments = useSegments();
   const [isReady, setIsReady] = useState(false);
@@ -44,13 +46,14 @@ export default function RootLayout() {
         tabBarStyle: {
           backgroundColor: theme.background,
           borderTopColor: theme.border,
-          height: 70,
+          height: 58 + Math.max(insets.bottom, 10),
           paddingTop: 12,
-          paddingBottom: 24,
+          paddingBottom: Math.max(insets.bottom, 10),
         },
         tabBarActiveTintColor: theme.accent,
         tabBarInactiveTintColor: theme.textDim,
         tabBarShowLabel: false,
+        tabBarHideOnKeyboard: true,
       }}
     >
       <Tabs.Screen
@@ -84,4 +87,3 @@ export default function RootLayout() {
     </Tabs>
   );
 }
-

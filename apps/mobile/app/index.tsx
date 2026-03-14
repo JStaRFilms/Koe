@@ -28,6 +28,7 @@ export default function RecorderScreen() {
     hasPendingRetry,
     isRecording,
     durationMillis,
+    voiceLevels,
     startRecording,
     stopAndProcess,
     retryLastSession,
@@ -38,31 +39,38 @@ export default function RecorderScreen() {
 
   const stage = status.stage as ScreenStage;
   const stateMeta = RECORDER_STATES[stage];
-  const pulseValue = useRef(new Animated.Value(0)).current;
+  const waveBars = useRef(Array.from({ length: 8 }, () => new Animated.Value(8))).current;
+  const sweepValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (isRecording) {
+    Animated.parallel(
+      waveBars.map((bar, index) =>
+        Animated.timing(bar, {
+          toValue: 8 + (voiceLevels[index] ?? 0) * 58,
+          duration: 110,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: false,
+        })
+      )
+    ).start();
+  }, [voiceLevels, waveBars]);
+
+  useEffect(() => {
+    if (status.stage === 'recording' || status.stage === 'processing') {
       Animated.loop(
-        Animated.sequence([
-          Animated.timing(pulseValue, {
-            toValue: 1,
-            duration: 600,
-            easing: Easing.ease,
-            useNativeDriver: false,
-          }),
-          Animated.timing(pulseValue, {
-            toValue: 0,
-            duration: 600,
-            easing: Easing.ease,
-            useNativeDriver: false,
-          }),
-        ])
+        Animated.timing(sweepValue, {
+          toValue: 1,
+          duration: 1800,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
       ).start();
       return;
     }
 
-    pulseValue.setValue(0);
-  }, [isRecording, pulseValue]);
+    sweepValue.stopAnimation();
+    sweepValue.setValue(0);
+  }, [status.stage, sweepValue]);
 
   const handlePrimaryPress = async () => {
     if (status.stage === 'recording') {
@@ -107,7 +115,13 @@ export default function RecorderScreen() {
       >
         <View style={styles.hero}>
           <View style={[styles.badge, { borderColor: theme.border }]}>
-            <Text style={[styles.badgeText, { color: theme.textMuted }]}>Ready</Text>
+            <Text style={[styles.badgeText, { color: theme.textMuted }]}>
+              {status.stage === 'recording'
+                ? 'Live'
+                : status.stage === 'processing'
+                  ? 'Working'
+                  : 'Ready'}
+            </Text>
           </View>
           <Text style={[styles.title, { color: theme.text, fontFamily: Typography.fonts.deco }]}>
             Koe <Text style={{ color: theme.accent }}>{'\u58F0'}</Text>
@@ -118,6 +132,24 @@ export default function RecorderScreen() {
         </View>
 
         <View style={styles.visualizationContainer}>
+          <Animated.View
+            pointerEvents="none"
+            style={[
+              styles.signalSweep,
+              {
+                backgroundColor: theme.accent,
+                opacity: status.stage === 'processing' ? 0.16 : 0.11,
+                transform: [
+                  {
+                    translateX: sweepValue.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [-width * 0.7, width * 0.7],
+                    }),
+                  },
+                ],
+              },
+            ]}
+          />
           <View style={styles.waveformContainer}>
             {[1, 2, 3, 4, 5, 6, 7, 8].map((index) => (
               <Animated.View
@@ -126,11 +158,13 @@ export default function RecorderScreen() {
                   styles.waveBar,
                   {
                     backgroundColor: theme.accent,
-                    height: pulseValue.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [12, 12 + (index % 3 + 1) * 20],
-                    }),
-                    opacity: isRecording ? 0.6 : 0.12,
+                    height: waveBars[index - 1],
+                    opacity:
+                      status.stage === 'recording'
+                        ? 0.92
+                        : status.stage === 'processing'
+                          ? 0.42
+                          : 0.14,
                   },
                 ]}
               />
@@ -143,6 +177,7 @@ export default function RecorderScreen() {
           detail={status.error || status.transcript || stateMeta.detail}
           toneColor={stateMeta.toneColor}
           progress={status.progress}
+          stream={status.stage === 'processing'}
         />
 
         <View style={styles.actionSection}>
@@ -157,8 +192,10 @@ export default function RecorderScreen() {
           <View style={styles.helperSection}>
             <Text style={[styles.helperText, { color: theme.textMuted }]}>
               {status.stage === 'recording'
-                ? 'Listening. Tap to stop when you are done.'
-                : 'Clipboard-first output with fast retry if processing fails.'}
+                ? 'Listening. Tap again when you want to stop.'
+                : status.stage === 'processing'
+                  ? 'Working through your recording in smaller parts.'
+                  : 'Records locally first, then copies the finished text when it is ready.'}
             </Text>
           </View>
 
@@ -249,6 +286,14 @@ const styles = StyleSheet.create({
     height: 120,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
+  },
+  signalSweep: {
+    position: 'absolute',
+    width: width * 0.42,
+    height: 72,
+    borderRadius: 18,
+    top: 24,
   },
   waveformContainer: {
     flexDirection: 'row',
@@ -256,8 +301,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   waveBar: {
-    width: 2,
-    borderRadius: 1,
+    width: 3,
+    borderRadius: 2,
   },
   actionSection: {
     paddingTop: Spacing.md,

@@ -6,12 +6,21 @@ const USAGE_STATS_STORAGE_KEY = 'koe_mobile_usage_stats_v1';
 
 export interface PersistedRetryState {
   sessionId: string;
-  audioUri: string;
+  audioUri?: string | null;
+  audioUris?: string[];
   durationMillis: number;
   createdAt: number;
   lastError?: string | null;
   rawText?: string | null;
   interrupted?: boolean;
+}
+
+export function getRetryAudioUris(state: PersistedRetryState): string[] {
+  if (Array.isArray(state.audioUris) && state.audioUris.length > 0) {
+    return state.audioUris.filter((value): value is string => Boolean(value));
+  }
+
+  return state.audioUri ? [state.audioUri] : [];
 }
 
 async function saveJson(key: string, value: unknown): Promise<void> {

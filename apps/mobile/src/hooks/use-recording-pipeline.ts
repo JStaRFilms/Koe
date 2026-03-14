@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
-import { useAudioRecorder, useAudioRecorderState } from 'expo-audio';
+import { useAudioRecorder, useAudioRecorderState, type RecordingStatus } from 'expo-audio';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import type { UsageStats } from '@koe/core';
@@ -14,6 +14,7 @@ import {
 } from '../recording/recorder-controller';
 import {
   clearRetryState,
+  getRetryAudioUris,
   loadRetryState,
   loadUsageTracker,
   markRetryStateInterrupted,
@@ -22,8 +23,8 @@ import {
   type PersistedRetryState,
 } from '../storage/pipeline-storage';
 import { getGroqApiKey } from '../storage/secure-storage';
-import { loadAppSettings } from '../storage/settings-storage';
 import { addToHistory } from '../storage/history-storage';
+import { loadAppSettings } from '../storage/settings-storage';
 
 export type RecordingStage = 'idle' | 'recording' | 'processing' | 'copied' | 'empty' | 'error';
 
@@ -34,6 +35,18 @@ export interface PipelineStatus {
   error?: string;
   progress?: number;
 }
+
+interface ActiveRecordingSession {
+  sessionId: string;
+  createdAt: number;
+  totalDurationMillis: number;
+  chunkUris: string[];
+}
+
+const CHUNK_ROTATION_MS = 20_000;
+const MIN_CHUNK_DURATION_MS = 900;
+const VOICE_BAR_COUNT = 8;
+const VOICE_BAR_WEIGHTS = [0.36, 0.54, 0.78, 1, 1, 0.78, 0.54, 0.36];
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -47,9 +60,74 @@ function getErrorMessage(error: unknown): string {
   return 'An unknown error occurred.';
 }
 
+function appendTranscript(existing: string, nextChunk: string): string {
+  const left = existing.trim();
+  const right = nextChunk.trim();
+
+  if (!left) {
+    return right;
+  }
+
+  if (!right) {
+    return left;
+  }
+
+  return `${left} ${right}`.trim();
+}
+
+function buildRetryState(
+  sessionId: string,
+  audioUris: string[],
+  durationMillis: number,
+  createdAt: number,
+  rawText?: string | null
+): PersistedRetryState {
+  return {
+    sessionId,
+    audioUri: audioUris[0] ?? null,
+    audioUris,
+    durationMillis,
+    createdAt,
+    rawText: rawText ?? null,
+    interrupted: false,
+    lastError: null,
+  };
+}
+
+function meteringToVoiceBars(metering: number | undefined, durationMillis: number, previous: number[]) {
+  const normalizedMeter =
+    typeof metering === 'number' ? Math.max(0, Math.min(1, (metering + 60) / 60)) : 0;
+  const phase = durationMillis / 140;
+
+  return VOICE_BAR_WEIGHTS.map((weight, index) => {
+    const ripple = Math.max(0, Math.sin(phase + index * 0.85)) * normalizedMeter * 0.18;
+    const floor = normalizedMeter > 0.08 ? 0.08 * weight : 0;
+    const target = Math.max(floor, Math.min(1, normalizedMeter * weight + ripple));
+    const current = previous[index] ?? 0;
+    const eased = current + (target - current) * 0.58;
+    return Math.max(0, Math.min(1, eased));
+  });
+}
+
 export function useRecordingPipeline() {
-  const recorder = useAudioRecorder(DEFAULT_RECORDING_OPTIONS);
-  const recorderState = useAudioRecorderState(recorder);
+  const finalRecordingRef = useRef<{ url: string | null; error: string | null }>({
+    url: null,
+    error: null,
+  });
+  const recorder = useAudioRecorder(
+    DEFAULT_RECORDING_OPTIONS,
+    useCallback((nextStatus: RecordingStatus) => {
+      if (!nextStatus.isFinished) {
+        return;
+      }
+
+      finalRecordingRef.current = {
+        url: nextStatus.url,
+        error: nextStatus.hasError ? nextStatus.error : null,
+      };
+    }, [])
+  );
+  const recorderState = useAudioRecorderState(recorder, 120);
 
   const [status, setStatusState] = useState<PipelineStatus>({
     stage: 'idle',
@@ -57,10 +135,17 @@ export function useRecordingPipeline() {
   });
   const [usageStats, setUsageStats] = useState<UsageStats | null>(null);
   const [hasPendingRetry, setHasPendingRetry] = useState(false);
+  const [voiceLevels, setVoiceLevels] = useState<number[]>(Array.from({ length: VOICE_BAR_COUNT }, () => 0));
+  const [sessionDurationMillis, setSessionDurationMillis] = useState(0);
+  const [isSessionRecording, setIsSessionRecording] = useState(false);
 
   const statusRef = useRef<PipelineStatus>(status);
   const retryStateRef = useRef<PersistedRetryState | null>(null);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chunkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const rotationPromiseRef = useRef<Promise<void> | null>(null);
+  const activeSessionRef = useRef<ActiveRecordingSession | null>(null);
+  const stopRequestedRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
 
   const setStatus = useCallback((next: PipelineStatus) => {
@@ -72,6 +157,13 @@ export function useRecordingPipeline() {
     if (resetTimerRef.current) {
       clearTimeout(resetTimerRef.current);
       resetTimerRef.current = null;
+    }
+  }, []);
+
+  const clearChunkTimer = useCallback(() => {
+    if (chunkTimerRef.current) {
+      clearTimeout(chunkTimerRef.current);
+      chunkTimerRef.current = null;
     }
   }, []);
 
@@ -122,8 +214,28 @@ export function useRecordingPipeline() {
     return () => {
       cancelled = true;
       clearResetTimer();
+      clearChunkTimer();
     };
-  }, [clearResetTimer, hydrateRetryBanner]);
+  }, [clearChunkTimer, clearResetTimer, hydrateRetryBanner]);
+
+  useEffect(() => {
+    const activeSession = activeSessionRef.current;
+
+    if (!recorderState.isRecording) {
+      if (activeSession && statusRef.current.stage === 'recording' && !stopRequestedRef.current) {
+        setSessionDurationMillis(activeSession.totalDurationMillis);
+        return;
+      }
+
+      setVoiceLevels(Array.from({ length: VOICE_BAR_COUNT }, () => 0));
+      return;
+    }
+
+    setSessionDurationMillis((activeSession?.totalDurationMillis ?? 0) + recorderState.durationMillis);
+    setVoiceLevels((previous) =>
+      meteringToVoiceBars(recorderState.metering, recorderState.durationMillis, previous)
+    );
+  }, [recorderState.durationMillis, recorderState.isRecording, recorderState.metering]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
@@ -140,6 +252,11 @@ export function useRecordingPipeline() {
         statusRef.current.stage === 'recording' &&
         (!recorderState.isRecording || recorderState.mediaServicesDidReset)
       ) {
+        clearChunkTimer();
+        stopRequestedRef.current = false;
+        activeSessionRef.current = null;
+        setIsSessionRecording(false);
+        setSessionDurationMillis(0);
         setStatus({
           stage: 'error',
           label: 'Recording interrupted',
@@ -152,7 +269,12 @@ export function useRecordingPipeline() {
     return () => {
       subscription.remove();
     };
-  }, [recorderState.isRecording, recorderState.mediaServicesDidReset, setStatus]);
+  }, [
+    clearChunkTimer,
+    recorderState.isRecording,
+    recorderState.mediaServicesDidReset,
+    setStatus,
+  ]);
 
   const persistUsage = useCallback(async (durationMillis: number) => {
     const tracker = await loadUsageTracker();
@@ -166,7 +288,7 @@ export function useRecordingPipeline() {
       await Clipboard.setStringAsync(finalText);
       await persistUsage(durationMillis);
       await clearRetryState();
-      
+
       await addToHistory({
         id: `mobile-${Date.now()}`,
         timestamp: Date.now(),
@@ -176,6 +298,8 @@ export function useRecordingPipeline() {
       });
 
       retryStateRef.current = null;
+      activeSessionRef.current = null;
+      stopRequestedRef.current = false;
       setHasPendingRetry(false);
 
       try {
@@ -190,6 +314,8 @@ export function useRecordingPipeline() {
         transcript: finalText,
         progress: 100,
       });
+      setSessionDurationMillis(0);
+      setIsSessionRecording(false);
       scheduleReturnToIdle();
     },
     [persistUsage, scheduleReturnToIdle, setStatus]
@@ -204,6 +330,7 @@ export function useRecordingPipeline() {
         interrupted: false,
         lastError: null,
       };
+      let pendingAudioUris = getRetryAudioUris(currentRetryState);
       let rawText = currentRetryState.rawText?.trim() ?? '';
 
       retryStateRef.current = currentRetryState;
@@ -212,26 +339,66 @@ export function useRecordingPipeline() {
 
       try {
         const settings = await loadAppSettings();
-        const apiKey = await getGroqApiKey() || '';
+        const apiKey = (await getGroqApiKey()) || '';
+        const totalChunkCount = pendingAudioUris.length;
 
         setStatus({
           stage: 'processing',
-          label: 'Uploading audio...',
+          label:
+            totalChunkCount > 1
+              ? `Processing recording part 1 of ${totalChunkCount}...`
+              : 'Processing recording...',
           transcript: rawText || undefined,
-          progress: 18,
+          progress: 12,
         });
 
-        if (!rawText) {
-          rawText = await mobileProvider.transcribeSegment(currentRetryState.audioUri, {
+        while (pendingAudioUris.length > 0) {
+          const audioUri = pendingAudioUris[0];
+          const completedChunkCount = totalChunkCount - pendingAudioUris.length;
+          const chunkNumber = completedChunkCount + 1;
+          const chunkProgressBase = 18 + Math.round((completedChunkCount / Math.max(totalChunkCount, 1)) * 48);
+
+          const chunkText = await mobileProvider.transcribeSegment(audioUri, {
             apiKey,
             language: settings.language === 'auto' ? undefined : settings.language,
             onStage: (nextStage) =>
               setStatus({
                 stage: 'processing',
-                label: nextStage.label,
+                label:
+                  totalChunkCount > 1
+                    ? `Processing recording part ${chunkNumber} of ${totalChunkCount}...`
+                    : nextStage.label,
                 transcript: rawText || undefined,
-                progress: nextStage.progress ?? 35,
+                progress: Math.min(72, nextStage.progress ?? chunkProgressBase),
               }),
+          });
+
+          rawText = appendTranscript(rawText, chunkText);
+          pendingAudioUris = pendingAudioUris.slice(1);
+          currentRetryState = {
+            ...currentRetryState,
+            audioUri: pendingAudioUris[0] ?? null,
+            audioUris: pendingAudioUris,
+            rawText,
+            interrupted: false,
+            lastError: null,
+          };
+          retryStateRef.current = currentRetryState;
+          await saveRetryState(currentRetryState);
+
+          setStatus({
+            stage: 'processing',
+            label:
+              pendingAudioUris.length > 0
+                ? `Processing recording part ${chunkNumber + 1} of ${totalChunkCount}...`
+                : settings.enhanceText
+                  ? 'Polishing transcript...'
+                  : 'Finalizing copy...',
+            transcript: rawText || undefined,
+            progress: Math.min(
+              settings.enhanceText ? 78 : 96,
+              22 + Math.round(((chunkNumber / Math.max(totalChunkCount, 1)) * 56))
+            ),
           });
         }
 
@@ -248,28 +415,19 @@ export function useRecordingPipeline() {
           return;
         }
 
-        currentRetryState = {
-          ...currentRetryState,
-          rawText,
-          interrupted: false,
-          lastError: null,
-        };
-        retryStateRef.current = currentRetryState;
-        await saveRetryState(currentRetryState);
-
-        const refinedText = settings.enhanceText 
+        const refinedText = settings.enhanceText
           ? await mobileProvider.refineTranscript(rawText, {
-            apiKey,
-            promptStyle: settings.promptStyle,
-            model: settings.model,
-            onStage: (nextStage) =>
-              setStatus({
-                stage: 'processing',
-                label: nextStage.label,
-                transcript: rawText,
-                progress: nextStage.progress ?? 82,
-              }),
-          })
+              apiKey,
+              promptStyle: settings.promptStyle,
+              model: settings.model,
+              onStage: (nextStage) =>
+                setStatus({
+                  stage: 'processing',
+                  label: nextStage.label,
+                  transcript: rawText,
+                  progress: nextStage.progress ?? 84,
+                }),
+            })
           : rawText;
 
         await finalizeSuccess(rawText, refinedText, currentRetryState.durationMillis);
@@ -277,6 +435,8 @@ export function useRecordingPipeline() {
         const message = getErrorMessage(error);
         const failedState: PersistedRetryState = {
           ...currentRetryState,
+          audioUri: pendingAudioUris[0] ?? currentRetryState.audioUri ?? null,
+          audioUris: pendingAudioUris,
           rawText: rawText || currentRetryState.rawText || null,
           lastError: message,
           interrupted: false,
@@ -297,6 +457,53 @@ export function useRecordingPipeline() {
     },
     [clearResetTimer, finalizeSuccess, scheduleReturnToIdle, setStatus]
   );
+
+  const scheduleChunkRotation = useCallback(() => {
+    clearChunkTimer();
+    chunkTimerRef.current = setTimeout(() => {
+      const activeSession = activeSessionRef.current;
+      if (!activeSession || stopRequestedRef.current) {
+        return;
+      }
+
+      if (rotationPromiseRef.current) {
+        return;
+      }
+
+      rotationPromiseRef.current = (async () => {
+        try {
+          const completed = await stopRecorder(recorder);
+
+          if (completed.uri && completed.durationMillis >= MIN_CHUNK_DURATION_MS) {
+            activeSession.chunkUris.push(completed.uri);
+            activeSession.totalDurationMillis += completed.durationMillis;
+            setSessionDurationMillis(activeSession.totalDurationMillis);
+          }
+
+          if (!stopRequestedRef.current) {
+            finalRecordingRef.current = { url: null, error: null };
+            await startRecorder(recorder);
+            scheduleChunkRotation();
+          }
+        } catch (error) {
+          activeSessionRef.current = null;
+          stopRequestedRef.current = false;
+          setIsSessionRecording(false);
+          setSessionDurationMillis(0);
+          setStatus({
+            stage: 'error',
+            label: 'Recording interrupted',
+            error: getErrorMessage(error),
+            progress: 0,
+          });
+        }
+      })().finally(() => {
+        rotationPromiseRef.current = null;
+      });
+
+      void rotationPromiseRef.current;
+    }, CHUNK_ROTATION_MS);
+  }, [clearChunkTimer, recorder, setStatus]);
 
   const startRecordingSession = useCallback(async () => {
     clearResetTimer();
@@ -335,18 +542,36 @@ export function useRecordingPipeline() {
     }
 
     try {
+      stopRequestedRef.current = false;
+      activeSessionRef.current = {
+        sessionId: `mobile-${Date.now()}`,
+        createdAt: Date.now(),
+        totalDurationMillis: 0,
+        chunkUris: [],
+      };
+      finalRecordingRef.current = { url: null, error: null };
+      setSessionDurationMillis(0);
+      setIsSessionRecording(true);
+
       await startRecorder(recorder);
+      scheduleChunkRotation();
+
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       } catch {
         // Optional.
       }
+
       setStatus({
         stage: 'recording',
         label: 'Listening...',
         progress: 0,
       });
     } catch (error) {
+      activeSessionRef.current = null;
+      stopRequestedRef.current = false;
+      setIsSessionRecording(false);
+      setSessionDurationMillis(0);
       setStatus({
         stage: 'error',
         label: 'Failed to start recording',
@@ -354,17 +579,81 @@ export function useRecordingPipeline() {
         progress: 0,
       });
     }
-  }, [clearResetTimer, recorder, setStatus]);
+  }, [clearResetTimer, recorder, scheduleChunkRotation, setStatus]);
 
   const stopAndProcess = useCallback(async () => {
+    const activeSession = activeSessionRef.current;
+    if (!activeSession) {
+      setStatus({
+        stage: 'error',
+        label: 'Nothing is recording',
+        error: 'Start a new recording before trying to stop it.',
+        progress: 0,
+      });
+      return;
+    }
+
     try {
-      const completed = await stopRecorder(recorder);
+      stopRequestedRef.current = true;
+      clearChunkTimer();
+      setIsSessionRecording(true);
+
+      if (rotationPromiseRef.current) {
+        await rotationPromiseRef.current;
+      }
+
+      const recorderStatus = recorder.getStatus();
+      let completed = null as Awaited<ReturnType<typeof stopRecorder>> | null;
+
+      try {
+        completed = await stopRecorder(recorder);
+      } catch (error) {
+        const fallbackUri = finalRecordingRef.current.url ?? recorderStatus.url;
+        if (!fallbackUri) {
+          throw error;
+        }
+
+        completed = {
+          uri: fallbackUri,
+          durationMillis: recorderStatus.durationMillis,
+        };
+      }
+
+      const finalUri = completed.uri ?? finalRecordingRef.current.url ?? recorderStatus.url;
+      const finalDurationMillis = Math.max(completed.durationMillis, recorderStatus.durationMillis);
+
+      if (finalUri && finalDurationMillis >= MIN_CHUNK_DURATION_MS) {
+        activeSession.chunkUris.push(finalUri);
+        activeSession.totalDurationMillis += finalDurationMillis;
+        setSessionDurationMillis(activeSession.totalDurationMillis);
+      }
+
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       } catch {
         // Optional.
       }
-      if (!completed.uri) {
+
+      activeSessionRef.current = null;
+      stopRequestedRef.current = false;
+      setIsSessionRecording(false);
+
+      if (activeSession.chunkUris.length === 0) {
+        const finalRecorderError = finalRecordingRef.current.error;
+        if (finalRecorderError) {
+          setIsSessionRecording(false);
+          setSessionDurationMillis(0);
+          setStatus({
+            stage: 'error',
+            label: 'Recording failed',
+            error: finalRecorderError,
+            progress: 0,
+          });
+          return;
+        }
+
+        setIsSessionRecording(false);
+        setSessionDurationMillis(0);
         setStatus({
           stage: 'empty',
           label: 'Nothing was captured',
@@ -374,19 +663,19 @@ export function useRecordingPipeline() {
         return;
       }
 
-      const retryState: PersistedRetryState = {
-        sessionId: `mobile-${Date.now()}`,
-        audioUri: completed.uri,
-        durationMillis: completed.durationMillis,
-        createdAt: Date.now(),
-        interrupted: false,
-      };
+      const retryState = buildRetryState(
+        activeSession.sessionId,
+        [...activeSession.chunkUris],
+        activeSession.totalDurationMillis,
+        activeSession.createdAt
+      );
 
       retryStateRef.current = retryState;
       setHasPendingRetry(true);
       await saveRetryState(retryState);
       await processRetryState(retryState);
     } catch (error) {
+      setIsSessionRecording(false);
       setStatus({
         stage: 'error',
         label: 'Failed to stop recording',
@@ -394,7 +683,7 @@ export function useRecordingPipeline() {
         progress: 0,
       });
     }
-  }, [processRetryState, recorder, scheduleReturnToIdle, setStatus]);
+  }, [clearChunkTimer, processRetryState, recorder, scheduleReturnToIdle, setStatus]);
 
   const retryLastSession = useCallback(async () => {
     const retryState = retryStateRef.current ?? (await loadRetryState());
@@ -414,6 +703,9 @@ export function useRecordingPipeline() {
     await clearRetryState();
     retryStateRef.current = null;
     setHasPendingRetry(false);
+    finalRecordingRef.current = { url: null, error: null };
+    setIsSessionRecording(false);
+    setSessionDurationMillis(0);
     setStatus({
       stage: 'idle',
       label: 'Ready to record',
@@ -421,12 +713,29 @@ export function useRecordingPipeline() {
   }, [setStatus]);
 
   const cancelActiveRecording = useCallback(async () => {
-    await cancelRecorder(recorder);
+    clearChunkTimer();
+    stopRequestedRef.current = true;
+
+    if (rotationPromiseRef.current) {
+      await rotationPromiseRef.current;
+    }
+
+    const recorderStatus = recorder.getStatus();
+    if (recorderStatus.isRecording) {
+      await cancelRecorder(recorder);
+    }
+
+    activeSessionRef.current = null;
+    stopRequestedRef.current = false;
+    finalRecordingRef.current = { url: null, error: null };
+    setIsSessionRecording(false);
+    setSessionDurationMillis(0);
+    setVoiceLevels(Array.from({ length: VOICE_BAR_COUNT }, () => 0));
     setStatus({
       stage: 'idle',
       label: 'Ready to record',
     });
-  }, [recorder, setStatus]);
+  }, [clearChunkTimer, recorder, setStatus]);
 
   const reset = useCallback(() => {
     clearResetTimer();
@@ -439,14 +748,17 @@ export function useRecordingPipeline() {
       stage: 'idle',
       label: 'Ready to record',
     });
+    setSessionDurationMillis(0);
+    setIsSessionRecording(false);
   }, [clearResetTimer, hydrateRetryBanner, setStatus]);
 
   return {
     status,
     usageStats,
     hasPendingRetry,
-    isRecording: recorderState.isRecording,
-    durationMillis: recorderState.durationMillis,
+    isRecording: isSessionRecording,
+    durationMillis: sessionDurationMillis,
+    voiceLevels,
     startRecording: startRecordingSession,
     stopAndProcess,
     retryLastSession,
