@@ -190,12 +190,12 @@ export default function DownloadPage() {
                                 <div className="border-raw p-5 bg-void">
                                     <p className="text-amber font-bold text-xs mb-2">ANDROID</p>
                                     <p className="text-bone text-base mb-2">
-                                        Android installs ship through the latest GitHub release.
+                                        Android download is live.
                                     </p>
                                     <p className="text-muted normal-case text-sm mb-4">
-                                        Attach the signed APK to the current GitHub release and Android users will get the direct install package automatically from the main download button.
+                                        Use the main download button above to get the latest Android APK.
                                     </p>
-                                    <div className="text-xs text-muted">No separate Android environment variable is needed once the APK is attached to the release.</div>
+                                    <div className="text-xs text-muted">If you open this page on Android, the button will point to the Android build automatically.</div>
                                 </div>
                             </div>
                         </div>
