@@ -20,7 +20,7 @@ export function Footer() {
                             <span className="font-jp text-3xl opacity-50">声</span>
                         </Link>
                         <p className="text-muted normal-case max-w-md">
-                            Lightning-fast, free voice dictation for desktop. Powered by AI, completely open source.
+                            Lightning-fast, free voice dictation for desktop and mobile. Powered by AI, completely open source.
                         </p>
                     </div>
 
@@ -118,3 +118,4 @@ export function Footer() {
         </footer>
     );
 }
+
