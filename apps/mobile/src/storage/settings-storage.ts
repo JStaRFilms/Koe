@@ -1,10 +1,14 @@
+import { DEFAULT_CUSTOM_PROMPT, DEFAULT_WHISPER_MODEL } from '@koe/core';
 import * as SecureStore from 'expo-secure-store';
 
 const APP_SETTINGS_STORAGE_KEY = 'koe_mobile_settings_v1';
+const SUPPORTED_TRANSCRIPTION_MODELS = new Set(['whisper-large-v3-turbo', 'whisper-large-v3']);
+const SUPPORTED_PROMPT_STYLES = new Set(['Clean', 'Formal', 'Professional', 'Casual', 'Concise']);
 
 export interface AppSettings {
   language: string;
   promptStyle: string;
+  customPrompt: string;
   model: string;
   enhanceText: boolean;
   autoPaste: boolean;
@@ -14,7 +18,8 @@ export interface AppSettings {
 export const DEFAULT_SETTINGS: AppSettings = {
   language: 'en',
   promptStyle: 'Clean',
-  model: 'llama-3.3-70b-versatile',
+  customPrompt: DEFAULT_CUSTOM_PROMPT,
+  model: DEFAULT_WHISPER_MODEL,
   enhanceText: true,
   autoPaste: true,
   hasSeenOnboarding: false,
@@ -45,5 +50,19 @@ export async function saveAppSettings(settings: AppSettings): Promise<void> {
 
 export async function loadAppSettings(): Promise<AppSettings> {
   const settings = await loadJson<AppSettings>(APP_SETTINGS_STORAGE_KEY);
-  return { ...DEFAULT_SETTINGS, ...settings };
+  const merged = { ...DEFAULT_SETTINGS, ...settings };
+
+  if (!SUPPORTED_TRANSCRIPTION_MODELS.has(merged.model)) {
+    merged.model = DEFAULT_SETTINGS.model;
+  }
+
+  if (!SUPPORTED_PROMPT_STYLES.has(merged.promptStyle)) {
+    merged.promptStyle = DEFAULT_SETTINGS.promptStyle;
+  }
+
+  if (!merged.customPrompt?.trim()) {
+    merged.customPrompt = DEFAULT_SETTINGS.customPrompt;
+  }
+
+  return merged;
 }

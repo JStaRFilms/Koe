@@ -20,5 +20,5 @@ export const REFINEMENT_GUARDRAILS = [
 export const GROQ_WHISPER_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
 export const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 export const DEFAULT_WHISPER_MODEL = 'whisper-large-v3-turbo';
-export const DEFAULT_ENHANCE_MODEL = 'llama-3.3-70b-versatile';
+export const DEFAULT_ENHANCE_MODEL = 'moonshotai/kimi-k2-instruct-0905';
 export const PROD_PROXY_URL = 'https://koe.jstarstudios.com/api/process';

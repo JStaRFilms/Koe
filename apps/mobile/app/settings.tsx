@@ -27,6 +27,11 @@ const PROMPT_STYLE_OPTIONS = [
   { label: 'Concise', value: 'Concise' },
 ] as const;
 
+const MODEL_OPTIONS = [
+  { label: 'Fast (Turbo)', value: 'whisper-large-v3-turbo' },
+  { label: 'Accurate (Large-v3)', value: 'whisper-large-v3' },
+] as const;
+
 const LANGUAGE_OPTIONS = [
   { label: 'English', value: 'en' },
   { label: 'Auto', value: 'auto' },
@@ -53,6 +58,7 @@ export default function SettingsScreen() {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [savedKeyLabel, setSavedKeyLabel] = useState('Loading...');
   const [settings, setSettings] = useState<AppSettings | null>(null);
+  const [customPromptDraft, setCustomPromptDraft] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -65,6 +71,7 @@ export default function SettingsScreen() {
 
       setSavedKeyLabel(maskKey(existingKey));
       setSettings(loadedSettings);
+      setCustomPromptDraft(loadedSettings.customPrompt);
     };
 
     void loadData();
@@ -72,6 +79,12 @@ export default function SettingsScreen() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (settings) {
+      setCustomPromptDraft(settings.customPrompt);
+    }
+  }, [settings?.customPrompt]);
 
   const saveKey = async () => {
     const trimmed = apiKeyInput.trim();
@@ -113,6 +126,14 @@ export default function SettingsScreen() {
     } catch {
       // Haptics are optional.
     }
+  };
+
+  const saveCustomPrompt = async () => {
+    if (!settings) {
+      return;
+    }
+
+    await updateSetting('customPrompt', customPromptDraft.trim());
   };
 
   if (!settings) {
@@ -192,8 +213,40 @@ export default function SettingsScreen() {
                     />
                   ))}
                 </View>
+
+                <Text style={[styles.subLabel, { color: theme.textDim, marginTop: Spacing.md }]}>Custom Prompt</Text>
+                <TextInput
+                  value={customPromptDraft}
+                  onChangeText={setCustomPromptDraft}
+                  onEndEditing={() => void saveCustomPrompt()}
+                  multiline
+                  placeholder="Override the shared refinement prompt. Clear to use the selected style."
+                  placeholderTextColor={theme.textDim}
+                  style={[
+                    styles.textarea,
+                    { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text },
+                  ]}
+                />
+                <Text style={[styles.helperCopy, { color: theme.textDim }]}>
+                  Matches desktop behavior: if this is blank, the selected style preset is used.
+                </Text>
               </>
             )}
+
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
+
+            <Text style={[styles.subLabel, { color: theme.textDim, marginTop: Spacing.sm }]}>Transcription Model</Text>
+            <View style={styles.optionGrid}>
+              {MODEL_OPTIONS.map((modelOption) => (
+                <BrutalButton
+                  key={modelOption.value}
+                  onPress={() => updateSetting('model', modelOption.value)}
+                  title={modelOption.label}
+                  variant={settings.model === modelOption.value ? 'primary' : 'outline'}
+                  small
+                />
+              ))}
+            </View>
 
             <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
@@ -245,8 +298,18 @@ const styles = StyleSheet.create({
     fontFamily: Typography.fonts.mono,
     borderRadius: 2,
   },
+  textarea: {
+    borderWidth: 1,
+    padding: Spacing.md,
+    fontSize: Typography.sizes.sm,
+    fontFamily: Typography.fonts.mono,
+    borderRadius: 2,
+    minHeight: 140,
+    textAlignVertical: 'top',
+  },
   actionRow: { flexDirection: 'row', gap: Spacing.sm },
   statusMsg: { fontSize: Typography.sizes.xs, lineHeight: 18 },
+  helperCopy: { fontSize: Typography.sizes.xs, lineHeight: 18 },
   settingRow: {
     flexDirection: 'row',
     alignItems: 'center',

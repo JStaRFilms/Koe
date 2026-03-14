@@ -71,7 +71,7 @@ Turn the functional mobile pipeline into a real product shell with recorder UX, 
 - [x] **Persistent Storage**: Use `expo-secure-store` for all sensitive (API Key) and functional (History, Settings) data.
 - [x] **Haptics**: Trigger haptics on start, stop, and success.
 - [x] **Clipboard Integration**: Success = `refinedText` (else `rawText`) -> System Clipboard.
-- [x] **Platform Defaults**: Use `en` as default language and `llama-3.3-70b-versatile` as default model.
+- [x] **Platform Defaults**: Use `en` as default language and `moonshotai/kimi-k2-instruct-0905` as default model.
 
 ## Implementation Checklist
 - [x] Create `src/storage/settings-storage.ts` for app preferences.

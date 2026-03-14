@@ -43,8 +43,11 @@ interface ActiveRecordingSession {
   chunkUris: string[];
 }
 
-const CHUNK_ROTATION_MS = 20_000;
+const CHUNK_MIN_DURATION_MS = 10_000;
+const CHUNK_HARD_CAP_MS = 30_000;
+const PAUSE_CLOSE_MS = 1_200;
 const MIN_CHUNK_DURATION_MS = 900;
+const SPEECH_ACTIVITY_THRESHOLD = 0.12;
 const VOICE_BAR_COUNT = 8;
 const VOICE_BAR_WEIGHTS = [0.36, 0.54, 0.78, 1, 1, 0.78, 0.54, 0.36];
 
@@ -95,8 +98,7 @@ function buildRetryState(
 }
 
 function meteringToVoiceBars(metering: number | undefined, durationMillis: number, previous: number[]) {
-  const normalizedMeter =
-    typeof metering === 'number' ? Math.max(0, Math.min(1, (metering + 60) / 60)) : 0;
+  const normalizedMeter = normalizeMetering(metering);
   const phase = durationMillis / 140;
 
   return VOICE_BAR_WEIGHTS.map((weight, index) => {
@@ -107,6 +109,10 @@ function meteringToVoiceBars(metering: number | undefined, durationMillis: numbe
     const eased = current + (target - current) * 0.58;
     return Math.max(0, Math.min(1, eased));
   });
+}
+
+function normalizeMetering(metering: number | undefined) {
+  return typeof metering === 'number' ? Math.max(0, Math.min(1, (metering + 60) / 60)) : 0;
 }
 
 export function useRecordingPipeline() {
@@ -142,11 +148,13 @@ export function useRecordingPipeline() {
   const statusRef = useRef<PipelineStatus>(status);
   const retryStateRef = useRef<PersistedRetryState | null>(null);
   const resetTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const chunkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rotationPromiseRef = useRef<Promise<void> | null>(null);
   const activeSessionRef = useRef<ActiveRecordingSession | null>(null);
   const stopRequestedRef = useRef(false);
   const appStateRef = useRef(AppState.currentState);
+  const chunkHasSpeechRef = useRef(false);
+  const lastSpeechAtRef = useRef<number | null>(null);
+  const rotationGuardRef = useRef(false);
 
   const setStatus = useCallback((next: PipelineStatus) => {
     statusRef.current = next;
@@ -160,11 +168,9 @@ export function useRecordingPipeline() {
     }
   }, []);
 
-  const clearChunkTimer = useCallback(() => {
-    if (chunkTimerRef.current) {
-      clearTimeout(chunkTimerRef.current);
-      chunkTimerRef.current = null;
-    }
+  const resetChunkTracking = useCallback(() => {
+    chunkHasSpeechRef.current = false;
+    lastSpeechAtRef.current = null;
   }, []);
 
   const scheduleReturnToIdle = useCallback(() => {
@@ -214,9 +220,9 @@ export function useRecordingPipeline() {
     return () => {
       cancelled = true;
       clearResetTimer();
-      clearChunkTimer();
+      resetChunkTracking();
     };
-  }, [clearChunkTimer, clearResetTimer, hydrateRetryBanner]);
+  }, [clearResetTimer, hydrateRetryBanner, resetChunkTracking]);
 
   useEffect(() => {
     const activeSession = activeSessionRef.current;
@@ -231,11 +237,92 @@ export function useRecordingPipeline() {
       return;
     }
 
+    if (recorderState.durationMillis < 500 && rotationGuardRef.current) {
+      rotationGuardRef.current = false;
+    }
+
     setSessionDurationMillis((activeSession?.totalDurationMillis ?? 0) + recorderState.durationMillis);
+    if (normalizeMetering(recorderState.metering) >= SPEECH_ACTIVITY_THRESHOLD) {
+      chunkHasSpeechRef.current = true;
+      lastSpeechAtRef.current = Date.now();
+    }
     setVoiceLevels((previous) =>
       meteringToVoiceBars(recorderState.metering, recorderState.durationMillis, previous)
     );
   }, [recorderState.durationMillis, recorderState.isRecording, recorderState.metering]);
+
+  const rotateActiveChunk = useCallback(async () => {
+    const activeSession = activeSessionRef.current;
+    if (!activeSession) {
+      return;
+    }
+
+    try {
+      const completed = await stopRecorder(recorder);
+
+      if (completed.uri && completed.durationMillis >= MIN_CHUNK_DURATION_MS) {
+        activeSession.chunkUris.push(completed.uri);
+        activeSession.totalDurationMillis += completed.durationMillis;
+        setSessionDurationMillis(activeSession.totalDurationMillis);
+      }
+
+      resetChunkTracking();
+
+      if (!stopRequestedRef.current) {
+        finalRecordingRef.current = { url: null, error: null };
+        await startRecorder(recorder);
+      }
+    } catch (error) {
+      activeSessionRef.current = null;
+      stopRequestedRef.current = false;
+      rotationGuardRef.current = false;
+      resetChunkTracking();
+      setIsSessionRecording(false);
+      setSessionDurationMillis(0);
+      setStatus({
+        stage: 'error',
+        label: 'Recording interrupted',
+        error: getErrorMessage(error),
+        progress: 0,
+      });
+    }
+  }, [recorder, resetChunkTracking, setStatus]);
+
+  useEffect(() => {
+    if (
+      !recorderState.isRecording ||
+      statusRef.current.stage !== 'recording' ||
+      stopRequestedRef.current ||
+      rotationPromiseRef.current ||
+      rotationGuardRef.current
+    ) {
+      return;
+    }
+
+    const chunkDurationMillis = recorderState.durationMillis;
+    if (chunkDurationMillis <= 0) {
+      return;
+    }
+
+    const now = Date.now();
+    const reachedHardCap = chunkDurationMillis >= CHUNK_HARD_CAP_MS;
+    const reachedSilenceBoundary =
+      chunkHasSpeechRef.current &&
+      chunkDurationMillis >= CHUNK_MIN_DURATION_MS &&
+      lastSpeechAtRef.current !== null &&
+      now - lastSpeechAtRef.current >= PAUSE_CLOSE_MS;
+
+    if (!reachedHardCap && !reachedSilenceBoundary) {
+      return;
+    }
+
+    rotationGuardRef.current = true;
+    rotationPromiseRef.current = rotateActiveChunk().finally(() => {
+      rotationPromiseRef.current = null;
+    });
+
+    void rotationPromiseRef.current;
+  }, [recorderState.durationMillis, recorderState.isRecording, rotateActiveChunk]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener('change', (nextAppState) => {
@@ -252,7 +339,7 @@ export function useRecordingPipeline() {
         statusRef.current.stage === 'recording' &&
         (!recorderState.isRecording || recorderState.mediaServicesDidReset)
       ) {
-        clearChunkTimer();
+        resetChunkTracking();
         stopRequestedRef.current = false;
         activeSessionRef.current = null;
         setIsSessionRecording(false);
@@ -270,9 +357,9 @@ export function useRecordingPipeline() {
       subscription.remove();
     };
   }, [
-    clearChunkTimer,
     recorderState.isRecording,
     recorderState.mediaServicesDidReset,
+    resetChunkTracking,
     setStatus,
   ]);
 
@@ -361,6 +448,7 @@ export function useRecordingPipeline() {
           const chunkText = await mobileProvider.transcribeSegment(audioUri, {
             apiKey,
             language: settings.language === 'auto' ? undefined : settings.language,
+            model: settings.model,
             onStage: (nextStage) =>
               setStatus({
                 stage: 'processing',
@@ -419,7 +507,7 @@ export function useRecordingPipeline() {
           ? await mobileProvider.refineTranscript(rawText, {
               apiKey,
               promptStyle: settings.promptStyle,
-              model: settings.model,
+              customPrompt: settings.customPrompt,
               onStage: (nextStage) =>
                 setStatus({
                   stage: 'processing',
@@ -457,53 +545,6 @@ export function useRecordingPipeline() {
     },
     [clearResetTimer, finalizeSuccess, scheduleReturnToIdle, setStatus]
   );
-
-  const scheduleChunkRotation = useCallback(() => {
-    clearChunkTimer();
-    chunkTimerRef.current = setTimeout(() => {
-      const activeSession = activeSessionRef.current;
-      if (!activeSession || stopRequestedRef.current) {
-        return;
-      }
-
-      if (rotationPromiseRef.current) {
-        return;
-      }
-
-      rotationPromiseRef.current = (async () => {
-        try {
-          const completed = await stopRecorder(recorder);
-
-          if (completed.uri && completed.durationMillis >= MIN_CHUNK_DURATION_MS) {
-            activeSession.chunkUris.push(completed.uri);
-            activeSession.totalDurationMillis += completed.durationMillis;
-            setSessionDurationMillis(activeSession.totalDurationMillis);
-          }
-
-          if (!stopRequestedRef.current) {
-            finalRecordingRef.current = { url: null, error: null };
-            await startRecorder(recorder);
-            scheduleChunkRotation();
-          }
-        } catch (error) {
-          activeSessionRef.current = null;
-          stopRequestedRef.current = false;
-          setIsSessionRecording(false);
-          setSessionDurationMillis(0);
-          setStatus({
-            stage: 'error',
-            label: 'Recording interrupted',
-            error: getErrorMessage(error),
-            progress: 0,
-          });
-        }
-      })().finally(() => {
-        rotationPromiseRef.current = null;
-      });
-
-      void rotationPromiseRef.current;
-    }, CHUNK_ROTATION_MS);
-  }, [clearChunkTimer, recorder, setStatus]);
 
   const startRecordingSession = useCallback(async () => {
     clearResetTimer();
@@ -550,11 +591,12 @@ export function useRecordingPipeline() {
         chunkUris: [],
       };
       finalRecordingRef.current = { url: null, error: null };
+      rotationGuardRef.current = false;
+      resetChunkTracking();
       setSessionDurationMillis(0);
       setIsSessionRecording(true);
 
       await startRecorder(recorder);
-      scheduleChunkRotation();
 
       try {
         await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -570,6 +612,7 @@ export function useRecordingPipeline() {
     } catch (error) {
       activeSessionRef.current = null;
       stopRequestedRef.current = false;
+      rotationGuardRef.current = false;
       setIsSessionRecording(false);
       setSessionDurationMillis(0);
       setStatus({
@@ -579,7 +622,7 @@ export function useRecordingPipeline() {
         progress: 0,
       });
     }
-  }, [clearResetTimer, recorder, scheduleChunkRotation, setStatus]);
+  }, [clearResetTimer, recorder, resetChunkTracking, setStatus]);
 
   const stopAndProcess = useCallback(async () => {
     const activeSession = activeSessionRef.current;
@@ -595,7 +638,6 @@ export function useRecordingPipeline() {
 
     try {
       stopRequestedRef.current = true;
-      clearChunkTimer();
       setIsSessionRecording(true);
 
       if (rotationPromiseRef.current) {
@@ -636,6 +678,8 @@ export function useRecordingPipeline() {
 
       activeSessionRef.current = null;
       stopRequestedRef.current = false;
+      rotationGuardRef.current = false;
+      resetChunkTracking();
       setIsSessionRecording(false);
 
       if (activeSession.chunkUris.length === 0) {
@@ -675,6 +719,7 @@ export function useRecordingPipeline() {
       await saveRetryState(retryState);
       await processRetryState(retryState);
     } catch (error) {
+      rotationGuardRef.current = false;
       setIsSessionRecording(false);
       setStatus({
         stage: 'error',
@@ -683,7 +728,7 @@ export function useRecordingPipeline() {
         progress: 0,
       });
     }
-  }, [clearChunkTimer, processRetryState, recorder, scheduleReturnToIdle, setStatus]);
+  }, [processRetryState, recorder, resetChunkTracking, scheduleReturnToIdle, setStatus]);
 
   const retryLastSession = useCallback(async () => {
     const retryState = retryStateRef.current ?? (await loadRetryState());
@@ -713,7 +758,6 @@ export function useRecordingPipeline() {
   }, [setStatus]);
 
   const cancelActiveRecording = useCallback(async () => {
-    clearChunkTimer();
     stopRequestedRef.current = true;
 
     if (rotationPromiseRef.current) {
@@ -727,6 +771,8 @@ export function useRecordingPipeline() {
 
     activeSessionRef.current = null;
     stopRequestedRef.current = false;
+    rotationGuardRef.current = false;
+    resetChunkTracking();
     finalRecordingRef.current = { url: null, error: null };
     setIsSessionRecording(false);
     setSessionDurationMillis(0);
@@ -735,7 +781,7 @@ export function useRecordingPipeline() {
       stage: 'idle',
       label: 'Ready to record',
     });
-  }, [clearChunkTimer, recorder, setStatus]);
+  }, [recorder, resetChunkTracking, setStatus]);
 
   const reset = useCallback(() => {
     clearResetTimer();

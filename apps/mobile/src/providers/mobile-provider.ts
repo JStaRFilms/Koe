@@ -1,6 +1,10 @@
 import {
+  DEFAULT_ENHANCE_MODEL,
+  DEFAULT_WHISPER_MODEL,
   parseErrorMessage,
+  REFINEMENT_GUARDRAILS,
   resolveEnhancementPrompt,
+  sanitizeRefinedText,
   type ProviderOptions,
   type TranscriptionProvider,
 } from '@koe/core';
@@ -57,7 +61,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
 
     const formData = new FormData();
     await appendAudioFile(formData, audioUri);
-    formData.append('model', options.model || 'whisper-large-v3-turbo');
+    formData.append('model', options.model || DEFAULT_WHISPER_MODEL);
 
     if (options.language && options.language !== 'auto') {
       formData.append('language', options.language);
@@ -101,6 +105,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
     }
 
     const prompt = resolveEnhancementPrompt(options.promptStyle, options.customPrompt);
+    const systemPrompt = `${REFINEMENT_GUARDRAILS} ${prompt} Before you finish, check the final text and remove any transcript tags if any remain.`.trim();
 
     options.onStage?.({
       stage: 'refining',
@@ -115,12 +120,15 @@ export class MobileGroqProvider implements TranscriptionProvider {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: options.model || 'llama-3.3-70b-versatile',
+        model: DEFAULT_ENHANCE_MODEL,
         messages: [
-          { role: 'system', content: prompt },
-          { role: 'user', content: trimmed },
+          { role: 'system', content: systemPrompt },
+          {
+            role: 'user',
+            content: `Refine only the text inside <transcript> tags.\n<transcript>\n${trimmed}\n</transcript>`,
+          },
         ],
-        temperature: 0.1,
+        temperature: 0.2,
       }),
     });
 
@@ -132,7 +140,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
     if (typeof payload === 'object' && payload && 'choices' in payload) {
       const content = (payload as { choices?: Array<{ message?: { content?: string } }> }).choices?.[0]
         ?.message?.content;
-      return String(content || trimmed).trim();
+      return sanitizeRefinedText(content || trimmed) || trimmed;
     }
 
     return trimmed;

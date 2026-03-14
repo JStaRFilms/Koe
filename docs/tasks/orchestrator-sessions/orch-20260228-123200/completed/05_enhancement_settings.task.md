@@ -50,7 +50,7 @@ src/renderer/index.html  — Add settings panel markup
 ### Llama Enhancement (`groq.js` addition)
 - New method: `enhance(rawText, promptStyle)`
 - Endpoint: `https://api.groq.com/openai/v1/chat/completions`
-- Model: `llama-3.3-70b-versatile` (free tier)
+- Model: `moonshotai/kimi-k2-instruct-0905` (free tier)
 - System prompts by style:
   - **Clean** (default): "Clean this dictated text. Remove filler words, fix punctuation and grammar. Keep original meaning and tone. Return only the cleaned text."
   - **Formal**: "Rewrite this dictated text in a formal, professional tone..."
