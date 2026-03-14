@@ -123,11 +123,11 @@ Replace placeholder or generic mobile UI text with real product copy that matche
 
 ## Definition Of Done
 
-- [ ] Placeholder-feeling text is gone
-- [ ] Main app brand usage includes `声` where appropriate
-- [ ] Copy matches real behavior and constraints
-- [ ] Tone feels intentional and non-generic
-- [ ] No purple-neon AI cliché language remains
+- [x] Placeholder-feeling text is gone ✅
+- [x] Main app brand usage includes `声` where appropriate ✅
+- [x] Copy matches real behavior and constraints ✅
+- [x] Tone feels intentional and non-generic ✅
+- [x] No purple-neon AI cliché language remains ✅
 
 ## Constraints
 

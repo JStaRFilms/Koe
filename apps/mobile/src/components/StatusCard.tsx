@@ -102,7 +102,7 @@ export const StatusCard: React.FC<StatusCardProps> = ({
   }, [detail, stream]);
 
   return (
-    <View style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.border }]}>
+    <View style={[styles.card, { backgroundColor: theme.surfaceSolid, borderColor: theme.border }]}>
       <View style={[styles.header, { backgroundColor: theme.surfaceElevated, borderBottomColor: theme.border }]}>
         <Text style={[styles.headerText, { color: toneColor }]}>
           {label}

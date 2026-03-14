@@ -38,43 +38,45 @@ export default function OnboardingScreen() {
             <View style={[styles.badge, { borderColor: theme.border }]}>
               <Text style={[styles.badgeText, { color: theme.textMuted }]}>First run</Text>
             </View>
-            <Text style={[styles.title, { color: theme.text, fontFamily: Typography.fonts.deco }]}>Koe</Text>
+            <Text style={[styles.title, { color: theme.text, fontFamily: Typography.fonts.deco }]}>
+              Koe <Text style={{ color: theme.accent }}>{'\u58F0'}</Text>
+            </Text>
             <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-              Turn speech into paste-ready text
+              Speak, polish, paste.
             </Text>
           </View>
 
           <View style={styles.cardContainer}>
             <View style={[styles.infoBlock, { borderColor: theme.border }]}>
-              <Text style={[styles.infoTitle, { color: theme.text }]}>Bring your own key</Text>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>Add your key</Text>
               <Text style={[styles.infoDesc, { color: theme.textDim }]}>
-                Add your API key in Settings. Koe saves it on this device.
+                Koe uses your own API key to process audio. No subscriptions required.
               </Text>
             </View>
 
             <View style={[styles.infoBlock, { borderColor: theme.border }]}>
-              <Text style={[styles.infoTitle, { color: theme.text }]}>Record, then paste</Text>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>Voice to Clipboard</Text>
               <Text style={[styles.infoDesc, { color: theme.textDim }]}>
-                Start recording, stop when you are done, and your text is copied when processing finishes.
+                Record, stop, and your refined text is ready to paste anywhere.
               </Text>
             </View>
 
             <View style={[styles.infoBlock, { borderColor: theme.border }]}>
-              <Text style={[styles.infoTitle, { color: theme.text }]}>Retry if needed</Text>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>Always Resilient</Text>
               <Text style={[styles.infoDesc, { color: theme.textDim }]}>
-                If processing fails, Koe keeps the last recording so you can retry or discard it.
+                Koe saves your last session if a connection drops. Never lose a thought.
               </Text>
             </View>
           </View>
 
           <Text style={[styles.helpText, { color: theme.textDim }]}>
-            You can add your API key from Settings after this screen.
+            Configure your own API key in Settings to begin.
           </Text>
         </View>
 
         <View style={styles.footer}>
           <BrutalButton onPress={handleFinish} title="Open Koe" style={{ width: '100%' }} />
-          <Text style={[styles.footerNote, { color: theme.textDim }]}>Clipboard-first on mobile</Text>
+          <Text style={[styles.footerNote, { color: theme.textDim }]}>Ready when you are</Text>
         </View>
       </ScrollView>
     </View>

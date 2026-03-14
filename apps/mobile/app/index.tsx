@@ -127,7 +127,7 @@ export default function RecorderScreen() {
             Koe <Text style={{ color: theme.accent }}>{'\u58F0'}</Text>
           </Text>
           <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-            Record, refine, copy
+            Your voice, everywhere.
           </Text>
         </View>
 
@@ -192,10 +192,10 @@ export default function RecorderScreen() {
           <View style={styles.helperSection}>
             <Text style={[styles.helperText, { color: theme.textMuted }]}>
               {status.stage === 'recording'
-                ? 'Listening. Tap again when you want to stop.'
+                ? 'Listening. Tap again to stop.'
                 : status.stage === 'processing'
-                  ? 'Working through your recording in smaller parts.'
-                  : 'Records locally first, then copies the finished text when it is ready.'}
+                  ? 'Refining your recording into text.'
+                  : 'Captured audio is refined and copied to your clipboard.'}
             </Text>
           </View>
 
@@ -212,7 +212,7 @@ export default function RecorderScreen() {
               {hasPendingRetry && (
                 <BrutalButton
                   onPress={discardRetrySession}
-                  title="Discard saved recording"
+                  title="Discard saved session"
                   variant="danger"
                   style={{ width: '100%' }}
                 />
@@ -224,8 +224,8 @@ export default function RecorderScreen() {
         <View style={styles.footer}>
           <Text style={[styles.usageText, { color: theme.textDim }]}>
             {usageStats
-              ? `Today: ${usageStats.requestCount} sessions, ${usageStats.audioSecondsUsed}s recorded`
-              : 'Usage updates after your first recording.'}
+              ? `Today: ${usageStats.requestCount} sessions // ${usageStats.audioSecondsUsed}s total`
+              : 'Usage updates after your first capture.'}
           </Text>
         </View>
       </ScrollView>

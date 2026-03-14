@@ -62,14 +62,14 @@ export default function HistoryScreen() {
     } catch {
       // Haptics are optional.
     }
-    Alert.alert('Copied', 'Transcript copied to your clipboard.');
+    Alert.alert('Copied', 'The selected text is in your clipboard.');
   };
 
   const handleClearHistory = () => {
     Alert.alert('Clear history', 'Delete all saved transcripts from this device?', [
       { text: 'Cancel', style: 'cancel' },
       {
-        text: 'Clear',
+        text: 'Delete All',
         style: 'destructive',
         onPress: async () => {
           await clearHistory();
@@ -111,10 +111,19 @@ export default function HistoryScreen() {
             <Text style={[styles.title, { color: theme.text, fontFamily: Typography.fonts.deco }]}>
               History
             </Text>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Your recent transcripts</Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Recent voice notes</Text>
           </View>
           {history.length > 0 && (
-            <TouchableOpacity onPress={handleClearHistory} style={[styles.purgeBtn, { borderColor: theme.danger }]}>
+            <TouchableOpacity
+              onPress={handleClearHistory}
+              style={[
+                styles.purgeBtn,
+                {
+                  borderColor: theme.danger,
+                  backgroundColor: theme.dangerDim,
+                },
+              ]}
+            >
               <Trash2 size={16} color={theme.danger} />
             </TouchableOpacity>
           )}
@@ -123,7 +132,9 @@ export default function HistoryScreen() {
         {history.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyGlyph, { color: theme.border }]}>{'\u58F0'}</Text>
-            <Text style={[styles.emptyText, { color: theme.textMuted }]}>No transcripts yet</Text>
+            <Text style={[styles.emptyText, { color: theme.textMuted }]}>
+              Your recent recordings will show up here.
+            </Text>
           </View>
         ) : (
           <View style={styles.list}>
@@ -139,7 +150,7 @@ export default function HistoryScreen() {
                       {displayText}
                     </Text>
 
-                    <View style={styles.itemFooter}>
+                    <View style={[styles.itemFooter, { borderTopColor: theme.border }]}>
                       <View style={styles.itemMeta}>
                         <Text style={[styles.metaText, { color: theme.textDim }]}>
                           {Math.round(item.durationMillis / 1000)} sec
@@ -158,7 +169,7 @@ export default function HistoryScreen() {
                               <EyeOff size={14} color={theme.textDim} />
                             )}
                             <Text style={[styles.miniActionText, { color: isRaw ? theme.accent : theme.textDim }]}>
-                              {isRaw ? 'Show refined' : 'Show original'}
+                              {isRaw ? 'Show polished' : 'Show original'}
                             </Text>
                           </TouchableOpacity>
                         )}
@@ -211,7 +222,6 @@ const styles = StyleSheet.create({
   purgeBtn: {
     borderWidth: 1,
     padding: Spacing.sm,
-    backgroundColor: 'rgba(138, 3, 3, 0.05)',
   },
   emptyContainer: {
     alignItems: 'center',
@@ -233,7 +243,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
     paddingTop: Spacing.sm,
   },
   itemMeta: { flexDirection: 'row' },

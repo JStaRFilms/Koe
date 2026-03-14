@@ -16,13 +16,21 @@ export function BrutalCard({ children, headerTitle, style }: BrutalCardProps) {
     <View style={[
       styles.card, 
       { 
-        backgroundColor: theme.background, 
+        backgroundColor: theme.surfaceSolid,
         borderColor: theme.border,
       }, 
       style
     ]}>
       {headerTitle && (
-        <View style={[styles.header, { borderBottomColor: theme.border }]}>
+        <View
+          style={[
+            styles.header,
+            {
+              borderBottomColor: theme.border,
+              backgroundColor: theme.surfaceElevated,
+            },
+          ]}
+        >
           <Text style={[styles.headerText, { color: theme.accent }]}>
             {headerTitle.toUpperCase()}
           </Text>
@@ -45,7 +53,6 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.xs,
     paddingHorizontal: Spacing.md,
     borderBottomWidth: 1,
-    backgroundColor: 'rgba(0,0,0,0.05)',
   },
   headerText: {
     fontSize: 10,

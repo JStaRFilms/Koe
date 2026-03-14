@@ -132,7 +132,7 @@ export default function SettingsScreen() {
         style={styles.container}
         contentContainerStyle={styles.content}
       >
-        <BrutalCard headerTitle="API key">
+        <BrutalCard headerTitle="BYOK // API Key">
           <View style={styles.itemBody}>
             <Text style={[styles.label, { color: theme.textDim }]}>Saved key</Text>
             <Text selectable style={[styles.savedKey, { color: theme.accent, fontFamily: Typography.fonts.mono }]}>
@@ -142,12 +142,12 @@ export default function SettingsScreen() {
             <TextInput
               value={apiKeyInput}
               onChangeText={setApiKeyInput}
-              placeholder="Paste your Groq API key"
+              placeholder="Enter your Groq key"
               placeholderTextColor={theme.textDim}
               secureTextEntry
               style={[
                 styles.input,
-                { backgroundColor: theme.surfaceElevated, borderColor: theme.border, color: theme.text },
+                { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text },
               ]}
             />
 
@@ -157,7 +157,7 @@ export default function SettingsScreen() {
             </View>
 
             <Text style={[styles.statusMsg, { color: theme.textDim }]}>
-              Saved securely on this device. Need a key? Get one from Groq, then paste it here.
+              Stored locally. Requires a valid Groq key for transcription.
             </Text>
           </View>
         </BrutalCard>
@@ -166,9 +166,9 @@ export default function SettingsScreen() {
           <View style={styles.itemBody}>
             <View style={styles.settingRow}>
               <View style={styles.settingText}>
-                <Text style={[styles.settingLabel, { color: theme.text }]}>Enhance text</Text>
+                <Text style={[styles.settingLabel, { color: theme.text }]}>Refine Transcript</Text>
                 <Text style={[styles.settingDesc, { color: theme.textDim }]}>
-                  Clean up filler words, punctuation, and grammar
+                  Remove filler words, fix grammar, and polish punctuation.
                 </Text>
               </View>
               <Switch
@@ -195,7 +195,7 @@ export default function SettingsScreen() {
               </>
             )}
 
-            <View style={styles.divider} />
+            <View style={[styles.divider, { backgroundColor: theme.border }]} />
 
             <Text style={[styles.subLabel, { color: theme.textDim, marginTop: Spacing.sm }]}>Language</Text>
             <View style={styles.optionGrid}>
@@ -243,6 +243,7 @@ const styles = StyleSheet.create({
     padding: Spacing.md,
     fontSize: Typography.sizes.md,
     fontFamily: Typography.fonts.mono,
+    borderRadius: 2,
   },
   actionRow: { flexDirection: 'row', gap: Spacing.sm },
   statusMsg: { fontSize: Typography.sizes.xs, lineHeight: 18 },
@@ -256,7 +257,7 @@ const styles = StyleSheet.create({
   settingDesc: { fontSize: Typography.sizes.xs, marginTop: 2, lineHeight: 18 },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'transparent',
     marginVertical: Spacing.xs,
   },
   optionGrid: {
