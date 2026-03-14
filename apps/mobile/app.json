@@ -1,0 +1,59 @@
+{
+  "expo": {
+    "name": "Koe",
+    "slug": "koe-mobile",
+    "version": "1.1.0",
+    "icon": "./assets/icon.png",
+    "orientation": "portrait",
+    "scheme": "koe",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0A0A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.jstar.koe",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Koe needs access to your microphone to transcribe your voice."
+      }
+    },
+    "android": {
+      "package": "com.jstar.koe",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0A0A"
+      },
+      "permissions": [
+        "RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE_MICROPHONE",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Koe needs access to your microphone to transcribe your voice.",
+          "recordAudioAndroid": true,
+          "enableBackgroundRecording": true
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "41f91b8c-0e31-492f-90c6-a7df17a8aef9"
+      }
+    },
+    "owner": "supremeleader"
+  }
+}

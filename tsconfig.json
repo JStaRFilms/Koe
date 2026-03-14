@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "moduleResolution": "node",
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": [
+    "apps/mobile/app/**/*.ts",
+    "apps/mobile/app/**/*.tsx",
+    "apps/mobile/expo-env.d.ts",
+    "apps/mobile/src/**/*.ts",
+    "apps/mobile/src/**/*.tsx",
+    "packages/koe-core/src/**/*.ts"
+  ],
+  "exclude": ["node_modules", "dist", ".expo"]
+}

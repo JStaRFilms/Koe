@@ -6,6 +6,10 @@ import { Mic, MicOff, Copy, Trash2, AlertTriangle } from "lucide-react";
 const DAILY_LIMIT = 10;
 const STORAGE_KEY = "koe_live_demo_usage_v1";
 const MAX_RECORDING_MS = 90_000;
+const CHUNK_MIN_DURATION_MS = 10_000;
+const CHUNK_HARD_CAP_MS = 30_000;
+const PAUSE_CLOSE_MS = 1_200;
+const SPEECH_THRESHOLD = 0.018;
 
 type DemoPhase = "idle" | "recording" | "transcribing" | "done" | "error";
 
@@ -48,6 +52,15 @@ export function LiveDemo() {
   const streamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<BlobPart[]>([]);
   const stopTimeoutRef = useRef<number | null>(null);
+  const chunkStartedAtRef = useRef(0);
+  const chunkHasSpeechRef = useRef(false);
+  const lastSpeechAtRef = useRef<number | null>(null);
+  const chunkBoundaryPendingRef = useRef(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
+  const analysisFrameRef = useRef<number | null>(null);
+  const analysisDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
 
   const [phase, setPhase] = useState<DemoPhase>("idle");
   const [isClient, setIsClient] = useState(false);
@@ -86,9 +99,111 @@ export function LiveDemo() {
     }
   };
 
+  const resetChunkWindow = (startedAt = performance.now()) => {
+    chunkStartedAtRef.current = startedAt;
+    chunkHasSpeechRef.current = false;
+    lastSpeechAtRef.current = null;
+  };
+
+  const stopAudioAnalysis = () => {
+    if (analysisFrameRef.current !== null) {
+      window.cancelAnimationFrame(analysisFrameRef.current);
+      analysisFrameRef.current = null;
+    }
+
+    sourceNodeRef.current?.disconnect();
+    analyserRef.current?.disconnect();
+
+    sourceNodeRef.current = null;
+    analyserRef.current = null;
+    analysisDataRef.current = null;
+    chunkBoundaryPendingRef.current = false;
+
+    if (audioContextRef.current) {
+      void audioContextRef.current.close().catch(() => {});
+      audioContextRef.current = null;
+    }
+  };
+
+  const requestChunkBoundary = (boundaryAt = performance.now()) => {
+    const recorder = mediaRecorderRef.current;
+    if (!recorder || recorder.state !== "recording" || chunkBoundaryPendingRef.current) {
+      return;
+    }
+
+    chunkBoundaryPendingRef.current = true;
+    resetChunkWindow(boundaryAt);
+    recorder.requestData();
+  };
+
+  const startAudioAnalysis = (stream: MediaStream) => {
+    stopAudioAnalysis();
+
+    const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextCtor) {
+      return;
+    }
+
+    const context = new AudioContextCtor();
+    const analyser = context.createAnalyser();
+    analyser.fftSize = 2048;
+    analyser.smoothingTimeConstant = 0.2;
+
+    const source = context.createMediaStreamSource(stream);
+    source.connect(analyser);
+
+    audioContextRef.current = context;
+    analyserRef.current = analyser;
+    sourceNodeRef.current = source;
+    analysisDataRef.current = new Uint8Array(analyser.fftSize) as Uint8Array<ArrayBuffer>;
+
+    const tick = () => {
+      const recorder = mediaRecorderRef.current;
+      const analyserNode = analyserRef.current;
+      const data = analysisDataRef.current;
+
+      if (!recorder || recorder.state !== "recording" || !analyserNode || !data) {
+        return;
+      }
+
+      analyserNode.getByteTimeDomainData(data);
+
+      let sumSquares = 0;
+      for (const sample of data) {
+        const normalized = (sample - 128) / 128;
+        sumSquares += normalized * normalized;
+      }
+
+      const rms = Math.sqrt(sumSquares / data.length);
+      const now = performance.now();
+
+      if (rms >= SPEECH_THRESHOLD) {
+        chunkHasSpeechRef.current = true;
+        lastSpeechAtRef.current = now;
+      }
+
+      const chunkDuration = now - chunkStartedAtRef.current;
+      const reachedHardCap = chunkDuration >= CHUNK_HARD_CAP_MS;
+      const reachedSilenceBoundary =
+        chunkHasSpeechRef.current &&
+        chunkDuration >= CHUNK_MIN_DURATION_MS &&
+        lastSpeechAtRef.current !== null &&
+        now - lastSpeechAtRef.current >= PAUSE_CLOSE_MS;
+
+      if (reachedHardCap || reachedSilenceBoundary) {
+        requestChunkBoundary(now);
+      }
+
+      analysisFrameRef.current = window.requestAnimationFrame(tick);
+    };
+
+    analysisFrameRef.current = window.requestAnimationFrame(tick);
+  };
+
   useEffect(() => {
     return () => {
       clearStopTimeout();
+      stopAudioAnalysis();
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
         mediaRecorderRef.current.stop();
       }
@@ -154,10 +269,16 @@ export function LiveDemo() {
       const mimeType = preferredMimeTypes.find((type) => MediaRecorder.isTypeSupported(type));
       const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
       audioChunksRef.current = [];
+      chunkBoundaryPendingRef.current = false;
+      resetChunkWindow(performance.now());
 
       recorder.ondataavailable = (event: BlobEvent) => {
         if (event.data && event.data.size > 0) {
           audioChunksRef.current.push(event.data);
+        }
+
+        if (chunkBoundaryPendingRef.current) {
+          chunkBoundaryPendingRef.current = false;
         }
       };
 
@@ -165,11 +286,13 @@ export function LiveDemo() {
         setPhase("error");
         setStatus("Recorder error. Please retry.");
         clearStopTimeout();
+        stopAudioAnalysis();
         stopTracks();
       };
 
       recorder.onstop = () => {
         clearStopTimeout();
+        stopAudioAnalysis();
         const audioBlob = new Blob(audioChunksRef.current, {
           type: recorder.mimeType || "audio/webm",
         });
@@ -185,6 +308,7 @@ export function LiveDemo() {
 
       mediaRecorderRef.current = recorder;
       recorder.start(250);
+      startAudioAnalysis(stream);
       setPhase("recording");
       setStatus("Recording...");
 

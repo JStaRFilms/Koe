@@ -5,6 +5,8 @@ const { createSettingsWindow } = require('./settings-window');
 const { toggleRecording } = require('./services/recording-state');
 const fs = require('fs');
 
+const logger = require('./services/logger');
+
 let tray = null;
 let isRecording = false;
 
@@ -25,13 +27,13 @@ function resolveTrayIcon() {
 
         const icon = nativeImage.createFromPath(tryPath);
         if (!icon.isEmpty()) {
-            console.log('[Tray] Found icon at:', tryPath);
+            logger.info('[Tray] Found icon at:', tryPath);
             return icon.resize({ width: 16, height: 16 });
         }
     }
 
-    console.error('[Tray] Warning: no usable tray icon found.');
-    console.error('[Tray] Checked paths:', possiblePaths);
+    logger.warn('[Tray] Warning: no usable tray icon found.');
+    logger.debug('[Tray] Checked paths:', possiblePaths);
     return nativeImage.createEmpty();
 }
 

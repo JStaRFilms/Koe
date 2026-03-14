@@ -52,7 +52,7 @@ export function Hero() {
                 </h1>
 
                 <p className="text-base sm:text-lg md:text-xl text-muted mb-8 md:mb-12 max-w-lg normal-case font-mono tracking-wide leading-relaxed">
-                    Lightning-fast voice dictation for desktop. Local VAD. Powered by Groq. Zero subscriptions.
+                    Lightning-fast voice dictation across desktop and mobile. Local VAD. Powered by Groq. Zero subscriptions.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center w-full">
@@ -105,3 +105,4 @@ export function Hero() {
         </section>
     );
 }
+

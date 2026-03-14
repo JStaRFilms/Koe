@@ -1,3 +1,8 @@
+const { 
+    SessionCoordinator, 
+    joinTranscriptParts, 
+    safeAudioSeconds 
+} = require('@koe/core');
 const path = require('path');
 const { Worker } = require('worker_threads');
 const { CHANNELS } = require('../../shared/constants');
@@ -8,27 +13,43 @@ const rateLimiter = require('./rate-limiter');
 const pendingRetryService = require('./pending-retry');
 const logger = require('./logger');
 
-function joinTranscriptParts(parts) {
-    return parts
-        .map((part) => String(part || '').trim())
-        .filter(Boolean)
-        .join(' ')
-        .replace(/\s+([,.;!?])/g, '$1')
-        .replace(/\s{2,}/g, ' ')
-        .trim();
-}
-
-function safeAudioSeconds(value) {
-    const numeric = Number(value || 0);
-    return Number.isFinite(numeric) ? numeric : 0;
-}
+// Logic moved to @koe/core
 
 class TranscriptionSessionManager {
     constructor() {
         this.mainWindow = null;
-        this.sessions = new Map();
         this.worker = null;
         this.workerReady = false;
+
+        // Shared coordinator with Electron hooks
+        this.coordinator = new SessionCoordinator({
+            onStatus: (status) => this.sendStatus(status),
+            onPreview: (payload) => this.sendPreview(payload),
+            onProcessSegment: (payload) => {
+                this.ensureWorker();
+                this.worker.postMessage({
+                    type: 'process-segment',
+                    payload
+                });
+            },
+            onRefineSession: (payload) => {
+                this.ensureWorker();
+                this.worker.postMessage({
+                    type: 'refine-session',
+                    payload
+                });
+            },
+            onFinalize: async (session, text, isEnhanced) => {
+                await this.finalizeSuccessfulSession(session, text, isEnhanced);
+            },
+            onPersistRetry: async (session) => {
+                await this.persistRetryManifest(session);
+            },
+            onSegmentCommitted: async (_session, segment) => {
+                pendingRetryService.removeTempFile(segment.tempPath);
+                segment.tempPath = null;
+            }
+        });
     }
 
     init(mainWindow) {
@@ -72,37 +93,21 @@ class TranscriptionSessionManager {
     }
 
     createSession(sessionId, settings = getSettings()) {
-        const session = {
-            sessionId,
-            settings: {
-                groqApiKey: settings.groqApiKey || '',
-                language: settings.language || 'auto',
-                promptStyle: settings.promptStyle || 'Clean',
-                customPrompt: settings.customPrompt || '',
-                model: settings.model || 'whisper-large-v3-turbo',
-                enhanceText: settings.enhanceText !== false,
-                autoPaste: settings.autoPaste !== false
-            },
-            segments: new Map(),
-            nextSequenceToCommit: 0,
-            stopRequested: false,
-            finalized: false,
-            flushing: false,
-            failureError: null,
-            pendingRetrySaved: false,
-            committedRawParts: [],
-            finalRawText: '',
-            finalRefinementRequested: false,
-            finalRefinementPending: false,
-            createdAt: Date.now()
+        const sessionSettings = {
+            groqApiKey: settings.groqApiKey || '',
+            language: settings.language || 'auto',
+            promptStyle: settings.promptStyle || 'Clean',
+            customPrompt: settings.customPrompt || '',
+            model: settings.model || 'whisper-large-v3-turbo',
+            enhanceText: settings.enhanceText !== false,
+            autoPaste: settings.autoPaste !== false
         };
 
-        this.sessions.set(sessionId, session);
-        return session;
+        return this.coordinator.createSession(sessionId, sessionSettings);
     }
 
     getOrCreateSession(sessionId, settings = getSettings()) {
-        return this.sessions.get(sessionId) || this.createSession(sessionId, settings);
+        return this.coordinator.getSession(sessionId) || this.createSession(sessionId, settings);
     }
 
     sendStatus(status) {
@@ -139,38 +144,13 @@ class TranscriptionSessionManager {
     }
 
     async handleSegment(audioData) {
-        this.ensureWorker();
-
         const settings = getSettings();
         const session = this.getOrCreateSession(audioData.sessionId, settings);
-        const segment = {
-            sessionId: audioData.sessionId,
-            segmentId: audioData.segmentId,
-            sequence: audioData.sequence,
-            audioSeconds: safeAudioSeconds(audioData.audioSeconds),
-            status: 'queued',
-            buffer: audioData.buffer,
-            rawText: '',
-            tempPath: null,
-            error: null
-        };
-
-        session.segments.set(segment.sequence, segment);
-        this.worker.postMessage({
-            type: 'process-segment',
-            payload: {
-                sessionId: segment.sessionId,
-                segmentId: segment.segmentId,
-                sequence: segment.sequence,
-                audioSeconds: segment.audioSeconds,
-                buffer: segment.buffer,
-                options: session.settings
-            }
-        });
+        await this.coordinator.addSegment(session, audioData);
     }
 
     async handleSessionStopped(sessionId) {
-        const session = this.sessions.get(sessionId);
+        const session = this.coordinator.getSession(sessionId);
         if (!session) {
             this.sendStatus({
                 sessionId,
@@ -182,8 +162,8 @@ class TranscriptionSessionManager {
         }
 
         session.stopRequested = true;
-        await this.flushReadySegments(session);
-        await this.updatePostStopState(session);
+        await this.coordinator.flushReadySegments(session);
+        await this.coordinator.updatePostStopState(session);
     }
 
     async handleWorkerMessage(message) {
@@ -198,12 +178,21 @@ class TranscriptionSessionManager {
         }
 
         if (message.type === 'segment-result') {
-            await this.handleSegmentResult(message);
+            await this.coordinator.handleSegmentResult(
+                message.sessionId, 
+                message.sequence, 
+                message.rawText, 
+                !!message.empty
+            );
             return;
         }
 
         if (message.type === 'segment-error') {
-            await this.handleSegmentError(message);
+            await this.coordinator.handleSegmentError(
+                message.sessionId, 
+                message.sequence, 
+                message.error
+            );
             return;
         }
 
@@ -217,57 +206,10 @@ class TranscriptionSessionManager {
         }
     }
 
-    async handleSegmentResult(message) {
-        const session = this.sessions.get(message.sessionId);
-        if (!session) {
-            return;
-        }
-
-        const segment = session.segments.get(message.sequence);
-        if (!segment) {
-            return;
-        }
-
-        segment.rawText = String(message.rawText || '').trim();
-        segment.error = null;
-        segment.status = message.empty ? 'empty' : 'ready';
-
-        await this.flushReadySegments(session);
-        await this.updatePostStopState(session);
-    }
-
-    async handleSegmentError(message) {
-        const session = this.sessions.get(message.sessionId);
-        if (!session) {
-            return;
-        }
-
-        const segment = session.segments.get(message.sequence);
-        if (!segment) {
-            return;
-        }
-
-        segment.status = 'failed';
-        segment.error = String(message.error || 'Segment processing failed.');
-        session.failureError = segment.error;
-
-        await this.persistRetryManifest(session);
-
-        if (!session.stopRequested) {
-            this.sendStatus({
-                sessionId: session.sessionId,
-                stage: 'warning',
-                label: 'Retry Needed Later',
-                detail: 'A chunk failed. Keep talking. Retry after you stop if needed.'
-            });
-            return;
-        }
-
-        await this.updatePostStopState(session);
-    }
+    // Handlers moved to @koe/core coordinator
 
     async handleSessionRefined(message) {
-        const session = this.sessions.get(message.sessionId);
+        const session = this.coordinator.getSession(message.sessionId);
         if (!session || session.finalized) {
             return;
         }
@@ -277,7 +219,7 @@ class TranscriptionSessionManager {
     }
 
     async handleSessionRefineError(message) {
-        const session = this.sessions.get(message.sessionId);
+        const session = this.coordinator.getSession(message.sessionId);
         if (!session || session.finalized) {
             return;
         }
@@ -286,199 +228,11 @@ class TranscriptionSessionManager {
         await this.finalizeWithRawFallback(session, String(message.error || 'Session refinement failed.'));
     }
 
-    getOrderedSequences(session) {
-        return Array.from(session.segments.keys()).sort((left, right) => left - right);
-    }
+    // Helpers moved to @koe/core
 
-    getPreviewText(session) {
-        return joinTranscriptParts(session.committedRawParts);
-    }
+    // Session flow control moved to @koe/core coordinator
 
-    emitPreview(session) {
-        this.sendPreview({
-            sessionId: session.sessionId,
-            text: this.getPreviewText(session)
-        });
-    }
-
-    async flushReadySegments(session) {
-        if (session.flushing) {
-            return;
-        }
-
-        session.flushing = true;
-        let committedAny = false;
-
-        try {
-            while (true) {
-                const segment = session.segments.get(session.nextSequenceToCommit);
-                if (!segment) {
-                    break;
-                }
-
-                if (segment.status === 'failed') {
-                    break;
-                }
-
-                if (segment.status !== 'ready' && segment.status !== 'empty') {
-                    break;
-                }
-
-                if (segment.status === 'ready' && segment.rawText) {
-                    session.committedRawParts.push(segment.rawText);
-                    committedAny = true;
-                }
-
-                segment.status = 'committed';
-                segment.buffer = null;
-                segment.error = null;
-                pendingRetryService.removeTempFile(segment.tempPath);
-                segment.tempPath = null;
-                session.nextSequenceToCommit += 1;
-            }
-        } finally {
-            session.flushing = false;
-        }
-
-        if (committedAny) {
-            this.emitPreview(session);
-        }
-    }
-
-    getProcessingCounts(session) {
-        let committed = 0;
-        let unresolved = 0;
-
-        for (const segment of session.segments.values()) {
-            if (segment.status === 'committed' || segment.status === 'empty') {
-                committed += 1;
-                continue;
-            }
-
-            unresolved += 1;
-        }
-
-        return {
-            total: session.segments.size,
-            committed,
-            unresolved
-        };
-    }
-
-    isSessionSettled(session) {
-        for (const segment of session.segments.values()) {
-            if (segment.status === 'queued' || segment.status === 'processing') {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    hasBlockingFailure(session) {
-        for (const segment of session.segments.values()) {
-            if (segment.status === 'failed') {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    async updatePostStopState(session) {
-        if (!session.stopRequested || session.finalized) {
-            return;
-        }
-
-        const counts = this.getProcessingCounts(session);
-
-        if (!this.isSessionSettled(session)) {
-            const progress = counts.total > 0
-                ? Math.max(20, Math.min(78, Math.round((counts.committed / counts.total) * 100)))
-                : 24;
-
-            this.sendStatus({
-                sessionId: session.sessionId,
-                stage: 'processing',
-                label: 'Finishing up',
-                progress
-            });
-            return;
-        }
-
-        if (this.hasBlockingFailure(session)) {
-            await this.persistRetryManifest(session);
-            this.sendStatus({
-                sessionId: session.sessionId,
-                stage: 'error',
-                error: session.failureError || 'Some chunks failed. Retry to finish the transcript.',
-                detail: 'The last unsent recording is ready to resend.',
-                retryAvailable: true,
-                lingerMs: 6500
-            });
-            return;
-        }
-
-        await this.requestFinalRefinement(session);
-    }
-
-    async requestFinalRefinement(session) {
-        if (session.finalRefinementPending) {
-            this.sendStatus({
-                sessionId: session.sessionId,
-                stage: 'refining',
-                label: 'Refining',
-                progress: 90
-            });
-            return;
-        }
-
-        if (session.finalRefinementRequested) {
-            return;
-        }
-
-        const rawText = joinTranscriptParts(session.committedRawParts);
-        session.finalRawText = rawText;
-
-        if (!rawText) {
-            pendingRetryService.clearPendingRetry();
-            this.sendPreview({
-                sessionId: session.sessionId,
-                text: ''
-            });
-            this.sendStatus({
-                sessionId: session.sessionId,
-                stage: 'empty',
-                label: 'No speech detected',
-                progress: 0
-            });
-            this.sessions.delete(session.sessionId);
-            return;
-        }
-
-        if (!session.settings.enhanceText) {
-            await this.finalizeSuccessfulSession(session, rawText, false);
-            return;
-        }
-
-        session.finalRefinementRequested = true;
-        session.finalRefinementPending = true;
-        this.sendStatus({
-            sessionId: session.sessionId,
-            stage: 'refining',
-            label: 'Polishing',
-            progress: 90
-        });
-
-        this.worker.postMessage({
-            type: 'refine-session',
-            payload: {
-                sessionId: session.sessionId,
-                rawText,
-                options: session.settings
-            }
-        });
-    }
+    // Refinement moved to @koe/core coordinator
 
     async finalizeSuccessfulSession(session, refinedText, isEnhanced = true) {
         if (session.finalized) {
@@ -512,7 +266,7 @@ class TranscriptionSessionManager {
             text: outputText,
             sessionId: session.sessionId
         });
-        this.sessions.delete(session.sessionId);
+        this.coordinator.deleteSession(session.sessionId);
     }
 
     async finalizeWithRawFallback(session, errorMessage) {
@@ -536,7 +290,7 @@ class TranscriptionSessionManager {
                 retryAvailable: false,
                 lingerMs: 4500
             });
-            this.sessions.delete(session.sessionId);
+            this.coordinator.deleteSession(session.sessionId);
             return;
         }
 
@@ -567,13 +321,13 @@ class TranscriptionSessionManager {
             retryAvailable: true,
             lingerMs: 6500
         });
-        this.sessions.delete(session.sessionId);
+        this.coordinator.deleteSession(session.sessionId);
     }
 
     buildRetryManifest(session) {
         const committedSegments = [];
         const unresolvedSegments = [];
-        const orderedSequences = this.getOrderedSequences(session);
+        const orderedSequences = Array.from(session.segments.keys()).sort((left, right) => left - right);
 
         for (const sequence of orderedSequences) {
             const segment = session.segments.get(sequence);
@@ -642,7 +396,7 @@ class TranscriptionSessionManager {
     }
 
     async retryPendingSession(options = {}) {
-        const liveSession = Array.from(this.sessions.values()).find((session) => this.hasBlockingFailure(session));
+        const liveSession = this.coordinator.findSessionWithBlockingFailure();
 
         if (liveSession) {
             await this.retrySession(liveSession, options);
@@ -670,7 +424,7 @@ class TranscriptionSessionManager {
             .sort((left, right) => left.sequence - right.sequence)
             .map((segment) => segment.rawText || '')
             .filter(Boolean);
-        session.finalRawText = this.getPreviewText(session);
+        session.finalRawText = joinTranscriptParts(session.committedRawParts);
 
         for (const committed of manifest.committedSegments || []) {
             session.segments.set(committed.sequence, {
@@ -700,7 +454,10 @@ class TranscriptionSessionManager {
             });
         }
 
-        this.emitPreview(session);
+        this.sendPreview({
+            sessionId: session.sessionId,
+            text: joinTranscriptParts(session.committedRawParts)
+        });
         await this.retrySession(session, options);
         return {
             source: 'pending-session',
@@ -709,13 +466,14 @@ class TranscriptionSessionManager {
     }
 
     async retrySession(session, options = {}) {
-        const retryableSegments = this.getOrderedSequences(session)
+        const retryableSegments = Array.from(session.segments.keys())
+            .sort((left, right) => left - right)
             .map((sequence) => session.segments.get(sequence))
             .filter((segment) => segment && segment.status === 'failed');
 
         if (retryableSegments.length === 0) {
-            await this.flushReadySegments(session);
-            await this.updatePostStopState(session);
+            await this.coordinator.flushReadySegments(session);
+            await this.coordinator.updatePostStopState(session);
             return;
         }
 
@@ -753,8 +511,8 @@ class TranscriptionSessionManager {
             });
         }
 
-        await this.flushReadySegments(session);
-        await this.updatePostStopState(session);
+        await this.coordinator.flushReadySegments(session);
+        await this.coordinator.updatePostStopState(session);
     }
 }
 

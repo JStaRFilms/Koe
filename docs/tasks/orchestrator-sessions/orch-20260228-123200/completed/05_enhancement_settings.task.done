@@ -6,7 +6,7 @@
 
 ## Results
 
-Implemented the settings panel UI, wired up IPC communication for API key testing, saving user preferences natively via electron-store encrypted storage, and bound the settings modal to open on first-launch if the API key is not configured. Configured Groq Llama text enhancement utilizing `llama-3.3-70b-versatile` through `groq.js` handler which defaults to clean/formal/casual/bullet formatting according to UI selection. Wrote clipboard auto-paste script relying on powershell's `SendKeys` mechanism for simple multi-platform agnostic auto-paste fallback after clipboard write.
+Implemented the settings panel UI, wired up IPC communication for API key testing, saving user preferences natively via electron-store encrypted storage, and bound the settings modal to open on first-launch if the API key is not configured. Configured Groq Llama text enhancement utilizing `moonshotai/kimi-k2-instruct-0905` through `groq.js` handler which defaults to clean/formal/casual/bullet formatting according to UI selection. Wrote clipboard auto-paste script relying on powershell's `SendKeys` mechanism for simple multi-platform agnostic auto-paste fallback after clipboard write.
 
 ## Files Created/Modified
 

@@ -1,7 +1,7 @@
 <div align="center">
   <img src="src/assets/icons/logo.svg" width="120" alt="Koe Logo">
   <h1>Koe (声)</h1>
-  <p><strong>Lightning-Fast, Privacy-First Voice Dictation for Windows</strong></p>
+  <p><strong>Lightning-Fast, Privacy-First Voice Dictation for Windows, iOS, and Android</strong></p>
 
   [![Release](https://img.shields.io/github/v/release/JStaRFilms/Koe)](https://github.com/JStaRFilms/Koe/releases)
   [![License](https://img.shields.io/badge/license-ISC-green.svg)](LICENSE)
@@ -13,7 +13,7 @@
 
 ## What is Koe?
 
-**Koe** (声, Japanese for "voice") is a free, open-source alternative to subscription-based voice dictation tools like WhisperFlow. Press a hotkey, speak naturally, pause when you need to think, and get polished text typed where your cursor already is.
+**Koe** (声, Japanese for "voice") is a free, open-source alternative to subscription-based voice dictation tools. Press a hotkey (Desktop) or a button (Mobile), speak naturally, and get polished AI text typed at your cursor or copied to your clipboard.
 
 Unlike cloud-based solutions that charge monthly fees, Koe uses your own [Groq API key](https://console.groq.com/keys) and stays free for up to 8 hours of transcription a day on Groq's free tier.
 
@@ -30,56 +30,62 @@ Unlike cloud-based solutions that charge monthly fees, Koe uses your own [Groq A
 
 ---
 
-## Features
-
-- **Global Hotkey** — Press `Ctrl + Shift + Space` anywhere to start or stop dictation
+- **Cross-Platform** — Native performance on Windows (Desktop) and iOS/Android (Mobile)
+- **Global Hotkey (Desktop)** — Press `Ctrl + Shift + Space` anywhere to start or stop dictation
+- **Clipboard-First (Mobile)** — High-fidelity audio capture with instant polished results copied to your clipboard
 - **Pause Naturally** — Koe keeps listening through short pauses instead of treating every breath like the end of a recording
 - **Rolling Segments** — Long recordings are processed in the background as ordered chunks, so performance stays fast even on longer sessions
 - **Instant Transcription** — Groq Whisper handles speech-to-text at high speed
-- **AI Text Enhancement** — Each segment is refined before it is typed, so only polished text is committed to the target app
-- **Auto-Type** — Refined text is typed progressively into the focused text field while you are still talking
-- **Retry Failed Segments** — If a chunk fails, Koe retries only the missing part instead of rebuilding the entire session
-- **Minimalist "Pill" UI** — A compact floating interface with live voice levels, recording state, and warnings
+- **AI Text Enhancement** — Each segment is refined before it is committed, so only polished text is returned
+- **Auto-Type (Desktop)** — Refined text is typed progressively into the focused text field while you are still talking
+- **Minimalist UI** — A premium, high-contrast interface designed for focus and speed
 - **Transcription History** — One-click copy and retry for saved transcripts
 - **Usage Dashboard** — Track daily audio seconds, request pressure, and queue activity
 
 ---
 
-## Installation
+### Desktop (Windows)
 
-### Download Pre-built Installer
+1. Download the latest `.exe` from [Releases](https://github.com/JStaRFilms/Koe/releases).
+2. Install and launch. Koe will live in your system tray.
 
-1. Go to the [Releases](https://github.com/JStaRFilms/Koe/releases) page
-2. Download the latest Windows installer asset
-3. Run the installer and launch Koe
+### Mobile (iOS & Android)
 
-### Build from Source
+1. Clone the repo and navigate to `apps/mobile`.
+2. Install [Expo Go](https://expo.dev/go) on your device.
+3. Run `pnpm dev:mobile` and scan the QR code.
+*Note: Native builds (.ipa/.apk) can be generated via EAS.*
+
+### Build Everything from Source
 
 ```bash
 # Clone the repository
 git clone https://github.com/JStaRFilms/Koe.git
 cd Koe
 
-# Install dependencies
+# Install all dependencies (Monorepo)
 pnpm install
 
-# Run in development mode
+# Run Desktop
 pnpm dev
 
 # Build for production
 pnpm build
+
+# Run Mobile
+pnpm dev:mobile
 ```
 
 ### Release Builds
 
 - Real release artifacts should be built on GitHub Actions, not locally
-- Push a matching version tag such as `v1.0.5` after updating `package.json`
+- Push a matching version tag such as `v1.1.0` after updating `package.json`
 - The release workflow will build Windows and macOS and attach artifacts to that GitHub Release
 - See [docs/release-process.md](docs/release-process.md)
 
 ### Requirements
 
-- Windows 10/11 (64-bit)
+- Windows 10/11 (for Desktop) or iOS/Android (for Mobile)
 - [Groq API Key](https://console.groq.com/keys) (free tier available)
 - Microphone access
 
@@ -137,51 +143,25 @@ Configure via the settings window (right-click the tray icon):
 
 ---
 
-## Architecture
+Koe uses a shared core architecture to ensure consistency across Desktop and Mobile. Business logic lives in `@koe/core`, while platform-specific drivers handle audio and output.
 
-```
-┌─────────────────────────────────────────────┐
-│           ELECTRON MAIN PROCESS             │
-│  ┌──────────┐  ┌──────────────────────┐    │
-│  │ System   │  │ Global Shortcuts     │    │
-│  │ Tray     │  │ (Ctrl+Shift+Space)   │    │
-│  └──────────┘  └──────────────────────┘    │
-│  ┌──────────────────────────────────────┐  │
-│  │ Session Coordinator                  │  │
-│  │ ├─ Ordered segment commit            │  │
-│  │ ├─ Live auto-paste                   │  │
-│  │ └─ Retry manifest + final transcript │  │
-│  └──────────────────────────────────────┘  │
-│  ┌──────────────────────────────────────┐  │
-│  │ Worker Thread                        │  │
-│  │ ├─ Whisper STT (audio → text)        │  │
-│  │ ├─ Transcript refinement             │  │
-│  │ └─ RPM-aware request pacing          │  │
-│  └──────────────────────────────────────┘  │
-└──────────────────┬──────────────────────────┘
-                   │ IPC
-┌──────────────────┴──────────────────────────┐
-│           ELECTRON RENDERER                 │
-│  ┌──────────────────────────────────────┐   │
-│  │ Floating Pill UI                     │   │
-│  │ (always-on-top, glassmorphism)       │   │
-│  └──────────────────────────────────────┘   │
-│  ┌──────────────────────────────────────┐   │
-│  │ Audio Pipeline                       │   │
-│  │ ├─ Web Audio API (mic capture)       │   │
-│  │ ├─ Silero VAD (local speech detect)  │   │
-│  │ ├─ Rolling segment flush             │   │
-│  │ └─ WAV encoder (segment → file)      │   │
-│  └──────────────────────────────────────┘   │
-└─────────────────────────────────────────────┘
-```
+See the [Detailed Architecture Guide](docs/Architecture.md) for more info.
+
+### Platform Specifics
+
+| Feature | Desktop (Windows) | Mobile (iOS/Android) |
+|---------|-------------------|----------------------|
+| **Trigger** | Global Hotkey | Capture Button |
+| **Output** | Auto-Paste / Type | Clipboard-First |
+| **Storage** | `electron-store` | `SecureStore` |
+| **Capture Logic** | Local VAD + ordered segments | Metering-driven chunk rotation + ordered segments |
 
 ### Privacy-First Design
 
-1. **Voice Activity Detection** runs entirely offline using ONNX WebAssembly
-2. **Audio segments** are only sent for transcription after speech has been captured
-3. **Retry audio** is stored only for failed or unresolved segments, and only as temporary files
-4. **Your API key** is stored locally via `electron-store`, never sent anywhere except Groq
+1. **Desktop speech detection** runs locally using ONNX WebAssembly
+2. **Mobile recording control** stays on-device until a chunk is ready to transcribe
+3. **Retry audio** is stored only for failed or unresolved segments
+4. **Your API key** is stored locally on each platform and only used for transcription/refinement requests
 
 ---
 
@@ -217,21 +197,21 @@ The built-in scheduler tracks request pressure and keeps the app responsive whil
 ## Roadmap
 
 ### Completed
-- [x] Global hotkey toggle
+- [x] Global hotkey toggle (Desktop)
 - [x] Local VAD speech detection
 - [x] Groq Whisper transcription
 - [x] AI transcript refinement
-- [x] Auto-paste to focused window
-- [x] Transcription history
-- [x] Usage dashboard
-- [x] Long-session segmented processing
-- [x] Retry for failed segments
+- [x] Auto-paste to focused window (Desktop)
+- [x] Transcription history & Usage dashboard
+- [x] Mobile App (iOS/Android V1)
+- [x] Shared Core Extraction
 
 ### Planned
-- [ ] Custom AI prompts
-- [ ] Keyboard shortcut customization
+- [x] Custom AI prompts
+- [x] Keyboard shortcut customization
 - [ ] Export history as `.txt` / `.md`
-- [ ] macOS support
+- [x] Native macOS support (Electron)
+- [ ] Android IME (Custom Keyboard) implementation
 
 ### Future
 - [ ] Snippet library with voice shortcuts
@@ -261,24 +241,37 @@ pnpm install
 pnpm dev
 ```
 
+### Monorepo Structure
+
+Koe is transitioning to a monorepo to support multiple platforms:
+
+- **Root**: Legacy Electron Desktop app and shared workspace configuration
+- **`apps/mobile`**: Expo-based mobile client (iOS/Android)
+- **`packages/koe-core`**: Shared business logic, types, and API services
+
+### Development Commands
+
+| Target | Command | Description |
+|--------|---------|-------------|
+| **Desktop** | `pnpm dev` | Start the Electron app in dev mode |
+| **Mobile** | `pnpm dev:mobile` | Start the Expo development server |
+| **Core** | `pnpm build:core` | Build the shared logic package |
+| **All** | `pnpm type-check` | Run type-checking across all packages |
+
 ### Project Structure
 
 ```text
 Koe/
-├── src/
+├── apps/               # Application projects
+│   └── mobile/        # Expo mobile app
+├── packages/           # Shared logic
+│   └── koe-core/      # Core services (Whisper, Sessions)
+├── src/                # Legacy Desktop source
 │   ├── main/           # Electron main process
-│   │   ├── main.js     # Entry point
-│   │   ├── ipc.js      # IPC handlers
-│   │   ├── services/   # Session coordinator, worker, settings, retry
-│   │   └── ...
-│   ├── renderer/       # UI code
-│   │   ├── components/ # Pill UI, panels
-│   │   ├── audio/      # VAD, segmentation, encoding
-│   │   └── ...
-│   └── shared/         # Constants
-├── docs/               # Documentation, tasks
-├── public/             # Static assets
-└── release/            # Build output
+│   └── renderer/       # UI code
+├── docs/               # Documentation & Tasks
+├── pnpm-workspace.yaml # Workspace config
+└── package.json        # Root manifest & scripts
 ```
 
 ---

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koe Mobile - Recorder Mockup</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=IBM+Plex+Mono:wght@400;700&family=Noto+Serif+JP:wght@900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        void: '#050505',
+                        bone: '#E2DFD2',
+                        amber: '#FFB000',
+                        muted: '#888888',
+                        zinc: '#1F1F1F',
+                        crimson: '#8A0303',
+                    },
+                    fontFamily: {
+                        deco: ['Righteous', 'cursive'],
+                        mono: ['IBM Plex Mono', 'monospace'],
+                        jp: ['Noto Serif JP', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #E2DFD2;
+            font-family: 'IBM Plex Mono', monospace;
+            text-transform: uppercase;
+            overflow: hidden;
+        }
+        .scanline {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.15;
+            z-index: 100;
+        }
+        .brutal-border {
+            border: 1px solid #1F1F1F;
+        }
+        .btn-brutal {
+            position: relative;
+            background: #FFB000;
+            color: #050505;
+            padding: 16px;
+            font-weight: 700;
+            border: 2px solid #FFB000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+        .btn-brutal::after {
+            content: '';
+            position: absolute;
+            top: 4px; left: 4px; right: -6px; bottom: -6px;
+            border: 1px solid #FFB000;
+            z-index: -1;
+        }
+        .btn-stop {
+            background: #8A0303;
+            border-color: #8A0303;
+            color: #E2DFD2;
+        }
+        .btn-stop::after { border-color: #8A0303; }
+
+        .waveform-bar {
+            width: 4px;
+            background: #FFB000;
+            margin: 0 2px;
+            height: 10px;
+            animation: pulse-wave 1s infinite ease-in-out;
+        }
+        @keyframes pulse-wave {
+            0%, 100% { height: 10px; }
+            50% { height: 40px; }
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen">
+    <div class="scanline"></div>
+    
+    <!-- Giant Kanji Background -->
+    <div class="fixed inset-0 flex items-center justify-center pointer-events-none opacity-10">
+        <span class="font-jp text-[120vw]">声</span>
+    </div>
+
+    <!-- Header -->
+    <header class="p-6 border-b border-zinc relative z-10 flex justify-between items-center bg-void/50 backdrop-blur-sm">
+        <div class="flex items-center gap-2">
+            <span class="font-deco text-3xl text-amber">KOE</span>
+            <span class="font-jp text-xl opacity-30">声</span>
+        </div>
+        <div class="text-[10px] text-zinc font-bold space-y-1 text-right">
+            <div>SYS.READY</div>
+            <div>ST.IDLE</div>
+        </div>
+    </header>
+
+    <!-- Main Recording Area -->
+    <main class="flex-grow flex flex-col p-6 relative z-10 space-y-8">
+        <!-- Visualization Area -->
+        <div class="flex-grow flex flex-col items-center justify-center space-y-12">
+            <!-- Waveform (Placeholder for recording state) -->
+            <div class="flex items-center h-20 opacity-30">
+                <div class="waveform-bar" style="animation-delay: 0.1s"></div>
+                <div class="waveform-bar" style="animation-delay: 0.2s"></div>
+                <div class="waveform-bar" style="animation-delay: 0.3s"></div>
+                <div class="waveform-bar" style="animation-delay: 0.4s"></div>
+                <div class="waveform-bar" style="animation-delay: 0.5s"></div>
+                <div class="waveform-bar" style="animation-delay: 0.6s"></div>
+                <div class="waveform-bar" style="animation-delay: 0.7s"></div>
+                <div class="waveform-bar" style="animation-delay: 0.8s"></div>
+            </div>
+
+            <!-- Central "Voice Mark" -->
+            <div class="border-2 border-zinc p-4 rounded-full opacity-50">
+                <span class="font-jp text-6xl">声</span>
+            </div>
+
+            <div class="text-center space-y-2">
+                <h2 class="text-4xl font-deco text-amber animate-pulse">00:00:00</h2>
+                <p class="text-xs text-muted font-mono tracking-widest">PRESS RECORD TO COMMENCE</p>
+            </div>
+        </div>
+
+        <!-- Terminal Status Card -->
+        <div class="border border-zinc min-h-[120px] bg-zinc/5 overflow-hidden">
+            <div class="bg-zinc p-1 px-3 flex justify-between">
+                <span class="text-[9px] font-bold">LOG.CONSOLE</span>
+                <span class="text-[9px] opacity-40">AUTO_PASTE=OFF</span>
+            </div>
+            <div class="p-3 font-mono text-[11px] lowercase leading-relaxed">
+                <p class="text-amber uppercase mb-1 font-bold">[SYSTEM_INITIALIZED]</p>
+                <div class="opacity-50 space-y-1">
+                    <p>> session tx_8847 linked</p>
+                    <p>> audio_pipeline: primary_mic detected</p>
+                    <p>> awaiting user input...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons Area -->
+        <div class="pb-8">
+            <button class="btn-brutal w-full text-xl py-6 shadow-xl">START RECORDING</button>
+        </div>
+    </main>
+
+    <!-- Tab Bar (Simulated) -->
+    <footer class="border-t border-zinc p-4 flex justify-around items-center bg-zinc/10 relative z-20">
+        <div class="flex flex-col items-center text-amber text-[10px] font-bold">
+            <div class="w-1.5 h-1.5 bg-amber mb-1"></div>
+            RECORDER
+        </div>
+        <div class="flex flex-col items-center text-zinc text-[10px] font-bold">
+            <div class="w-1.5 h-1.5 bg-zinc mb-1 opacity-0"></div>
+            HISTORY
+        </div>
+        <div class="flex flex-col items-center text-zinc text-[10px] font-bold">
+            <div class="w-1.5 h-1.5 bg-zinc mb-1 opacity-0"></div>
+            SETTINGS
+        </div>
+    </footer>
+</body>
+</html>

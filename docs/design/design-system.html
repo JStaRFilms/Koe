@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Koe Mobile Design System - Terminal Noir</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Righteous&family=IBM+Plex+Mono:wght@400;700&family=Noto+Serif+JP:wght@900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        void: '#050505',
+                        bone: '#E2DFD2',
+                        amber: '#FFB000',
+                        muted: '#888888',
+                        zinc: '#1F1F1F',
+                        crimson: '#8A0303',
+                    },
+                    fontFamily: {
+                        deco: ['Righteous', 'cursive'],
+                        mono: ['IBM Plex Mono', 'monospace'],
+                        jp: ['Noto Serif JP', 'serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #050505;
+            color: #E2DFD2;
+            font-family: 'IBM Plex Mono', monospace;
+            text-transform: uppercase;
+        }
+        .scanline {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.15;
+            z-index: 100;
+        }
+        .brutal-border {
+            border: 1px solid #1F1F1F;
+        }
+        .btn-brutal {
+            position: relative;
+            background: #FFB000;
+            color: #050505;
+            padding: 12px 24px;
+            font-weight: 700;
+            border: 2px solid #FFB000;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+        .btn-brutal::after {
+            content: '';
+            position: absolute;
+            top: 4px; left: 4px; right: -6px; bottom: -6px;
+            border: 1px solid #FFB000;
+            z-index: -1;
+        }
+        .giant-kanji {
+            position: fixed;
+            font-size: 80vh;
+            color: #1F1F1F;
+            opacity: 0.3;
+            z-index: -1;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="p-8">
+    <div class="scanline"></div>
+    <div class="giant-kanji font-jp">声</div>
+
+    <div class="max-w-4xl mx-auto space-y-12 relative z-10">
+        <header class="border-b border-zinc pb-8">
+            <h1 class="font-deco text-6xl text-amber">KOE <span class="font-jp text-4xl opacity-50">声</span></h1>
+            <p class="mt-2 text-muted tracking-widest text-sm">MOBILE DESIGN SYSTEM // VERSION 1.0</p>
+        </header>
+
+        <section class="space-y-6">
+            <h2 class="text-xl font-bold border-l-4 border-amber pl-4">CORE PALETTE</h2>
+            <div class="grid grid-cols-2 md:grid-cols-6 gap-4">
+                <div class="space-y-2">
+                    <div class="h-20 bg-void border border-zinc"></div>
+                    <p class="text-xs">VOID #050505</p>
+                </div>
+                <div class="space-y-2">
+                    <div class="h-20 bg-bone border border-zinc"></div>
+                    <p class="text-xs">BONE #E2DFD2</p>
+                </div>
+                <div class="space-y-2">
+                    <div class="h-20 bg-amber border border-zinc"></div>
+                    <p class="text-xs">AMBER #FFB000</p>
+                </div>
+                <div class="space-y-2">
+                    <div class="h-20 bg-zinc border border-zinc"></div>
+                    <p class="text-xs">ZINC #1F1F1F</p>
+                </div>
+                <div class="space-y-2">
+                    <div class="h-20 bg-crimson border border-zinc"></div>
+                    <p class="text-xs">CRIMSON #8A0303</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="space-y-6">
+            <h2 class="text-xl font-bold border-l-4 border-amber pl-4">COMPONENTS</h2>
+            
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="space-y-4">
+                    <p class="text-xs text-muted">BRUTALIST BUTTONS</p>
+                    <div class="space-y-8 pt-4">
+                        <button class="btn-brutal w-full">START RECORDING</button>
+                        <button class="btn-brutal border-crimson bg-crimson w-full text-bone">DELETE SESSION</button>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <p class="text-xs text-muted">TERMINAL CARDS</p>
+                    <div class="border border-zinc p-0 overflow-hidden">
+                        <div class="bg-zinc p-2 flex justify-between items-center">
+                            <span class="text-[10px] font-bold">STATUS.TERMINAL</span>
+                            <span class="text-[10px] opacity-50">TX-409</span>
+                        </div>
+                        <div class="p-4 space-y-2 font-mono lowercase text-sm">
+                            <p class="text-amber uppercase font-bold text-xs">[PROCESSING]</p>
+                            <p>segmenting audio stream...</p>
+                            <p>requesting groq whisper-v3...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="space-y-6 pb-20">
+            <h2 class="text-xl font-bold border-l-4 border-amber pl-4">TYPOGRAPHY</h2>
+            <div class="space-y-4">
+                <p class="font-deco text-4xl">RIGHTEOUS DECO STYLE</p>
+                <p class="font-mono text-2xl">IBM PLEX MONO REGULAR</p>
+                <p class="font-jp text-6xl">声 VOICE MARK</p>
+            </div>
+        </section>
+    </div>
+</body>
+</html>
