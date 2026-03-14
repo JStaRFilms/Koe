@@ -96,10 +96,10 @@ Create an orchestrator summary with:
 
 ## Definition Of Done
 
-- [ ] README matches the new repo shape
-- [ ] Mobile limitations are documented clearly
-- [ ] Shared-core architecture is explained
-- [ ] Session summary exists with status and follow-ups
+- [x] README matches the new repo shape
+- [x] Mobile limitations are documented clearly
+- [x] Shared-core architecture is explained
+- [x] Session summary exists with status and follow-ups
 
 ## Constraints
 

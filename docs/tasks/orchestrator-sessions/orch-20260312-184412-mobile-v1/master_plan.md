@@ -3,7 +3,7 @@
 **Session ID:** orch-20260312-184412-mobile-v1  
 **Created:** 2026-03-12T17:44:12Z  
 **Source:** User request for a cross-platform mobile version, Takomi orchestrator session  
-**Status:** In Progress
+**Status:** Completed
 
 ## Overview
 
@@ -59,7 +59,7 @@ The current repo is a production-oriented Electron desktop app. The mobile work 
   - `src/main/services/transcription-session-manager.js`
   - `src/main/services/groq.js`
   - `src/renderer/audio/vad.js`
-- Mobile client does not exist yet.
+- Mobile client now exists at `apps/mobile` as an Expo Router app on SDK 54.
 - The repo already uses `pnpm`, so workspaces are the cleanest expansion path.
 
 ## Tasks
@@ -74,7 +74,7 @@ The current repo is a production-oriented Electron desktop app. The mobile work 
 | 06 | `06_release_hardening_review.task.md` | Completed | vibe-review | takomi, security-audit, context7 | Verify security, build, and device readiness |
 | 07 | `07_mobile_ui_redesign.task.md` | Completed | vibe-code | takomi, frontend-design, building-native-ui | Redesign the mobile UI shell to match the Koe brand |
 | 08 | `08_mobile_copywriting_pass.task.md` | Completed | vibe-code | takomi, copywriting | Replace placeholder mobile text with real product copy |
-| 09 | `09_docs_handoff.task.md` | In Progress | vibe-code | takomi, sync-docs | Update docs and handoff materials |
+| 09 | `09_docs_handoff.task.md` | Completed | vibe-code | takomi, sync-docs | Update docs and handoff materials |
 
 ## Dependency Graph
 

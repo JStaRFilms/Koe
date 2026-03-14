@@ -79,10 +79,33 @@ Input:
 
 The workflow checks out that exact tag, rebuilds, and re-uploads the artifacts with `--clobber`.
 
+## Mobile Release Flow (Expo)
+
+Mobile store builds are intended to use **Expo Application Services (EAS)**, but EAS project config is not committed in this repo yet.
+
+### Development Builds
+To test native modules on a physical device, first add your Expo/EAS project config, then create a development build:
+```bash
+cd apps/mobile
+pnpm dlx eas-cli build --profile development --platform ios # or android
+```
+
+### Production Store Submissions
+1. Add `eas.json` and connect the app to the correct Expo project.
+2. Ensure `app.json` has the correct `version` and platform build numbers.
+3. Run EAS Build:
+```bash
+pnpm dlx eas-cli build --profile production --platform all
+```
+4. Use `eas submit` to send builds to the Apple App Store or Google Play Store.
+
+---
+
 ## Notes For Another Agent
 
-- Do not treat "latest GitHub release" as the source of truth.
+- Do not treat "latest GitHub release" as the source of truth for Desktop.
 - The source of truth is the git tag plus `package.json`.
+- Mobile versions are managed in `apps/mobile/app.json`.
 - Do not build macOS locally from Windows.
 - Keep release automation on GitHub-hosted runners.
 - If release automation changes, keep the tag/version validation in place.
