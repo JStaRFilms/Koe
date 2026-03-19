@@ -7,6 +7,8 @@
     "dev": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
     "dev:desktop": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
     "dev:mobile": "pnpm --filter koe-mobile start",
+    "dev:mobile:android": "pnpm --filter koe-mobile android",
+    "prebuild:mobile:android": "pnpm --filter koe-mobile android:prebuild",
     "build": "vite build && electron-builder",
     "build:desktop": "vite build && electron-builder",
     "build:core": "pnpm --filter @koe/core build",

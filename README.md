@@ -52,9 +52,11 @@ Unlike cloud-based solutions that charge monthly fees, Koe uses your own [Groq A
 ### Mobile (iOS & Android)
 
 1. Clone the repo and navigate to `apps/mobile`.
-2. Install [Expo Go](https://expo.dev/go) on your device.
-3. Run `pnpm dev:mobile` and scan the QR code.
-*Note: Native builds (.ipa/.apk) can be generated via EAS.*
+2. For the Expo-hosted JS flow, install [Expo Go](https://expo.dev/go) on your device and run `pnpm dev:mobile`.
+3. For the Android IME build, run `pnpm dev:mobile:android` from the repo root, or `pnpm --filter koe-mobile android` from `apps/mobile`.
+4. The Android IME requires a native development build, so Expo Go is not enough for keyboard registration.
+5. If you regenerate the Android project, use `pnpm prebuild:mobile:android` first, then run the native Android build again.
+*Note: Native builds (.ipa/.apk) can also be generated via EAS.*
 
 ### Build Everything from Source
 
@@ -255,6 +257,7 @@ Koe is transitioning to a monorepo to support multiple platforms:
 |--------|---------|-------------|
 | **Desktop** | `pnpm dev` | Start the Electron app in dev mode |
 | **Mobile** | `pnpm dev:mobile` | Start the Expo development server |
+| **Android IME** | `pnpm dev:mobile:android` | Build and launch the native Android dev client |
 | **Core** | `pnpm build:core` | Build the shared logic package |
 | **All** | `pnpm type-check` | Run type-checking across all packages |
 

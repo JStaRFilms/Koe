@@ -123,7 +123,7 @@ The existing mobile Expo app remains the control center for:
 | # | Task File | Status | Mode | Skills | Description |
 |---|---|---|---|---|---|
 | 01 | `01_android_ime_architecture_and_native_boundary.task.md` | Pending | vibe-architect/code | takomi, avoid-feature-creep, context7 | Define the IME architecture, native storage boundary, and minimal v1 contract |
-| 02 | `02_android_native_project_and_ime_registration.task.md` | Pending | vibe-code | takomi, context7 | Generate the Android native project, register the IME service, and make Koe show up in the keyboard list |
+| 02 | `02_android_native_project_and_ime_registration.task.md` | Completed | vibe-code | takomi, context7 | Generate the Android native project, register the IME service, and make Koe show up in the keyboard list |
 | 03 | `03_voice_input_view_and_commit_text_prototype.task.md` | Pending | vibe-code | takomi, avoid-feature-creep, context7 | Build the minimal voice keyboard UI and prove text insertion with a static commit prototype |
 | 04 | `04_ime_audio_capture_and_session_state.task.md` | Pending | vibe-code | takomi, context7 | Add microphone capture, session lifecycle, and in-keyboard status handling |
 | 05 | `05_ime_transcription_refinement_and_insert.task.md` | Pending | vibe-code | takomi, context7 | Connect the IME to Groq transcription/refinement and insert final text into the focused field |

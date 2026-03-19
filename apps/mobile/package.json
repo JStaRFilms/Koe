@@ -4,7 +4,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",
-    "android": "expo start --android",
+    "android": "expo run:android",
+    "android:prebuild": "expo prebuild --platform android --no-install",
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "eslint .",

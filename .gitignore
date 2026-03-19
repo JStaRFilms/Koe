@@ -52,3 +52,8 @@ android/
 *.p12
 *.key
 *.mobileprovision
+
+# Keep the checked-in Android IME project under apps/mobile
+!apps/mobile/android/
+!apps/mobile/android/**
+apps/mobile/android/app/debug.keystore
