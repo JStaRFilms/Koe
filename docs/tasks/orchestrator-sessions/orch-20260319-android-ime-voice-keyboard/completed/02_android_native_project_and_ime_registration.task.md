@@ -28,7 +28,7 @@
 > | Skill | Path | Why |
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Confirm current Expo prebuild and Android IME registration docs |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Confirm current Expo prebuild and Android IME registration docs |
 
 ---
 

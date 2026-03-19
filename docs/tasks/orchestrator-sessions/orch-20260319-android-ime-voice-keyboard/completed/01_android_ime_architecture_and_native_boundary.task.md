@@ -33,7 +33,7 @@
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Orchestration workflow |
 > | `avoid-feature-creep` | `C:/Users/johno/.codex/skills/avoid-feature-creep/SKILL.md` | Keep v1 voice-only and avoid full-keyboard scope |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify Android IME and Expo native docs |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Verify Android IME and Expo native docs |
 
 ---
 

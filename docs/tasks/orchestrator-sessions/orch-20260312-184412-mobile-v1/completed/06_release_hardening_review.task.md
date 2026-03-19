@@ -29,7 +29,7 @@
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `security-audit` | `C:/Users/johno/.codex/skills/security-audit/SKILL.md` | Deep mobile and supply-chain review |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify current package/platform guidance |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Verify current package/platform guidance |
 
 ### Check Additional Skills
 > Scan the available skills list and load anything clearly relevant before reviewing.

@@ -29,7 +29,7 @@
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `frontend-design` | `C:/Users/johno/.codex/skills/frontend-design/SKILL.md` | Small but clear edit UX |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify any editor or platform references if needed |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Verify any editor or platform references if needed |
 
 ---
 

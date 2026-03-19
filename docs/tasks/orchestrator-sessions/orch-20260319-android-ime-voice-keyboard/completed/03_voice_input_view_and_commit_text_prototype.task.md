@@ -28,7 +28,7 @@
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `avoid-feature-creep` | `C:/Users/johno/.codex/skills/avoid-feature-creep/SKILL.md` | Keep the UI voice-first instead of building a full keyboard |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify current Android input-connection behavior |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Verify current Android input-connection behavior |
 
 ---
 
@@ -52,10 +52,10 @@ Build the minimal Koe voice keyboard surface and prove that the IME can insert t
 
 ## Definition Of Done
 
-- [ ] The IME shows a minimal voice-first input surface
-- [ ] A static or test string can be committed into a focused field
-- [ ] The UI includes a way to switch to another keyboard
-- [ ] No full QWERTY keyboard layout is introduced
+- [x] The IME shows a minimal voice-first input surface
+- [x] A static or test string can be committed into a focused field
+- [x] The UI includes a way to switch to another keyboard
+- [x] No full QWERTY keyboard layout is introduced
 
 ## Notes
 

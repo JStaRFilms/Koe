@@ -31,7 +31,7 @@
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `sync-docs` | `C:/Users/johno/.codex/skills/sync-docs/SKILL.md` | Documentation alignment |
 > | `webapp-testing` | `C:/Users/johno/.codex/skills/webapp-testing/SKILL.md` | Desktop verification where possible |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Validate any final dependency/API assumptions |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Validate any final dependency/API assumptions |
 
 ---
 

@@ -84,7 +84,7 @@ This session does **not** include Android-only access experiments such as widget
 |---|---|---|---|
 | `takomi` | Yes | All tasks | Orchestration workflow and mode selection |
 | `spawn-task` | Yes | This session | Task prompt structure |
-| `context7` | Yes | Tasks 02-07 | Current docs for Electron, Expo, file pickers, and storage |
+| `` | Yes | Tasks 02-07 | Current docs for Electron, Expo, file pickers, and storage |
 | `building-native-ui` | Yes | Tasks 03, 05, 06 | Mobile UX and Expo-native behavior |
 | `frontend-design` | Yes | Tasks 04, 05, 06 | Clean edit and onboarding UX |
 | `sync-docs` | Yes | Task 07 | Final doc sync |
@@ -126,13 +126,13 @@ This session does **not** include Android-only access experiments such as widget
 
 | # | Task File | Status | Mode | Skills | Description |
 |---|---|---|---|---|---|
-| 01 | `01_shared_voice_memory_foundation.task.md` | Pending | vibe-architect/code | takomi, context7 | Define shared data model and storage contracts for voice profile and correction memory |
-| 02 | `02_desktop_audio_file_upload.task.md` | Pending | vibe-code | takomi, context7 | Add audio file upload flow to desktop |
-| 03 | `03_mobile_audio_file_upload.task.md` | Pending | vibe-code | takomi, context7, building-native-ui | Add audio file upload flow to mobile |
-| 04 | `04_desktop_edit_and_learn.task.md` | Pending | vibe-code | takomi, frontend-design, context7 | Add edit-last-output and learn-from-correction flow on desktop |
-| 05 | `05_mobile_edit_and_learn.task.md` | Pending | vibe-code | takomi, frontend-design, building-native-ui, context7 | Add edit-last-output and learn-from-correction flow on mobile |
-| 06 | `06_onboarding_names_and_profile.task.md` | Pending | vibe-code | takomi, frontend-design, building-native-ui, context7 | Add short onboarding and profile management for names, brands, jargon, and preferred spellings |
-| 07 | `07_integration_verification_and_docs.task.md` | Pending | vibe-review/code | takomi, sync-docs, webapp-testing, context7 | Wire learned memory into processing, verify flows, and update docs |
+| 01 | `01_shared_voice_memory_foundation.task.md` | Pending | vibe-architect/code | takomi,  | Define shared data model and storage contracts for voice profile and correction memory |
+| 02 | `02_desktop_audio_file_upload.task.md` | Pending | vibe-code | takomi,  | Add audio file upload flow to desktop |
+| 03 | `03_mobile_audio_file_upload.task.md` | Pending | vibe-code | takomi, , building-native-ui | Add audio file upload flow to mobile |
+| 04 | `04_desktop_edit_and_learn.task.md` | Pending | vibe-code | takomi, frontend-design,  | Add edit-last-output and learn-from-correction flow on desktop |
+| 05 | `05_mobile_edit_and_learn.task.md` | Pending | vibe-code | takomi, frontend-design, building-native-ui,  | Add edit-last-output and learn-from-correction flow on mobile |
+| 06 | `06_onboarding_names_and_profile.task.md` | Pending | vibe-code | takomi, frontend-design, building-native-ui,  | Add short onboarding and profile management for names, brands, jargon, and preferred spellings |
+| 07 | `07_integration_verification_and_docs.task.md` | Pending | vibe-review/code | takomi, sync-docs, webapp-testing,  | Wire learned memory into processing, verify flows, and update docs |
 
 ## Dependency Graph
 

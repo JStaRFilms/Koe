@@ -35,7 +35,7 @@ The current repo is a production-oriented Electron desktop app. The mobile work 
 | `building-native-ui` | Yes | Tasks 03-07 | Expo Router and native UI guidance |
 | `frontend-design` | Yes | Task 07 | Distinctive branded mobile UI redesign |
 | `copywriting` | Yes | Task 08 | Replace placeholder mobile copy with real product language |
-| `context7` | Yes | Tasks 01-06 | Current Expo and library docs |
+| `` | Yes | Tasks 01-06 | Current Expo and library docs |
 | `upgrading-expo` | Yes | Task 03 | Expo setup and dependency hygiene |
 | `security-audit` | Yes | Task 06 | Mobile security and release review |
 | `sync-docs` | Yes | Task 09 | Keep docs aligned with the new mobile architecture |
@@ -66,12 +66,12 @@ The current repo is a production-oriented Electron desktop app. The mobile work 
 
 | # | Task File | Status | Mode | Skills | Description |
 |---|---|---|---|---|---|
-| 01 | `01_workspace_foundation.task.md` | Completed | vibe-code | takomi, monorepo-management, context7 | Add workspace structure without breaking desktop |
-| 02 | `02_shared_core_extraction.task.md` | Completed | vibe-code | takomi, context7 | Extract portable transcription/session logic |
-| 03 | `03_mobile_app_scaffold.task.md` | Completed | vibe-code | takomi, building-native-ui, upgrading-expo, context7 | Create Expo mobile shell and navigation |
-| 04 | `04_mobile_recording_pipeline.task.md` | Completed | vibe-code | takomi, building-native-ui, context7 | Implement recording, segmentation, provider calls, retry |
-| 05 | `05_mobile_product_shell.task.md` | Completed | vibe-code | takomi, building-native-ui, context7 | Build recorder UX, history, settings, clipboard flow |
-| 06 | `06_release_hardening_review.task.md` | Completed | vibe-review | takomi, security-audit, context7 | Verify security, build, and device readiness |
+| 01 | `01_workspace_foundation.task.md` | Completed | vibe-code | takomi, monorepo-management,  | Add workspace structure without breaking desktop |
+| 02 | `02_shared_core_extraction.task.md` | Completed | vibe-code | takomi,  | Extract portable transcription/session logic |
+| 03 | `03_mobile_app_scaffold.task.md` | Completed | vibe-code | takomi, building-native-ui, upgrading-expo,  | Create Expo mobile shell and navigation |
+| 04 | `04_mobile_recording_pipeline.task.md` | Completed | vibe-code | takomi, building-native-ui,  | Implement recording, segmentation, provider calls, retry |
+| 05 | `05_mobile_product_shell.task.md` | Completed | vibe-code | takomi, building-native-ui,  | Build recorder UX, history, settings, clipboard flow |
+| 06 | `06_release_hardening_review.task.md` | Completed | vibe-review | takomi, security-audit,  | Verify security, build, and device readiness |
 | 07 | `07_mobile_ui_redesign.task.md` | Completed | vibe-code | takomi, frontend-design, building-native-ui | Redesign the mobile UI shell to match the Koe brand |
 | 08 | `08_mobile_copywriting_pass.task.md` | Completed | vibe-code | takomi, copywriting | Replace placeholder mobile text with real product copy |
 | 09 | `09_docs_handoff.task.md` | Completed | vibe-code | takomi, sync-docs | Update docs and handoff materials |

@@ -29,7 +29,7 @@
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `sync-docs` | `C:/Users/johno/.codex/skills/sync-docs/SKILL.md` | Keep docs aligned with the final behavior |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Validate any last-mile API assumptions |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Validate any last-mile API assumptions |
 
 ---
 

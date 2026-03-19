@@ -1,5 +1,18 @@
 <resources>
   <string name="app_name">Koe</string>
+  <string name="ime_action_mic">Mic</string>
+  <string name="ime_action_stop">Stop</string>
+  <string name="ime_action_cancel">Cancel</string>
+  <string name="ime_action_switch_keyboard">Keyboard</string>
+  <string name="ime_hint">Prototype only: tap Mic to commit a static test string.</string>
+  <string name="ime_prototype_text">Koe voice test</string>
+  <string name="ime_status_idle">Idle: ready to insert text.</string>
+  <string name="ime_status_working">Working: inserted the prototype text.</string>
+  <string name="ime_status_no_active_field">No active text field to receive input.</string>
+  <string name="ime_status_no_commit_support">This field does not support text commit.</string>
+  <string name="ime_status_commit_failed">Could not commit text into the focused field.</string>
+  <string name="ime_status_switch_unavailable">Keyboard switch is unavailable on this device.</string>
+  <string name="ime_status_picker_opened">Opening keyboard picker.</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
 </resources>

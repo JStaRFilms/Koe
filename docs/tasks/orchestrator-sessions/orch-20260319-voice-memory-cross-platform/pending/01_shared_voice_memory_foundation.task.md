@@ -29,7 +29,7 @@
 > | Skill | Path | Why |
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Orchestration workflow |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify any library or platform API changes |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Verify any library or platform API changes |
 
 ---
 

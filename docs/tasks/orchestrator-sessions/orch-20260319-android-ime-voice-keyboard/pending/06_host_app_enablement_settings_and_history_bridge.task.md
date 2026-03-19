@@ -29,7 +29,7 @@
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
 > | `building-native-ui` | `C:/Users/johno/.codex/skills/building-native-ui/SKILL.md` | Mobile-native enablement and settings UX |
 > | `frontend-design` | `C:/Users/johno/.codex/skills/frontend-design/SKILL.md` | Clear onboarding and affordance design |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Confirm any platform-specific setup guidance |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Confirm any platform-specific setup guidance |
 
 ---
 

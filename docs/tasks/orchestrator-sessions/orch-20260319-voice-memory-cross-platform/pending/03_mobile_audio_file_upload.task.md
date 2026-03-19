@@ -28,7 +28,7 @@
 > | Skill | Path | Why |
 > |---|---|---|
 > | `takomi` | `C:/Users/johno/.codex/skills/takomi/SKILL.md` | Workflow orchestration |
-> | `context7` | `C:/Users/johno/.codex/skills/context7/SKILL.md` | Verify Expo-compatible file import APIs |
+> | `` | `C:/Users/johno/.codex/skills//SKILL.md` | Verify Expo-compatible file import APIs |
 > | `building-native-ui` | `C:/Users/johno/.codex/skills/building-native-ui/SKILL.md` | Mobile UX and Expo behavior |
 
 ---

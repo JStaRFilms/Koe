@@ -229,7 +229,7 @@ Hotkey → Start Mic → VAD detects speech → Buffer audio
 |---|---|
 | `frontend-design` | Premium UI for the floating window |
 | `ui-ux-pro-max` | Color palette, typography, micro-animations |
-| `context7` | Electron API docs, Vite config docs |
+| `` | Electron API docs, Vite config docs |
 | `webapp-testing` | Verify the Electron app with Playwright |
 
 ### Build Order
@@ -294,6 +294,6 @@ When approved, the Orchestrator should:
 1. Run `/vibe-genesis` with this Vision Brief as context
 2. Scaffold an Electron + Vite project in the workspace
 3. Implement features in the Build Order (Phase 1 → 6)
-4. Inject `frontend-design`, `ui-ux-pro-max`, `context7` skills during UI phases
+4. Inject `frontend-design`, `ui-ux-pro-max`, `` skills during UI phases
 5. Run `/mode-review` after each phase
 6. Package with `electron-builder` for Windows

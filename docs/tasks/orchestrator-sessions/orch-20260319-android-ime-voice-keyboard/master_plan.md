@@ -53,11 +53,11 @@ The existing mobile Expo app remains the control center for:
 
 ## Current Repo State
 
-- `apps/mobile` is an Expo Router app with **no checked-in native `android/` project yet**.
+- `apps/mobile` now has a checked-in native `android/` project for the IME workflow.
 - Mobile dictation currently runs from React Native UI and copies final text to clipboard.
 - Mobile settings and API key are stored through Expo SecureStore.
 - `@koe/core` already contains reusable prompt, provider, text, and session helpers, but the current mobile recording pipeline is tied to React hooks and app UI.
-- Existing backlog item `FR-024` already reserves Android IME work and should now point at this execution session.
+- Existing backlog item `FR-024` already reserves Android IME work and points at this execution session.
 
 ## Cheapest-First Architecture
 
@@ -101,7 +101,7 @@ The existing mobile Expo app remains the control center for:
 |---|---|---|---|
 | `takomi` | Yes | All tasks | Orchestration workflow and session structure |
 | `avoid-feature-creep` | Yes | Tasks 01-06 | Prevent accidental expansion into a full keyboard product |
-| `context7` | Yes | Tasks 01-07 | Verify current Android IME, Expo native, and storage docs |
+| `` | Yes | Tasks 01-07 | Verify current Android IME, Expo native, and storage docs |
 | `building-native-ui` | Yes | Tasks 02, 06 | Host app UX and mobile-native setup flows |
 | `frontend-design` | Yes | Task 06 | Make enablement/onboarding UI clear and intentional |
 | `sync-docs` | Yes | Task 07 | Keep docs aligned with the implementation |
@@ -122,13 +122,13 @@ The existing mobile Expo app remains the control center for:
 
 | # | Task File | Status | Mode | Skills | Description |
 |---|---|---|---|---|---|
-| 01 | `01_android_ime_architecture_and_native_boundary.task.md` | Pending | vibe-architect/code | takomi, avoid-feature-creep, context7 | Define the IME architecture, native storage boundary, and minimal v1 contract |
-| 02 | `02_android_native_project_and_ime_registration.task.md` | Completed | vibe-code | takomi, context7 | Generate the Android native project, register the IME service, and make Koe show up in the keyboard list |
-| 03 | `03_voice_input_view_and_commit_text_prototype.task.md` | Pending | vibe-code | takomi, avoid-feature-creep, context7 | Build the minimal voice keyboard UI and prove text insertion with a static commit prototype |
-| 04 | `04_ime_audio_capture_and_session_state.task.md` | Pending | vibe-code | takomi, context7 | Add microphone capture, session lifecycle, and in-keyboard status handling |
-| 05 | `05_ime_transcription_refinement_and_insert.task.md` | Pending | vibe-code | takomi, context7 | Connect the IME to Groq transcription/refinement and insert final text into the focused field |
-| 06 | `06_host_app_enablement_settings_and_history_bridge.task.md` | Pending | vibe-code | takomi, building-native-ui, frontend-design, context7 | Add host-app UX for enabling the keyboard, sharing settings, and surfacing IME history/retry state |
-| 07 | `07_android_ime_verification_fallbacks_and_docs.task.md` | Pending | vibe-review/code | takomi, sync-docs, context7 | Verify flows, harden clipboard fallback/error handling, and update docs |
+| 01 | `01_android_ime_architecture_and_native_boundary.task.md` | Completed | vibe-architect/code | takomi, avoid-feature-creep,  | Define the IME architecture, native storage boundary, and minimal v1 contract |
+| 02 | `02_android_native_project_and_ime_registration.task.md` | Completed | vibe-code | takomi,  | Generate the Android native project, register the IME service, and make Koe show up in the keyboard list |
+| 03 | `03_voice_input_view_and_commit_text_prototype.task.md` | Completed | vibe-code | takomi, avoid-feature-creep,  | Build the minimal voice keyboard UI and prove text insertion with a static commit prototype |
+| 04 | `04_ime_audio_capture_and_session_state.task.md` | Pending | vibe-code | takomi,  | Add microphone capture, session lifecycle, and in-keyboard status handling |
+| 05 | `05_ime_transcription_refinement_and_insert.task.md` | Pending | vibe-code | takomi,  | Connect the IME to Groq transcription/refinement and insert final text into the focused field |
+| 06 | `06_host_app_enablement_settings_and_history_bridge.task.md` | Pending | vibe-code | takomi, building-native-ui, frontend-design,  | Add host-app UX for enabling the keyboard, sharing settings, and surfacing IME history/retry state |
+| 07 | `07_android_ime_verification_fallbacks_and_docs.task.md` | Pending | vibe-review/code | takomi, sync-docs,  | Verify flows, harden clipboard fallback/error handling, and update docs |
 
 ## Dependency Graph
 

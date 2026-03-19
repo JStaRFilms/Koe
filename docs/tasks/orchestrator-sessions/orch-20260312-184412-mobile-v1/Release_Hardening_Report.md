@@ -40,9 +40,9 @@
 ### P3 - Low (Fixed)
 
 #### 3. Task 6 prompt had a malformed required-skills row
-- **Issue:** The `context7` entry in the Task 6 prompt table was truncated.
+- **Issue:** The `` entry in the Task 6 prompt table was truncated.
 - **Risk:** The review instructions were internally inconsistent for the next agent.
-- **Fix:** Restored the full `context7` skill row.
+- **Fix:** Restored the full `` skill row.
 - **File:** `docs/tasks/orchestrator-sessions/orch-20260312-184412-mobile-v1/completed/06_release_hardening_review.task.md`
 
 ---

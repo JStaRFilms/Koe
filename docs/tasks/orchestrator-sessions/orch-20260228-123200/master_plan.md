@@ -14,7 +14,7 @@
 | `ui-ux-pro-max` | `skills/ui-ux-pro-max/SKILL.md` | Phase 4 (UI) |
 | `webapp-testing` | `skills/webapp-testing/SKILL.md` | Verification |
 
-> **Note:** Context7 excluded (currently unavailable per user).
+> **Note:**  excluded (currently unavailable per user).
 
 ---
 
