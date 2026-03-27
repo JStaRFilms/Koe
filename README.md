@@ -89,6 +89,12 @@ pnpm rebuild electron esbuild protobufjs electron-winstaller
 - The release workflow will build Windows and macOS and attach artifacts to that GitHub Release
 - See [docs/release-process.md](docs/release-process.md)
 
+### Vercel Deployment
+
+- The marketing website is the Next.js app in `koe-website/`
+- In Vercel Project Settings -> Build and Deployment -> Root Directory, set the root to `koe-website`
+- Leave the framework as Next.js for that project
+
 ### Requirements
 
 - Windows 10/11 (for Desktop) or iOS/Android (for Mobile)
