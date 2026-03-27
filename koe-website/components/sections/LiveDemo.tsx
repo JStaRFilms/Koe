@@ -155,7 +155,7 @@ export function LiveDemo() {
     audioContextRef.current = context;
     analyserRef.current = analyser;
     sourceNodeRef.current = source;
-    analysisDataRef.current = new Uint8Array(analyser.fftSize) as Uint8Array<ArrayBuffer>;
+    analysisDataRef.current = new Uint8Array(new ArrayBuffer(analyser.fftSize));
 
     const tick = () => {
       const recorder = mediaRecorderRef.current;

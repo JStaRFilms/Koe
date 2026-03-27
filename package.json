@@ -7,13 +7,16 @@
     "dev": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
     "dev:desktop": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
     "dev:mobile": "pnpm --filter koe-mobile start",
+    "dev:website": "pnpm --filter website dev",
     "build": "vite build && electron-builder",
     "build:desktop": "vite build && electron-builder",
     "build:core": "pnpm --filter @koe/core build",
+    "build:website": "pnpm --filter website build",
     "build:mac": "vite build && electron-builder --mac dmg zip --universal",
     "build:ci": "vite build && electron-builder --publish never",
     "build:mac:ci": "vite build && electron-builder --mac dmg zip --universal --publish never",
-    "type-check": "pnpm -r type-check"
+    "type-check": "pnpm -r type-check",
+    "vercel-build": "pnpm --filter website build"
   },
   "repository": {
     "type": "git",
@@ -47,6 +50,9 @@
     "concurrently": "^9.2.1",
     "electron": "^40.6.1",
     "electron-builder": "^26.8.1",
+    "next": "16.1.6",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
     "typescript": "5.3.3",
     "vite": "^7.3.1",
     "vite-plugin-static-copy": "^3.2.0"

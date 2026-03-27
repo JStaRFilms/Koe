@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
   turbopack: {
-    root: path.join(__dirname),
+    root: path.join(__dirname, ".."),
   },
   trailingSlash: true,
 };

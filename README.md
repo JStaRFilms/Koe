@@ -94,6 +94,7 @@ pnpm rebuild electron esbuild protobufjs electron-winstaller
 - The marketing website is the Next.js app in `koe-website/`
 - In Vercel Project Settings -> Build and Deployment -> Root Directory, set the root to `koe-website`
 - Leave the framework as Next.js for that project
+- A root-level `vercel.json` is also included as a fallback so root builds target `koe-website`
 
 ### Requirements
 
