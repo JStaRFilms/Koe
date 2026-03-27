@@ -62,3 +62,7 @@ flowchart LR
 ### 2026-03-02: PowerShell SendKeys Quote Fix
 - **Problem:** `"^v"` inner quotes stripped by `exec()` shell, causing parse error
 - **Solution:** Use single quotes `'^v'` inside PowerShell command
+
+### 2026-03-27: Desktop Z-Order Hardening
+- **Problem:** On Windows desktop, the hotkey could start transcription while the pill stayed hidden behind other top-most windows
+- **Solution:** Promote the pill to a stronger Electron always-on-top level on Windows and reassert z-order with `moveTop()` whenever it is shown

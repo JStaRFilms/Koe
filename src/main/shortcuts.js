@@ -6,6 +6,7 @@ const { toggleRecording } = require('./services/recording-state');
 const { retryAndPasteTranscript } = require('./services/retry-transcript');
 const historyService = require('./services/history');
 const pendingRetryService = require('./services/pending-retry');
+const { showPillWindow } = require('./services/pill-window');
 const { closeSettingsWindow } = require('./settings-window');
 const logger = require('./services/logger');
 
@@ -37,7 +38,7 @@ function handleRecordingToggle(mainWindow) {
 
     if (mainWindow && !mainWindow.isDestroyed()) {
         if (recordingState.isRecording) {
-            mainWindow.showInactive();
+            showPillWindow(mainWindow);
         }
         mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, recordingState);
     }
@@ -49,7 +50,7 @@ async function handleRetryLastTranscript(mainWindow) {
     await wait(200);
 
     if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.showInactive();
+        showPillWindow(mainWindow);
     }
 
     try {

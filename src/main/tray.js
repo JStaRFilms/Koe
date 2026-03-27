@@ -3,6 +3,7 @@ const path = require('path');
 const { CHANNELS } = require('../shared/constants');
 const { createSettingsWindow } = require('./settings-window');
 const { toggleRecording } = require('./services/recording-state');
+const { showPillWindow } = require('./services/pill-window');
 const fs = require('fs');
 
 const logger = require('./services/logger');
@@ -46,7 +47,7 @@ function setupTray(mainWindow) {
             if (mainWindow.isVisible()) {
                 mainWindow.hide();
             } else {
-                mainWindow.showInactive();
+                showPillWindow(mainWindow);
             }
         }
     });
@@ -68,7 +69,7 @@ function updateContextMenu(mainWindow) {
 
                 if (mainWindow && !mainWindow.isDestroyed()) {
                     if (isRecording) {
-                        mainWindow.showInactive();
+                        showPillWindow(mainWindow);
                     }
                     mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, recordingState);
                 }

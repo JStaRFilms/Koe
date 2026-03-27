@@ -76,6 +76,12 @@ pnpm build
 pnpm dev:mobile
 ```
 
+If `pnpm dev` fails with `Electron failed to install correctly`, pnpm likely skipped Electron's install script during dependency setup. This repo now allowlists the required build/install scripts for pnpm 10+, and an existing checkout can be repaired with:
+
+```bash
+pnpm rebuild electron esbuild protobufjs electron-winstaller
+```
+
 ### Release Builds
 
 - Real release artifacts should be built on GitHub Actions, not locally

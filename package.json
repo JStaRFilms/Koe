@@ -35,6 +35,14 @@
     "url": "https://github.com/JStaRFilms/Koe/issues"
   },
   "homepage": "https://github.com/JStaRFilms/Koe#readme",
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron",
+      "esbuild",
+      "protobufjs",
+      "electron-winstaller"
+    ]
+  },
   "devDependencies": {
     "concurrently": "^9.2.1",
     "electron": "^40.6.1",

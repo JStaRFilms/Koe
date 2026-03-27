@@ -1,9 +1,10 @@
-const { app, BrowserWindow, screen } = require('electron');
+const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const { setupTray } = require('./tray');
 const { registerShortcuts, unregisterShortcuts } = require('./shortcuts');
 const { setupIpcHandlers } = require('./ipc');
 const { createSettingsWindow } = require('./settings-window');
+const { getPillBounds, pinPillWindow } = require('./services/pill-window');
 const { getSetting } = require('./services/settings');
 const { applyLaunchOnStartupPreference } = require('./services/startup');
 const { applyAutoUpdatePreference } = require('./services/updater');
@@ -13,19 +14,13 @@ const logger = require('./services/logger');
 let mainWindow = null;
 
 function createWindow() {
-    const primaryDisplay = screen.getPrimaryDisplay();
-    const { width: screenW, height: screenH } = primaryDisplay.workAreaSize;
-
-    const pillWidth = 480;
-    const pillHeight = 160;
-    const pillX = Math.round((screenW - pillWidth) / 2);
-    const pillY = screenH - pillHeight - 16;
+    const pillBounds = getPillBounds();
 
     mainWindow = new BrowserWindow({
-        width: pillWidth,
-        height: pillHeight,
-        x: pillX,
-        y: pillY,
+        width: pillBounds.width,
+        height: pillBounds.height,
+        x: pillBounds.x,
+        y: pillBounds.y,
         frame: false,
         transparent: true,
         alwaysOnTop: true,
@@ -42,6 +37,8 @@ function createWindow() {
         }
     });
 
+    pinPillWindow(mainWindow);
+
     const isDev = !app.isPackaged;
     if (isDev) {
         mainWindow.loadURL('http://localhost:5173');
@@ -52,6 +49,10 @@ function createWindow() {
     mainWindow.on('show', () => {
         const { CHANNELS } = require('../shared/constants');
         if (mainWindow && !mainWindow.isDestroyed()) {
+            pinPillWindow(mainWindow);
+            if (typeof mainWindow.moveTop === 'function') {
+                mainWindow.moveTop();
+            }
             mainWindow.webContents.send(CHANNELS.WINDOW_ANIMATE_IN);
         }
     });
