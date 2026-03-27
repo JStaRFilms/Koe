@@ -12,6 +12,7 @@ const PAUSE_CLOSE_MS = 1_200;
 const SPEECH_THRESHOLD = 0.018;
 
 type DemoPhase = "idle" | "recording" | "transcribing" | "done" | "error";
+type TimeDomainData = Parameters<AnalyserNode["getByteTimeDomainData"]>[0];
 
 function getTodayKey() {
   return new Date().toISOString().slice(0, 10);
@@ -60,7 +61,7 @@ export function LiveDemo() {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analysisFrameRef = useRef<number | null>(null);
-  const analysisDataRef = useRef<Uint8Array<ArrayBuffer> | null>(null);
+  const analysisDataRef = useRef<TimeDomainData | null>(null);
 
   const [phase, setPhase] = useState<DemoPhase>("idle");
   const [isClient, setIsClient] = useState(false);
@@ -155,7 +156,7 @@ export function LiveDemo() {
     audioContextRef.current = context;
     analyserRef.current = analyser;
     sourceNodeRef.current = source;
-    analysisDataRef.current = new Uint8Array(new ArrayBuffer(analyser.fftSize));
+    analysisDataRef.current = new Uint8Array(new ArrayBuffer(analyser.fftSize)) as TimeDomainData;
 
     const tick = () => {
       const recorder = mediaRecorderRef.current;
