@@ -3,7 +3,7 @@
 **Session ID:** orch-20260319-android-ime-voice-keyboard  
 **Task:** 03_voice_input_view_and_commit_text_prototype  
 **Status:** Completed  
-**Date:** 2026-03-19
+**Date:** 2026-03-20
 
 ## Summary
 
@@ -19,7 +19,8 @@ Task 03 replaces the placeholder IME surface with a minimal voice-first input vi
 
 ## Verification Notes
 
-- Android Kotlin compilation could not be completed in this environment because `JAVA_HOME` is not set and `java` is unavailable on `PATH`
+- `:app:compileDebugKotlin` passes
+- `:app:assembleDebug` passes after moving Android build and CMake staging to a short temp directory
 - Android docs were used to confirm `InputConnection.commitText(..., 1)` is the supported insertion path and `InputMethodManager.showInputMethodPicker()` is the supported switch affordance
 - No full QWERTY keyboard layout was introduced
 

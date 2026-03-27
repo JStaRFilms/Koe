@@ -12,6 +12,20 @@ buildscript {
   }
 }
 
+def androidBuildRoot = new File(System.getProperty("java.io.tmpdir"), "koe-android-build")
+
+subprojects { subproject ->
+  subproject.buildDir = new File(androidBuildRoot, subproject.name)
+
+  subproject.plugins.withId("com.android.application") {
+    subproject.android.externalNativeBuild.cmake.buildStagingDirectory = new File(androidBuildRoot, "${subproject.name}-cxx")
+  }
+
+  subproject.plugins.withId("com.android.library") {
+    subproject.android.externalNativeBuild.cmake.buildStagingDirectory = new File(androidBuildRoot, "${subproject.name}-cxx")
+  }
+}
+
 allprojects {
   repositories {
     google()
