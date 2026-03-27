@@ -7,10 +7,10 @@ This project should use GitHub Actions for release builds.
 - App version comes from `package.json`.
 - Release tags must match that version exactly.
 - Example:
-  `package.json` version is `1.1.0`
-  release tag must be `v1.1.0`
-  `package.json` version is `1.1.0`
-  release tag must be `v1.1.0`
+  `package.json` version is `1.1.3`
+  release tag must be `v1.1.3`
+  `package.json` version is `1.1.3`
+  release tag must be `v1.1.3`
 
 If the tag and `package.json` version do not match, the release workflow fails on purpose.
 
@@ -59,13 +59,10 @@ Example:
 
 ```bash
 git add package.json pnpm-lock.yaml .
-git commit -m "Release v1.1.0"
-git commit -m "Release v1.1.0"
+git commit -m "Release v1.1.3"
 git push origin main
-git tag v1.1.0
-git push origin v1.1.0
-git tag v1.1.0
-git push origin v1.1.0
+git tag v1.1.3
+git push origin v1.1.3
 ```
 
 Once the tag is pushed, GitHub Actions automatically builds and publishes the Windows and macOS release artifacts.
@@ -80,8 +77,8 @@ Use this when:
 - you need to republish artifacts for an existing tag
 
 Input:
-- `release_tag`: for example `v1.1.0`
-- `release_tag`: for example `v1.1.0`
+- `release_tag`: for example `v1.1.3`
+- `release_tag`: for example `v1.1.3`
 
 The workflow checks out that exact tag, rebuilds, and re-uploads the artifacts with `--clobber`.
 

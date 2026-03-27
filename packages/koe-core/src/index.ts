@@ -2,7 +2,7 @@
  * Koe Core - Shared Logic
  */
 
-export const KOE_CORE_VERSION = '1.1.0';
+export const KOE_CORE_VERSION = '1.1.3';
 
 // Constants
 export * from './constants';
