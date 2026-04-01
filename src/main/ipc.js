@@ -132,7 +132,7 @@ function setupIpcHandlers(mainWindow) {
     });
 
     ipcMain.on(CHANNELS.TOGGLE_RECORDING, (event, options) => {
-        handleRecordingToggle(mainWindowRef, options);
+        handleRecordingToggle(mainWindow, options);
     });
 
 

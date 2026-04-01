@@ -26,6 +26,10 @@ export function resolveEnhancementPrompt(promptStyle: string = 'Clean', customPr
         return contextPrefix + 'Refine this meeting transcript into a structured set of meeting notes. Include a summary of the main points and a clear list of action items with owners if mentioned. Maintain a professional tone and ensure the output is concise and actionable.';
     }
 
+    if (promptStyle === 'Nigerian Pidgin') {
+        return contextPrefix + 'Refine this dictated text in Nigerian Pidgin English. Maintain the authentic Pidgin grammar and flow. Use standard Pidgin spellings (e.g., "sabi", "wetin", "pikin", "don", "go", "dey"). Fix punctuation and remove obvious verbal filler while preserving the original meaning and vibrant tone. Do not translate it to standard English.';
+    }
+
     return contextPrefix + DEFAULT_CUSTOM_PROMPT;
 }
 
