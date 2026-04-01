@@ -137,7 +137,7 @@ async function refineText(rawText, options) {
         return '';
     }
 
-    const stylePrompt = resolveEnhancementPrompt(options.promptStyle || 'Clean', options.customPrompt || '');
+    const stylePrompt = resolveEnhancementPrompt(options.promptStyle || 'Clean', options.customPrompt || '', options.smartContext || '');
     const systemPrompt = `${REFINEMENT_GUARDRAILS} ${stylePrompt} Before you finish, check the final text and remove any transcript tags if any remain.`.trim();
 
     await waitForRequestSlot();

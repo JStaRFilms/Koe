@@ -373,6 +373,14 @@
             </svg>
             Usage
         </button>
+        <button class="tab-btn" data-tab="tasks" id="tab-tasks">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="9 11 12 14 22 4"></polyline>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            Tasks
+        </button>
     </div>
 
     <!-- Content Area -->
@@ -435,6 +443,7 @@
                             <option value="ko">Korean</option>
                             <option value="zh">Chinese</option>
                             <option value="ru">Russian</option>
+                            <option value="pcm">Nigerian Pidgin</option>
                         </select>
                     </div>
 
@@ -450,7 +459,15 @@
                             <option value="Professional">Professional (Formal tone)</option>
                             <option value="Casual">Casual (Conversational)</option>
                             <option value="Concise">Concise (Remove filler words)</option>
+                            <option value="Meeting Notes">Meeting Notes (Summaries & Tasks)</option>
+                            <option value="Nigerian Pidgin">Nigerian Pidgin (Standard spellings)</option>
                         </select>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Smart Context</label>
+                        <input type="text" id="smart-context" placeholder="e.g., Engineering Meeting, Sales Call">
+                        <small class="input-help">Helps the AI understand the topic and jargon.</small>
                     </div>
 
                     <div class="setting-group" id="custom-prompt-group">
@@ -535,6 +552,16 @@
                         <label for="auto-update">Auto-update every 2 hours</label>
                     </div>
 
+                    <div class="setting-group checkbox-group">
+                        <input type="checkbox" id="always-on">
+                        <label for="always-on">Always-on background listening</label>
+                    </div>
+
+                    <div class="setting-group checkbox-group">
+                        <input type="checkbox" id="privacy-mode">
+                        <label for="privacy-mode">Privacy Mode (Hide live transcript)</label>
+                    </div>
+
                     <div class="setting-group">
                         <label>Debug & Support</label>
                         <button class="secondary-btn" id="btn-open-logs">
@@ -563,6 +590,9 @@
             <!-- Hidden close button for HistoryPanel compatibility -->
             <button id="btn-close-history" style="display: none;"></button>
             <div class="history-panel" id="history-panel">
+                <div class="history-header" style="padding: 12px; border-bottom: 1px solid var(--koe-border);">
+                    <input type="text" id="history-search" placeholder="Search transcripts..." style="width: 100%; background: var(--koe-input-bg); border: 1px solid var(--koe-border); border-radius: 6px; padding: 8px; color: var(--koe-text); font-family: var(--font-family); font-size: 12px;">
+                </div>
                 <div class="history-body" id="history-content">
                     <div class="empty-state">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
@@ -618,6 +648,21 @@
                     <div class="usage-bar-track">
                         <div class="usage-bar-fill bar-green" id="bar-rpm"></div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tasks Tab -->
+        <div class="tab-panel" id="panel-tasks">
+            <div class="section-header">Action Items from Meetings</div>
+            <div id="tasks-content" class="history-body">
+                <!-- Tasks will be rendered here -->
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="9 11 12 14 22 4"></polyline>
+                        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+                    </svg>
+                    <p>No action items extracted yet.</p>
                 </div>
             </div>
         </div>

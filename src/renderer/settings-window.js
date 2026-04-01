@@ -6,6 +6,7 @@
 import { SettingsPanel } from './components/settings-panel.js';
 import { HistoryPanel } from './components/history-panel.js';
 import { UsageMeter } from './components/usage-meter.js';
+import { TasksPanel } from './components/tasks-panel.js';
 import { getThemeManager } from './components/theme-manager.js';
 
 class SettingsWindow {
@@ -85,6 +86,11 @@ class SettingsWindow {
                     this.panels.usage.show();
                 }
                 break;
+            case 'tasks':
+                if (this.panels.tasks) {
+                    this.panels.tasks.show();
+                }
+                break;
         }
     }
 
@@ -106,6 +112,11 @@ class SettingsWindow {
             case 'usage':
                 if (this.panels.usage) {
                     this.panels.usage.hide();
+                }
+                break;
+            case 'tasks':
+                if (this.panels.tasks) {
+                    this.panels.tasks.hide();
                 }
                 break;
         }
@@ -161,9 +172,9 @@ class SettingsWindow {
             }
 
             // Tab switching with Ctrl/Cmd + number
-            if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '3') {
+            if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '4') {
                 e.preventDefault();
-                const tabMap = { '1': 'settings', '2': 'history', '3': 'usage' };
+                const tabMap = { '1': 'settings', '2': 'history', '3': 'usage', '4': 'tasks' };
                 this.switchToTab(tabMap[e.key]);
             }
         });
@@ -206,6 +217,13 @@ class SettingsWindow {
             this.panels.usage = new UsageMeter();
         } catch (error) {
             console.error('Failed to initialize UsageMeter:', error);
+        }
+
+        try {
+            // Initialize Tasks Panel
+            this.panels.tasks = new TasksPanel();
+        } catch (error) {
+            console.error('Failed to initialize TasksPanel:', error);
         }
 
         // Show initial panel

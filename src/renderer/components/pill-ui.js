@@ -20,6 +20,8 @@ export class PillUI {
         this.timer = document.getElementById('pill-timer');
         this.progressBar = document.getElementById('pill-progress-bar');
         this.visualizerBars = Array.from(document.querySelectorAll('.viz-bar'));
+        this.insightsOverlay = document.getElementById('insights-overlay');
+        this.insightsContent = document.getElementById('insights-content');
         this.detailStreamTimer = null;
         this.detailSourceText = '';
         this.detailQueuedWords = [];
@@ -106,6 +108,12 @@ export class PillUI {
                 this.stopTimer();
                 this.stopVisualizer();
                 break;
+            case 'meeting_suggested':
+                this.status.textContent = 'Meeting Detected';
+                this.setDetail('Join Meeting to take notes?');
+                this.stopTimer();
+                this.stopVisualizer();
+                break;
             case 'recording':
                 this.status.textContent = 'Listening...';
                 this.setDetail('');
@@ -130,6 +138,26 @@ export class PillUI {
             default:
                 this.stopVisualizer();
         }
+    }
+
+    setInsights(insight = '') {
+        if (!this.insightsOverlay || !this.insightsContent) return;
+
+        if (!insight) {
+            this.insightsOverlay.classList.remove('has-content');
+            return;
+        }
+
+        this.insightsContent.innerHTML = `
+            <div class="insights-header">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+                AI Insight
+            </div>
+            ${insight}
+        `;
+        this.insightsOverlay.classList.add('has-content');
     }
 
     setDetail(message = '') {

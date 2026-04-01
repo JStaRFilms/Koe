@@ -4,7 +4,10 @@
 
 /* â”€â”€â”€ Pill Shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 .pill-shell {
-    position: relative;
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px) scale(0.95);
     --pill-shell-width: 304px;
     width: min(var(--pill-shell-width), calc(100vw - 20px));
     display: flex;
@@ -36,12 +39,12 @@
 
 .pill-shell.animate-in {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: translateX(-50%) translateY(0) scale(1);
 }
 
 .pill-shell.animate-out {
     opacity: 0;
-    transform: translateY(12px) scale(0.97);
+    transform: translateX(-50%) translateY(12px) scale(0.97);
     transition:
         opacity 0.25s cubic-bezier(0.4, 0, 1, 1),
         transform 0.25s cubic-bezier(0.4, 0, 1, 1);
@@ -54,7 +57,27 @@
     height: var(--pill-height);
     border-radius: var(--pill-radius);
     overflow: hidden;
-    cursor: default;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pill:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow:
+        var(--shadow-pill),
+        0 8px 24px 4px rgba(10, 10, 16, 0.45);
+}
+
+.pill:active {
+    transform: translateY(0) scale(0.98);
+}
+
+[data-theme="light"] .pill:hover {
+    border-color: rgba(100, 115, 150, 0.6);
+    box-shadow:
+        0 24px 42px rgba(100, 115, 150, 0.32),
+        0 10px 22px rgba(60, 75, 110, 0.22);
 }
 
 /* â”€â”€â”€ Glass Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
@@ -943,4 +966,46 @@
     to {
         stroke-dashoffset: 0;
     }
+}
+
+/* --- Live Insights Overlay --- */
+.insights-overlay {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    width: 320px;
+    background: var(--koe-surface);
+    border: 1px solid var(--koe-border);
+    backdrop-filter: blur(24px);
+    border-radius: 12px;
+    padding: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    z-index: 100;
+}
+
+.insights-overlay.has-content {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.insights-content {
+    font-size: 11px;
+    color: var(--koe-text);
+    line-height: 1.4;
+}
+
+.insights-header {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--koe-accent);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
 }

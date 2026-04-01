@@ -16,6 +16,9 @@ export class SettingsPanel {
         this.chkAutoPaste = document.getElementById('auto-paste');
         this.chkLaunchOnStartup = document.getElementById('launch-on-startup');
         this.chkAutoUpdate = document.getElementById('auto-update');
+        this.chkAlwaysOn = document.getElementById('always-on');
+        this.chkPrivacyMode = document.getElementById('privacy-mode');
+        this.inputSmartContext = document.getElementById('smart-context');
         this.testResult = document.getElementById('test-key-result');
         this.cloudProcessingUrlGroup = document.getElementById('cloud-processing-url-group');
         this.promptStyleGroup = document.getElementById('prompt-style-group');
@@ -305,6 +308,15 @@ export class SettingsPanel {
                 if (this.chkAutoUpdate) {
                     this.chkAutoUpdate.checked = settings.autoUpdate !== false;
                 }
+                if (this.chkAlwaysOn) {
+                    this.chkAlwaysOn.checked = settings.alwaysOn === true;
+                }
+                if (this.chkPrivacyMode) {
+                    this.chkPrivacyMode.checked = settings.privacyMode === true;
+                }
+                if (this.inputSmartContext) {
+                    this.inputSmartContext.value = settings.smartContext || '';
+                }
 
                 // Load new settings
                 if (this.selModel) {
@@ -341,6 +353,9 @@ export class SettingsPanel {
             autoPaste: this.chkAutoPaste.checked,
             launchOnStartup: this.chkLaunchOnStartup ? this.chkLaunchOnStartup.checked : true,
             autoUpdate: this.chkAutoUpdate ? this.chkAutoUpdate.checked : true,
+            alwaysOn: this.chkAlwaysOn ? this.chkAlwaysOn.checked : false,
+            privacyMode: this.chkPrivacyMode ? this.chkPrivacyMode.checked : false,
+            smartContext: this.inputSmartContext ? this.inputSmartContext.value.trim() : '',
             model: this.selModel ? this.selModel.value : 'whisper-large-v3-turbo',
             theme: this.selTheme ? this.selTheme.value : 'dark',
             hotkey: this.pendingHotkey || (this.inputHotkey ? this.parseHotkeyFromDisplay(this.inputHotkey.value) : 'CommandOrControl+Shift+Space')
