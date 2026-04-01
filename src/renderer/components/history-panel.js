@@ -6,6 +6,7 @@ export class HistoryPanel {
         this.btnClear = document.getElementById('btn-clear-history');
         this.btnCopyAll = document.getElementById('btn-copy-history');
         this.btnExport = document.getElementById('btn-export-history');
+        this.searchField = document.getElementById('history-search');
 
         if (this.btnClose) {
             this.btnClose.addEventListener('click', () => this.hide());
@@ -21,6 +22,10 @@ export class HistoryPanel {
 
         if (this.btnExport) {
             this.btnExport.addEventListener('click', () => this.exportHistory());
+        }
+
+        if (this.searchField) {
+            this.searchField.addEventListener('input', (e) => this.searchHistory(e.target.value));
         }
     }
 
@@ -39,10 +44,24 @@ export class HistoryPanel {
         if (!window.api || !window.api.getHistory) return;
 
         try {
-            const history = await window.api.getHistory();
+            const query = this.searchField ? this.searchField.value : '';
+            const history = query
+                ? await window.api.searchHistory(query)
+                : await window.api.getHistory();
             this.renderHistory(history);
         } catch (error) {
             window.api.log(`Failed to load history: ${error.message}`);
+        }
+    }
+
+    async searchHistory(query) {
+        if (!window.api || !window.api.searchHistory) return;
+
+        try {
+            const history = await window.api.searchHistory(query);
+            this.renderHistory(history);
+        } catch (error) {
+            window.api.log(`Failed to search history: ${error.message}`);
         }
     }
 

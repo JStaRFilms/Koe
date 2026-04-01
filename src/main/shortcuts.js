@@ -30,9 +30,9 @@ function sendRetryStatus(mainWindow, status, fallbackSessionId = null) {
     });
 }
 
-function handleRecordingToggle(mainWindow) {
+function handleRecordingToggle(mainWindow, options = {}) {
     const recordingState = toggleRecording();
-    logger.info(`Global hotkey triggered. Recording state: ${recordingState.isRecording} (session ${recordingState.sessionId})`);
+    logger.info(`Recording toggle triggered. Recording state: ${recordingState.isRecording} (session ${recordingState.sessionId})`);
 
     setRecordingState(recordingState.isRecording, mainWindow);
 
@@ -40,7 +40,10 @@ function handleRecordingToggle(mainWindow) {
         if (recordingState.isRecording) {
             showPillWindow(mainWindow);
         }
-        mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, recordingState);
+        mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, {
+            ...recordingState,
+            overrides: options
+        });
     }
 }
 
@@ -171,5 +174,6 @@ module.exports = {
     registerShortcuts,
     unregisterShortcuts,
     updateHotkey,
-    getCurrentHotkey
+    getCurrentHotkey,
+    handleRecordingToggle
 };

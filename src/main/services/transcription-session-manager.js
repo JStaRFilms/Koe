@@ -5,9 +5,13 @@ const {
 } = require('@koe/core');
 const path = require('path');
 const { Worker } = require('worker_threads');
+const Store = require('electron-store').default || require('electron-store');
+const { v4: uuidv4 } = require('uuid');
 const { CHANNELS } = require('../../shared/constants');
 const { getSettings } = require('./settings');
 const { autoPaste, writeToClipboard } = require('./clipboard');
+const { Notification } = require('electron');
+const emailService = require('./email-service');
 const historyService = require('./history');
 const rateLimiter = require('./rate-limiter');
 const pendingRetryService = require('./pending-retry');
@@ -92,22 +96,23 @@ class TranscriptionSessionManager {
         }
     }
 
-    createSession(sessionId, settings = getSettings()) {
+    createSession(sessionId, settings = getSettings(), overrides = {}) {
         const sessionSettings = {
             groqApiKey: settings.groqApiKey || '',
             language: settings.language || 'auto',
-            promptStyle: settings.promptStyle || 'Clean',
+            promptStyle: overrides.promptStyle || settings.promptStyle || 'Clean',
             customPrompt: settings.customPrompt || '',
             model: settings.model || 'whisper-large-v3-turbo',
             enhanceText: settings.enhanceText !== false,
-            autoPaste: settings.autoPaste !== false
+            autoPaste: settings.autoPaste !== false,
+            smartContext: settings.smartContext || ''
         };
 
         return this.coordinator.createSession(sessionId, sessionSettings);
     }
 
-    getOrCreateSession(sessionId, settings = getSettings()) {
-        return this.coordinator.getSession(sessionId) || this.createSession(sessionId, settings);
+    getOrCreateSession(sessionId, settings = getSettings(), overrides = {}) {
+        return this.coordinator.getSession(sessionId) || this.createSession(sessionId, settings, overrides);
     }
 
     sendStatus(status) {
@@ -145,7 +150,7 @@ class TranscriptionSessionManager {
 
     async handleSegment(audioData) {
         const settings = getSettings();
-        const session = this.getOrCreateSession(audioData.sessionId, settings);
+        const session = this.getOrCreateSession(audioData.sessionId, settings, audioData.overrides);
         await this.coordinator.addSegment(session, audioData);
     }
 
@@ -246,6 +251,26 @@ class TranscriptionSessionManager {
         writeToClipboard(outputText);
         if (session.settings.autoPaste) {
             await autoPaste(outputText);
+        }
+
+        if (session.settings.promptStyle === 'Meeting Notes') {
+            const settings = getSettings();
+
+            const actionItems = this.extractActionItems(outputText);
+            if (actionItems.length > 0) {
+                this.saveActionItems(actionItems);
+            }
+
+            const notification = new Notification({
+                title: 'Koe - Meeting Summary Ready',
+                body: outputText.slice(0, 100) + '...',
+                silent: false
+            });
+            notification.show();
+
+            if (settings.sendEmailSummaries && settings.userEmail) {
+                emailService.sendMeetingSummary(settings.userEmail, outputText);
+            }
         }
 
         historyService.addHistoryEntry({
@@ -463,6 +488,40 @@ class TranscriptionSessionManager {
             source: 'pending-session',
             sessionId: session.sessionId
         };
+    }
+
+    extractActionItems(text) {
+        // Basic extraction logic: looking for lines that start with - or * and seem like tasks
+        const lines = text.split('\n');
+        const tasks = [];
+        let inActionItems = false;
+
+        for (const line of lines) {
+            const trimmed = line.trim().toLowerCase();
+            if (trimmed.includes('action items') || trimmed.includes('tasks') || trimmed.includes('to-do')) {
+                inActionItems = true;
+                continue;
+            }
+
+            if (inActionItems && (line.trim().startsWith('-') || line.trim().startsWith('*'))) {
+                tasks.push(line.trim().substring(1).trim());
+            } else if (inActionItems && line.trim() === '') {
+                inActionItems = false;
+            }
+        }
+        return tasks;
+    }
+
+    saveActionItems(tasks) {
+        const historyStore = new Store({ name: 'tasks-history' });
+        const existingTasks = historyStore.get('tasks', []);
+        const newTasks = tasks.map(task => ({
+            id: uuidv4(),
+            task,
+            timestamp: Date.now(),
+            completed: false
+        }));
+        historyStore.set('tasks', [...newTasks, ...existingTasks]);
     }
 
     async retrySession(session, options = {}) {
