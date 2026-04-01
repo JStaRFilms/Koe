@@ -142,8 +142,15 @@ async function init() {
         pill.animateIn();
     });
 
+    window.api.onMeetingDetected(() => {
+        pill.animateIn();
+        pill.setState('meeting_suggested');
+    });
+
+
     window.api.onRecordingToggle(async (payload) => {
         const recordingPayload = normalizeRecordingPayload(payload);
+        const overrides = payload?.overrides || {};
 
         if (recordingPayload.isRecording) {
             if (vadInitFailed || !isVADReady()) {
@@ -159,7 +166,7 @@ async function init() {
             pill.setState('recording');
 
             try {
-                await startListening(activeSessionId);
+                await startListening(activeSessionId, overrides);
             } catch (err) {
                 isRecording = false;
                 pill.setError(getErrorLabel(err.message), activeSessionId);
@@ -301,7 +308,12 @@ async function init() {
     if (pillElement) {
         pillElement.addEventListener('click', () => {
             if (window.api && window.api.toggleRecording) {
-                window.api.toggleRecording();
+                if (pill.state === 'meeting_suggested') {
+                    // Join meeting mode
+                    window.api.toggleRecording({ promptStyle: 'Meeting Notes' });
+                } else {
+                    window.api.toggleRecording();
+                }
             }
         });
     }

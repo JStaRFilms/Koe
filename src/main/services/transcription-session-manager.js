@@ -8,6 +8,8 @@ const { Worker } = require('worker_threads');
 const { CHANNELS } = require('../../shared/constants');
 const { getSettings } = require('./settings');
 const { autoPaste, writeToClipboard } = require('./clipboard');
+const { Notification } = require('electron');
+const emailService = require('./email-service');
 const historyService = require('./history');
 const rateLimiter = require('./rate-limiter');
 const pendingRetryService = require('./pending-retry');
@@ -92,11 +94,11 @@ class TranscriptionSessionManager {
         }
     }
 
-    createSession(sessionId, settings = getSettings()) {
+    createSession(sessionId, settings = getSettings(), overrides = {}) {
         const sessionSettings = {
             groqApiKey: settings.groqApiKey || '',
             language: settings.language || 'auto',
-            promptStyle: settings.promptStyle || 'Clean',
+            promptStyle: overrides.promptStyle || settings.promptStyle || 'Clean',
             customPrompt: settings.customPrompt || '',
             model: settings.model || 'whisper-large-v3-turbo',
             enhanceText: settings.enhanceText !== false,
@@ -106,8 +108,8 @@ class TranscriptionSessionManager {
         return this.coordinator.createSession(sessionId, sessionSettings);
     }
 
-    getOrCreateSession(sessionId, settings = getSettings()) {
-        return this.coordinator.getSession(sessionId) || this.createSession(sessionId, settings);
+    getOrCreateSession(sessionId, settings = getSettings(), overrides = {}) {
+        return this.coordinator.getSession(sessionId) || this.createSession(sessionId, settings, overrides);
     }
 
     sendStatus(status) {
@@ -145,7 +147,7 @@ class TranscriptionSessionManager {
 
     async handleSegment(audioData) {
         const settings = getSettings();
-        const session = this.getOrCreateSession(audioData.sessionId, settings);
+        const session = this.getOrCreateSession(audioData.sessionId, settings, audioData.overrides);
         await this.coordinator.addSegment(session, audioData);
     }
 
@@ -246,6 +248,21 @@ class TranscriptionSessionManager {
         writeToClipboard(outputText);
         if (session.settings.autoPaste) {
             await autoPaste(outputText);
+        }
+
+        if (session.settings.promptStyle === 'Meeting Notes') {
+            const settings = getSettings();
+
+            const notification = new Notification({
+                title: 'Koe - Meeting Summary Ready',
+                body: outputText.slice(0, 100) + '...',
+                silent: false
+            });
+            notification.show();
+
+            if (settings.sendEmailSummaries && settings.userEmail) {
+                emailService.sendMeetingSummary(settings.userEmail, outputText);
+            }
         }
 
         historyService.addHistoryEntry({

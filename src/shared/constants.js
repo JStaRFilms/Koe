@@ -9,6 +9,7 @@ const CHANNELS = {
     TRANSCRIPTION_COMPLETE: 'transcription:complete',
     TRANSCRIPTION_PREVIEW: 'transcription:preview',
     WINDOW_ANIMATE_IN: 'window:animate-in',
+    MEETING_DETECTED: 'meeting:detected',
 
     // Renderer -> Main
     GET_SETTINGS: 'settings:get',
@@ -49,7 +50,9 @@ const DEFAULT_SETTINGS = {
     customPrompt: DEFAULT_CUSTOM_PROMPT,
     model: 'whisper-large-v3-turbo',
     cloudProcessingEnabled: false,
-    cloudProcessingUrl: ''
+    cloudProcessingUrl: '',
+    userEmail: '',
+    sendEmailSummaries: true
 };
 
 module.exports = {

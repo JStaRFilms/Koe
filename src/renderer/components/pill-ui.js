@@ -106,6 +106,12 @@ export class PillUI {
                 this.stopTimer();
                 this.stopVisualizer();
                 break;
+            case 'meeting_suggested':
+                this.status.textContent = 'Meeting Detected';
+                this.setDetail('Join Meeting to take notes?');
+                this.stopTimer();
+                this.stopVisualizer();
+                break;
             case 'recording':
                 this.status.textContent = 'Listening...';
                 this.setDetail('');

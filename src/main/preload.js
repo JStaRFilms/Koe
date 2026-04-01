@@ -17,6 +17,11 @@ contextBridge.exposeInMainWorld('api', {
         ipcRenderer.on(CHANNELS.WINDOW_ANIMATE_IN, () => callback());
     },
 
+    onMeetingDetected: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.MEETING_DETECTED);
+        ipcRenderer.on(CHANNELS.MEETING_DETECTED, () => callback());
+    },
+
     // Settings
     getSettings: () => ipcRenderer.invoke(CHANNELS.GET_SETTINGS),
     saveSettings: (settings) => ipcRenderer.invoke(CHANNELS.SAVE_SETTINGS, settings),
@@ -39,7 +44,7 @@ contextBridge.exposeInMainWorld('api', {
     openLogsFolder: () => ipcRenderer.invoke('app:open-logs'),
 
     // Audio
-    toggleRecording: () => ipcRenderer.send(CHANNELS.TOGGLE_RECORDING),
+    toggleRecording: (options = {}) => ipcRenderer.send(CHANNELS.TOGGLE_RECORDING, options),
     sendAudioSegment: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SEGMENT, payload),
     sendAudioChunk: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SEGMENT, payload),
     notifyAudioSessionStopped: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SESSION_STOPPED, payload),

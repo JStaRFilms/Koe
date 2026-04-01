@@ -114,9 +114,10 @@ function setupIpcHandlers(mainWindow) {
         closeSettingsWindow();
     });
 
-    ipcMain.on(CHANNELS.TOGGLE_RECORDING, () => {
-        handleRecordingToggle(mainWindowRef);
+    ipcMain.on(CHANNELS.TOGGLE_RECORDING, (event, options) => {
+        handleRecordingToggle(mainWindowRef, options);
     });
+
 
     ipcMain.on(CHANNELS.AUDIO_SEGMENT, (event, audioData) => {
         sessionManager.handleSegment(audioData).catch((error) => {

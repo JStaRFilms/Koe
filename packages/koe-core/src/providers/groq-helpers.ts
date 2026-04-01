@@ -21,6 +21,10 @@ export function resolveEnhancementPrompt(promptStyle: string = 'Clean', customPr
         return 'Refine this dictated text into a tighter version with less filler while keeping the original meaning. Remove filler words like um, uh, and obvious filler mistranscriptions like ohms only when they are clearly filler, not when they are literal or technical. Never use em dashes, and do not add transcript tags or any other wrapper markup.';
     }
 
+    if (promptStyle === 'Meeting Notes' || promptStyle === 'Meeting') {
+        return 'Refine this meeting transcript into a structured set of meeting notes. Include a summary of the main points and a clear list of action items with owners if mentioned. Maintain a professional tone and ensure the output is concise and actionable.';
+    }
+
     return DEFAULT_CUSTOM_PROMPT;
 }
 
