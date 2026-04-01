@@ -17,6 +17,7 @@ const CHANNELS = {
     LOG: 'app:log',
     AUDIO_SEGMENT: 'audio:segment',
     AUDIO_SESSION_STOPPED: 'audio:session-stopped',
+    TOGGLE_RECORDING: 'recording:toggle',
     WINDOW_MINIMIZE: 'window:minimize',
     WINDOW_CLOSE: 'window:close',
     WINDOW_HIDE: 'window:hide',
@@ -37,7 +38,7 @@ const CHANNELS = {
 
 const DEFAULT_SETTINGS = {
     groqApiKey: '',
-    hotkey: 'CommandOrControl+Shift+Space',
+    hotkey: 'Alt+Shift+S',
     language: 'auto',
     enhanceText: true,
     autoPaste: true,

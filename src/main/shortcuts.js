@@ -171,5 +171,6 @@ module.exports = {
     registerShortcuts,
     unregisterShortcuts,
     updateHotkey,
-    getCurrentHotkey
+    getCurrentHotkey,
+    handleRecordingToggle
 };

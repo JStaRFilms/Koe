@@ -39,6 +39,7 @@ contextBridge.exposeInMainWorld('api', {
     openLogsFolder: () => ipcRenderer.invoke('app:open-logs'),
 
     // Audio
+    toggleRecording: () => ipcRenderer.send(CHANNELS.TOGGLE_RECORDING),
     sendAudioSegment: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SEGMENT, payload),
     sendAudioChunk: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SEGMENT, payload),
     notifyAudioSessionStopped: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SESSION_STOPPED, payload),

@@ -8,7 +8,7 @@ const { retryAndPasteTranscript } = require('./services/retry-transcript');
 const pendingRetryService = require('./services/pending-retry');
 const sessionManager = require('./services/transcription-session-manager');
 const { closeSettingsWindow } = require('./settings-window');
-const { updateHotkey } = require('./shortcuts');
+const { updateHotkey, handleRecordingToggle } = require('./shortcuts');
 const { applyLaunchOnStartupPreference } = require('./services/startup');
 const { applyAutoUpdatePreference } = require('./services/updater');
 const logger = require('./services/logger');
@@ -112,6 +112,10 @@ function setupIpcHandlers(mainWindow) {
 
     ipcMain.on(CHANNELS.CLOSE_SETTINGS_WINDOW, () => {
         closeSettingsWindow();
+    });
+
+    ipcMain.on(CHANNELS.TOGGLE_RECORDING, () => {
+        handleRecordingToggle(mainWindowRef);
     });
 
     ipcMain.on(CHANNELS.AUDIO_SEGMENT, (event, audioData) => {

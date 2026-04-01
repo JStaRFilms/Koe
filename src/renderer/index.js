@@ -297,6 +297,15 @@ async function init() {
         });
     }
 
+    const pillElement = document.getElementById('pill');
+    if (pillElement) {
+        pillElement.addEventListener('click', () => {
+            if (window.api && window.api.toggleRecording) {
+                window.api.toggleRecording();
+            }
+        });
+    }
+
     const settings = await window.api.getSettings();
     window.api.log(`Loaded settings. Hotkey: ${settings.hotkey}`);
 
