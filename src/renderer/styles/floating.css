@@ -967,3 +967,45 @@
         stroke-dashoffset: 0;
     }
 }
+
+/* --- Live Insights Overlay --- */
+.insights-overlay {
+    position: absolute;
+    bottom: calc(100% + 12px);
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    width: 320px;
+    background: var(--koe-surface);
+    border: 1px solid var(--koe-border);
+    backdrop-filter: blur(24px);
+    border-radius: 12px;
+    padding: 12px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    z-index: 100;
+}
+
+.insights-overlay.has-content {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+    pointer-events: auto;
+}
+
+.insights-content {
+    font-size: 11px;
+    color: var(--koe-text);
+    line-height: 1.4;
+}
+
+.insights-header {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--koe-accent);
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}

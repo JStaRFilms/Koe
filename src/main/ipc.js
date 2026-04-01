@@ -74,7 +74,24 @@ function setupIpcHandlers(mainWindow) {
     ipcMain.handle(CHANNELS.TEST_GROQ_KEY, async (event, apiKey) => validateApiKey(apiKey));
     ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => rateLimiter.getUsageStats());
     ipcMain.handle(CHANNELS.GET_HISTORY, async () => historyService.getHistory());
+    ipcMain.handle(CHANNELS.SEARCH_HISTORY, async (event, query) => historyService.searchHistory(query));
     ipcMain.handle(CHANNELS.CLEAR_HISTORY, async () => historyService.clearHistory());
+
+    ipcMain.handle(CHANNELS.GET_TASKS, async () => {
+        const historyStore = new Store({ name: 'tasks-history' });
+        return historyStore.get('tasks', []);
+    });
+
+    ipcMain.handle(CHANNELS.TOGGLE_TASK, async (event, taskId) => {
+        const historyStore = new Store({ name: 'tasks-history' });
+        const tasks = historyStore.get('tasks', []);
+        const task = tasks.find(t => t.id === taskId);
+        if (task) {
+            task.completed = !task.completed;
+            historyStore.set('tasks', tasks);
+        }
+        return tasks;
+    });
 
     ipcMain.handle(CHANNELS.RETRY_HISTORY_ENTRY, async (event, entryId) => {
         return retryAndPasteTranscript(entryId, {

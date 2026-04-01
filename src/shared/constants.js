@@ -10,6 +10,7 @@ const CHANNELS = {
     TRANSCRIPTION_PREVIEW: 'transcription:preview',
     WINDOW_ANIMATE_IN: 'window:animate-in',
     MEETING_DETECTED: 'meeting:detected',
+    AI_INSIGHT: 'ai:insight',
 
     // Renderer -> Main
     GET_SETTINGS: 'settings:get',
@@ -28,6 +29,9 @@ const CHANNELS = {
     CLEAR_HISTORY: 'history:clear',
     RETRY_HISTORY_ENTRY: 'history:retry-entry',
     RETRY_LAST_TRANSCRIPT: 'history:retry-last',
+    SEARCH_HISTORY: 'history:search',
+    GET_TASKS: 'tasks:get',
+    TOGGLE_TASK: 'tasks:toggle',
 
     // Settings Window
     OPEN_SETTINGS_WINDOW: 'window:open-settings-window',
@@ -52,7 +56,10 @@ const DEFAULT_SETTINGS = {
     cloudProcessingEnabled: false,
     cloudProcessingUrl: '',
     userEmail: '',
-    sendEmailSummaries: true
+    sendEmailSummaries: true,
+    smartContext: '',
+    alwaysOn: false,
+    privacyMode: false
 };
 
 module.exports = {

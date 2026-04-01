@@ -147,6 +147,10 @@ async function init() {
         pill.setState('meeting_suggested');
     });
 
+    window.api.onAiInsight((insight) => {
+        pill.setInsights(insight);
+    });
+
 
     window.api.onRecordingToggle(async (payload) => {
         const recordingPayload = normalizeRecordingPayload(payload);
@@ -163,7 +167,14 @@ async function init() {
             activeSessionId = recordingPayload.sessionId;
             isRecording = true;
             pill.beginSession(activeSessionId);
-            pill.setState('recording');
+
+            const settings = await window.api.getSettings();
+            if (settings.privacyMode) {
+                pill.setState('recording');
+                pill.status.textContent = 'Privacy Mode Active';
+            } else {
+                pill.setState('recording');
+            }
 
             try {
                 await startListening(activeSessionId, overrides);
@@ -323,6 +334,10 @@ async function init() {
 
     if (!settings.groqApiKey) {
         window.api.log('No API key found. User should configure it via the tray settings window.');
+    }
+
+    if (settings.alwaysOn && !isRecording && !vadInitFailed && isVADReady()) {
+        window.api.toggleRecording();
     }
 }
 
