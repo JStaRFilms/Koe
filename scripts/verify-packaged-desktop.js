@@ -1,6 +1,6 @@
 const fs = require('fs');
 const path = require('path');
-const { spawnSync } = require('child_process');
+const asar = require('@electron/asar');
 
 const REQUIRED_ENTRY = '\\node_modules\\@koe\\core\\dist\\index.js';
 const SEARCH_ROOTS = ['release'];
@@ -28,7 +28,7 @@ function collectAsars(rootDir) {
             if (
                 entry.isFile()
                 && entry.name === 'app.asar'
-                && fullPath.includes(`${path.sep}resources${path.sep}`)
+                && fullPath.toLowerCase().includes(`${path.sep}resources${path.sep}`)
             ) {
                 matches.push(fullPath);
             }
@@ -39,32 +39,11 @@ function collectAsars(rootDir) {
 }
 
 function listAsarEntries(asarPath) {
-    const relativeAsarPath = path.relative(process.cwd(), asarPath) || asarPath;
-    const result = process.platform === 'win32'
-        ? spawnSync(
-            'cmd.exe',
-            ['/d', '/s', '/c', `pnpm exec asar list ${relativeAsarPath}`],
-            {
-                encoding: 'utf8',
-                stdio: 'pipe'
-            }
-        )
-        : spawnSync(
-            'pnpm',
-            ['exec', 'asar', 'list', relativeAsarPath],
-            {
-                encoding: 'utf8',
-                stdio: 'pipe'
-            }
-        );
-
-    if (result.status !== 0) {
-        throw new Error(
-            `Failed to inspect ${asarPath}\n${result.stderr || result.stdout || 'Unknown asar error'}`
-        );
+    try {
+        return asar.listPackage(asarPath);
+    } catch (error) {
+        throw new Error(`Failed to inspect ${asarPath}\n${error.message}`);
     }
-
-    return result.stdout.split(/\r?\n/).filter(Boolean);
 }
 
 function verifyAsar(asarPath) {

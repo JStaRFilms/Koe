@@ -27,6 +27,9 @@ importers:
         specifier: ^13.0.0
         version: 13.0.0
     devDependencies:
+      '@electron/asar':
+        specifier: ^3.4.1
+        version: 3.4.1
       concurrently:
         specifier: ^9.2.1
         version: 9.2.1

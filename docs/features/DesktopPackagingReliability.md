@@ -18,6 +18,7 @@
   - Finds packaged `app.asar` files in the configured desktop output folder.
   - Confirms `node_modules/@koe/core/dist/index.js` exists inside each archive.
   - Fails the build if the packaged archive is missing the core module.
+  - Uses the `@electron/asar` Node API directly so verification works in CI on both Windows and macOS.
 
 ## Data Flow
 ```mermaid
@@ -35,7 +36,7 @@ flowchart LR
 ## Regression Checks
 - Desktop build commands should no longer rely on stale workspace output from a previous local session.
 - A packaged app missing `node_modules/@koe/core/dist/index.js` should fail release-time verification.
-- The verification step should work against the generated `release/*/resources/app.asar` output on Windows.
+- The verification step should work against generated `release` app bundles on both Windows and macOS.
 
 ## Notes
 - The observed client error is consistent with either:
