@@ -2,8 +2,13 @@ const fs = require('fs');
 const path = require('path');
 const asar = require('@electron/asar');
 
-const REQUIRED_ENTRY = '\\node_modules\\@koe\\core\\dist\\index.js';
+const REQUIRED_ENTRY = '/node_modules/@koe/core/dist/index.js';
 const SEARCH_ROOTS = ['release'];
+
+function normalizeEntry(entry) {
+    const normalized = String(entry || '').replace(/\\/g, '/');
+    return normalized.startsWith('/') ? normalized : `/${normalized}`;
+}
 
 function collectAsars(rootDir) {
     if (!fs.existsSync(rootDir)) {
@@ -47,7 +52,7 @@ function listAsarEntries(asarPath) {
 }
 
 function verifyAsar(asarPath) {
-    const entries = listAsarEntries(asarPath);
+    const entries = listAsarEntries(asarPath).map(normalizeEntry);
     const hasCoreEntry = entries.includes(REQUIRED_ENTRY);
 
     if (!hasCoreEntry) {
