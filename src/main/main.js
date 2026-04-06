@@ -6,6 +6,7 @@ const { setupIpcHandlers } = require('./ipc');
 const { createSettingsWindow } = require('./settings-window');
 const { getPillBounds, pinPillWindow } = require('./services/pill-window');
 const { getSetting } = require('./services/settings');
+const meetingDetector = require('./services/meeting-detector');
 const { applyLaunchOnStartupPreference } = require('./services/startup');
 const { applyAutoUpdatePreference } = require('./services/updater');
 const sessionManager = require('./services/transcription-session-manager');
@@ -81,6 +82,7 @@ app.whenReady().then(() => {
         setupTray(mainWindow);
         registerShortcuts(mainWindow);
         setupIpcHandlers(mainWindow);
+        meetingDetector.init(mainWindow);
 
         applyLaunchOnStartupPreference(getSetting('launchOnStartup') !== false);
         applyAutoUpdatePreference(getSetting('autoUpdate') !== false);

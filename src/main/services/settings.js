@@ -22,6 +22,13 @@ const SETTINGS_MIGRATIONS = [
         changes: {
             cloudProcessingEnabled: false
         }
+    },
+    {
+        id: '2026-03-20-update-default-hotkey',
+        mode: 'preserve',
+        changes: {
+            hotkey: 'Alt+Shift+S'
+        }
     }
 ];
 

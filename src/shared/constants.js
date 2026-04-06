@@ -9,6 +9,8 @@ const CHANNELS = {
     TRANSCRIPTION_COMPLETE: 'transcription:complete',
     TRANSCRIPTION_PREVIEW: 'transcription:preview',
     WINDOW_ANIMATE_IN: 'window:animate-in',
+    MEETING_DETECTED: 'meeting:detected',
+    AI_INSIGHT: 'ai:insight',
 
     // Renderer -> Main
     GET_SETTINGS: 'settings:get',
@@ -17,6 +19,7 @@ const CHANNELS = {
     LOG: 'app:log',
     AUDIO_SEGMENT: 'audio:segment',
     AUDIO_SESSION_STOPPED: 'audio:session-stopped',
+    TOGGLE_RECORDING: 'recording:toggle',
     WINDOW_MINIMIZE: 'window:minimize',
     WINDOW_CLOSE: 'window:close',
     WINDOW_HIDE: 'window:hide',
@@ -26,6 +29,9 @@ const CHANNELS = {
     CLEAR_HISTORY: 'history:clear',
     RETRY_HISTORY_ENTRY: 'history:retry-entry',
     RETRY_LAST_TRANSCRIPT: 'history:retry-last',
+    SEARCH_HISTORY: 'history:search',
+    GET_TASKS: 'tasks:get',
+    TOGGLE_TASK: 'tasks:toggle',
 
     // Settings Window
     OPEN_SETTINGS_WINDOW: 'window:open-settings-window',
@@ -37,7 +43,7 @@ const CHANNELS = {
 
 const DEFAULT_SETTINGS = {
     groqApiKey: '',
-    hotkey: 'CommandOrControl+Shift+Space',
+    hotkey: 'Alt+Shift+S',
     language: 'auto',
     enhanceText: true,
     autoPaste: true,
@@ -48,7 +54,12 @@ const DEFAULT_SETTINGS = {
     customPrompt: DEFAULT_CUSTOM_PROMPT,
     model: 'whisper-large-v3-turbo',
     cloudProcessingEnabled: false,
-    cloudProcessingUrl: ''
+    cloudProcessingUrl: '',
+    userEmail: '',
+    sendEmailSummaries: true,
+    smartContext: '',
+    alwaysOn: false,
+    privacyMode: false
 };
 
 module.exports = {

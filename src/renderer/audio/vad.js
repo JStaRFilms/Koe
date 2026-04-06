@@ -1,11 +1,11 @@
 import { encodeWAV } from './wav-encoder.js';
 
 const SAMPLE_RATE = 16000;
-const MIN_CHUNK_SECONDS = 10;
+const MIN_CHUNK_SECONDS = 3;
 const MIN_CHUNK_SAMPLES = SAMPLE_RATE * MIN_CHUNK_SECONDS;
 const HARD_CAP_SECONDS = 30;
 const HARD_CAP_SAMPLES = SAMPLE_RATE * HARD_CAP_SECONDS;
-const PAUSE_CLOSE_MS = 1200;
+const PAUSE_CLOSE_MS = 800;
 const SPEECH_THRESHOLD = 0.5;
 const MIN_SEGMENT_SECONDS = 0.25;
 
@@ -287,7 +287,8 @@ function emitSegment(audio) {
         audioSeconds,
         sessionId: currentSessionId,
         segmentId: `${currentSessionId}-${sequence}`,
-        sequence
+        sequence,
+        overrides: window.recordingOverrides
     });
 
     window.api?.log?.(
@@ -395,12 +396,13 @@ export async function initVAD() {
     window.api?.log?.('VAD initialized successfully.');
 }
 
-export async function startListening(sessionId) {
+export async function startListening(sessionId, options = {}) {
     if (!vad) {
         return false;
     }
 
     currentSessionId = sessionId ?? currentSessionId;
+    window.recordingOverrides = options;
     currentSequence = 0;
     sentSegments = 0;
     resetActiveSegment();

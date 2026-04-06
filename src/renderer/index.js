@@ -142,8 +142,19 @@ async function init() {
         pill.animateIn();
     });
 
+    window.api.onMeetingDetected(() => {
+        pill.animateIn();
+        pill.setState('meeting_suggested');
+    });
+
+    window.api.onAiInsight((insight) => {
+        pill.setInsights(insight);
+    });
+
+
     window.api.onRecordingToggle(async (payload) => {
         const recordingPayload = normalizeRecordingPayload(payload);
+        const overrides = payload?.overrides || {};
 
         if (recordingPayload.isRecording) {
             if (vadInitFailed || !isVADReady()) {
@@ -156,10 +167,17 @@ async function init() {
             activeSessionId = recordingPayload.sessionId;
             isRecording = true;
             pill.beginSession(activeSessionId);
-            pill.setState('recording');
+
+            const settings = await window.api.getSettings();
+            if (settings.privacyMode) {
+                pill.setState('recording');
+                pill.status.textContent = 'Privacy Mode Active';
+            } else {
+                pill.setState('recording');
+            }
 
             try {
-                await startListening(activeSessionId);
+                await startListening(activeSessionId, overrides);
             } catch (err) {
                 isRecording = false;
                 pill.setError(getErrorLabel(err.message), activeSessionId);
@@ -297,11 +315,29 @@ async function init() {
         });
     }
 
+    const pillElement = document.getElementById('pill');
+    if (pillElement) {
+        pillElement.addEventListener('click', () => {
+            if (window.api && window.api.toggleRecording) {
+                if (pill.state === 'meeting_suggested') {
+                    // Join meeting mode
+                    window.api.toggleRecording({ promptStyle: 'Meeting Notes' });
+                } else {
+                    window.api.toggleRecording();
+                }
+            }
+        });
+    }
+
     const settings = await window.api.getSettings();
     window.api.log(`Loaded settings. Hotkey: ${settings.hotkey}`);
 
     if (!settings.groqApiKey) {
         window.api.log('No API key found. User should configure it via the tray settings window.');
+    }
+
+    if (settings.alwaysOn && !isRecording && !vadInitFailed && isVADReady()) {
+        window.api.toggleRecording();
     }
 }
 

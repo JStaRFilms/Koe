@@ -75,6 +75,17 @@ function getEntryRawText(entry) {
     return entry?.rawText || entry?.text || '';
 }
 
+function searchHistory(query) {
+    const entries = getHistory();
+    if (!query) return entries;
+
+    const lowerQuery = query.toLowerCase();
+    return entries.filter(entry =>
+        (entry.refinedText || '').toLowerCase().includes(lowerQuery) ||
+        (entry.rawText || '').toLowerCase().includes(lowerQuery)
+    );
+}
+
 function clearHistory() {
     getStore().set('entries', []);
     return [];
@@ -86,5 +97,6 @@ module.exports = {
     getHistoryEntryById,
     getLatestEntry,
     getEntryRawText,
+    searchHistory,
     clearHistory
 };
