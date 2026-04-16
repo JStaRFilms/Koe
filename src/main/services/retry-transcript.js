@@ -3,6 +3,7 @@ const { enhance } = require('./groq');
 const { autoPaste } = require('./clipboard');
 const historyService = require('./history');
 const sessionManager = require('./transcription-session-manager');
+const pendingRetryService = require('./pending-retry');
 const logger = require('./logger');
 
 function emitRetryStatus(options, status) {
@@ -12,7 +13,18 @@ function emitRetryStatus(options, status) {
 }
 
 async function retryPendingSession(options = {}) {
-    return sessionManager.retryPendingSession(options);
+    try {
+        return await sessionManager.retryPendingSession(options);
+    } catch (error) {
+        const message = String(error?.message || '');
+        if (message.includes('Retry audio for segment')) {
+            logger.warn(`[Retry] Clearing stale pending retry: ${message}`);
+            pendingRetryService.clearPendingRetry();
+            return null;
+        }
+
+        throw error;
+    }
 }
 
 async function retryTranscript(entryId = null, options = {}) {

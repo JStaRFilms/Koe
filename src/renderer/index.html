@@ -11,6 +11,12 @@
   <link rel="stylesheet" href="./styles/main.css">
   <link rel="stylesheet" href="./styles/floating.css">
   <script>
+    if (typeof window.process === 'undefined') {
+      window.process = { env: {} };
+    } else if (!window.process.env) {
+      window.process.env = {};
+    }
+
     window.onerror = function (message, source, lineno, colno, error) {
       if (window.api && window.api.log) {
         window.api.log('GLOBAL ERROR: ' + message + ' at ' + source + ':' + lineno + ':' + colno + '\n' + (error ? error.stack : ''));

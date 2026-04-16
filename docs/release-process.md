@@ -9,8 +9,6 @@ This project should use GitHub Actions for release builds.
 - Example:
   `package.json` version is `1.1.3`
   release tag must be `v1.1.3`
-  `package.json` version is `1.1.3`
-  release tag must be `v1.1.3`
 
 If the tag and `package.json` version do not match, the release workflow fails on purpose.
 

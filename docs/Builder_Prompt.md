@@ -19,7 +19,7 @@
 - Model: `whisper-large-v3-turbo`
 - Send as `multipart/form-data` with `file` (WAV blob) and `model` fields
 - Response: `{ text: "transcribed text" }`
-- For Llama enhancement: use chat completions endpoint with system prompt
+- For text enhancement: use chat completions endpoint with system prompt and `openai/gpt-oss-120b`
 
 ### Rate Limiting (CRITICAL)
 - **20 requests per minute** — Use sliding window counter

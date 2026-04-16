@@ -399,11 +399,15 @@ class TranscriptionSessionManager {
         const liveSession = this.coordinator.findSessionWithBlockingFailure();
 
         if (liveSession) {
-            await this.retrySession(liveSession, options);
-            return {
-                source: 'pending-session',
-                sessionId: liveSession.sessionId
-            };
+            const retried = await this.retrySession(liveSession, options);
+            if (retried) {
+                return {
+                    source: 'pending-session',
+                    sessionId: liveSession.sessionId
+                };
+            }
+
+            return null;
         }
 
         const manifest = pendingRetryService.getPendingRetry();
@@ -458,7 +462,11 @@ class TranscriptionSessionManager {
             sessionId: session.sessionId,
             text: joinTranscriptParts(session.committedRawParts)
         });
-        await this.retrySession(session, options);
+        const retried = await this.retrySession(session, options);
+        if (!retried) {
+            return null;
+        }
+
         return {
             source: 'pending-session',
             sessionId: session.sessionId
@@ -466,15 +474,31 @@ class TranscriptionSessionManager {
     }
 
     async retrySession(session, options = {}) {
-        const retryableSegments = Array.from(session.segments.keys())
+        const failedSegments = Array.from(session.segments.keys())
             .sort((left, right) => left - right)
             .map((sequence) => session.segments.get(sequence))
             .filter((segment) => segment && segment.status === 'failed');
 
-        if (retryableSegments.length === 0) {
+        if (failedSegments.length === 0) {
             await this.coordinator.flushReadySegments(session);
             await this.coordinator.updatePostStopState(session);
-            return;
+            return true;
+        }
+
+        const missingRetrySegments = failedSegments.filter((segment) => {
+            const buffer = segment.buffer || pendingRetryService.readTempAudio(segment.tempPath);
+            return !buffer;
+        });
+
+        if (missingRetrySegments.length > 0) {
+            logger.warn(
+                `[Retry] Missing retry audio for session ${session.sessionId}: ${missingRetrySegments
+                    .map((segment) => segment.sequence)
+                    .join(', ')}. Falling back to transcript history.`
+            );
+            pendingRetryService.clearPendingRetry();
+            this.coordinator.deleteSession(session.sessionId);
+            return false;
         }
 
         session.failureError = null;
@@ -488,12 +512,7 @@ class TranscriptionSessionManager {
             forceDisplay: true
         });
 
-        for (const segment of retryableSegments) {
-            const buffer = segment.buffer || pendingRetryService.readTempAudio(segment.tempPath);
-            if (!buffer) {
-                throw new Error(`Retry audio for segment ${segment.sequence} is missing.`);
-            }
-
+        for (const segment of failedSegments) {
             segment.status = 'queued';
             segment.error = null;
             segment.buffer = null;
@@ -513,6 +532,7 @@ class TranscriptionSessionManager {
 
         await this.coordinator.flushReadySegments(session);
         await this.coordinator.updatePostStopState(session);
+        return true;
     }
 }
 
