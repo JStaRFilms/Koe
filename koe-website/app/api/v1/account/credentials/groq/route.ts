@@ -13,7 +13,7 @@ export const runtime = "nodejs";
 export async function PUT(request: Request) {
   try {
     const auth = await getAuthContext(request);
-    assertRateLimit(request, { scope: "credential:groq:user", key: auth.user.id, max: 10, windowMs: 10 * 60_000 });
+    await assertRateLimit(request, { scope: "credential:groq:user", key: auth.user.id, max: 10, windowMs: 10 * 60_000 });
 
     const body = credentialPutSchema.parse(await readJson<unknown>(request));
 

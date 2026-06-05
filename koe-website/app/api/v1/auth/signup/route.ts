@@ -13,8 +13,8 @@ export async function POST(request: Request) {
   try {
     const body = authWithDeviceSchema.parse(await readJson<unknown>(request));
     const email = normalizeEmail(body.email);
-    assertRateLimit(request, { scope: "auth:signup:ip", max: 10, windowMs: 60_000 });
-    assertRateLimit(request, { scope: "auth:signup:email", key: email, max: 5, windowMs: 10 * 60_000 });
+    await assertRateLimit(request, { scope: "auth:signup:ip", max: 10, windowMs: 60_000 });
+    await assertRateLimit(request, { scope: "auth:signup:email", key: email, max: 5, windowMs: 10 * 60_000 });
 
     const passwordHash = await hashPassword(body.password);
     const db = sql();

@@ -12,8 +12,8 @@ export async function POST(request: Request) {
   try {
     const body = authWithDeviceSchema.omit({ displayName: true }).parse(await readJson<unknown>(request));
     const email = normalizeEmail(body.email);
-    assertRateLimit(request, { scope: "auth:signin:ip", max: 20, windowMs: 60_000 });
-    assertRateLimit(request, { scope: "auth:signin:email", key: email, max: 8, windowMs: 10 * 60_000 });
+    await assertRateLimit(request, { scope: "auth:signin:ip", max: 20, windowMs: 60_000 });
+    await assertRateLimit(request, { scope: "auth:signin:email", key: email, max: 8, windowMs: 10 * 60_000 });
 
     const db = sql();
     const user = one<{

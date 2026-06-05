@@ -1,12 +1,8 @@
 import { createHash } from "node:crypto";
+import { sql } from "./db";
 import { ApiError } from "./errors";
 
 const DEFAULT_WINDOW_MS = 60_000;
-
-type Bucket = {
-  count: number;
-  resetAt: number;
-};
 
 type RateLimitOptions = {
   scope: string;
@@ -14,8 +10,6 @@ type RateLimitOptions = {
   max: number;
   windowMs?: number;
 };
-
-const buckets = new Map<string, Bucket>();
 
 function readClientIp(request: Request) {
   const forwarded = request.headers.get("x-forwarded-for");
@@ -30,32 +24,32 @@ function hashKey(value: string) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function cleanup(now: number) {
-  for (const [key, bucket] of buckets) {
-    if (bucket.resetAt <= now) {
-      buckets.delete(key);
-    }
-  }
-}
-
-export function assertRateLimit(request: Request, options: RateLimitOptions) {
-  const now = Date.now();
-  cleanup(now);
-
+export async function assertRateLimit(request: Request, options: RateLimitOptions) {
   const windowMs = Math.max(1_000, options.windowMs || DEFAULT_WINDOW_MS);
   const rawKey = options.key?.trim() || readClientIp(request);
-  const bucketKey = `${options.scope}:${hashKey(rawKey)}`;
-  const bucket = buckets.get(bucketKey) || { count: 0, resetAt: now + windowMs };
+  const keyHash = hashKey(rawKey);
+  const resetAt = new Date(Date.now() + windowMs).toISOString();
+  const db = sql();
 
-  if (bucket.resetAt <= now) {
-    bucket.count = 0;
-    bucket.resetAt = now + windowMs;
-  }
+  const rows = await db`
+    INSERT INTO rate_limits (scope, key_hash, count, reset_at)
+    VALUES (${options.scope}, ${keyHash}, 1, ${resetAt})
+    ON CONFLICT (scope, key_hash)
+    DO UPDATE SET
+      count = CASE
+        WHEN rate_limits.reset_at <= now() THEN 1
+        ELSE rate_limits.count + 1
+      END,
+      reset_at = CASE
+        WHEN rate_limits.reset_at <= now() THEN EXCLUDED.reset_at
+        ELSE rate_limits.reset_at
+      END,
+      updated_at = now()
+    RETURNING count, reset_at
+  `;
 
-  bucket.count += 1;
-  buckets.set(bucketKey, bucket);
-
-  if (bucket.count > options.max) {
+  const count = Number(rows[0]?.count || 0);
+  if (count > options.max) {
     throw new ApiError(
       "RATE_LIMITED",
       "Too many requests. Please wait and try again.",
@@ -63,4 +57,11 @@ export function assertRateLimit(request: Request, options: RateLimitOptions) {
       true,
     );
   }
+}
+
+export async function pruneExpiredRateLimits() {
+  await sql()`
+    DELETE FROM rate_limits
+    WHERE reset_at < now() - interval '1 day'
+  `;
 }

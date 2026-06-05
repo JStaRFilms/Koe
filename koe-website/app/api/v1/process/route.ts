@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { accountModeSchema, parseBooleanFormValue, promptStyleSchema, transcribeModelSchema } from "@/lib/server/contracts";
 import { resolveAccountMode, resolveProviderApiKey } from "@/lib/server/account-mode";
+import { deriveAudioSeconds } from "@/lib/server/audio-duration";
 import { getAuthContext } from "@/lib/server/auth";
 import { one, sql } from "@/lib/server/db";
 import { ApiError, apiError, handleApiError } from "@/lib/server/errors";
@@ -32,8 +33,8 @@ export async function POST(request: Request) {
 
   try {
     const auth = await getAuthContext(request);
-    assertRateLimit(request, { scope: "process:ip", max: 60, windowMs: 60_000 });
-    assertRateLimit(request, { scope: "process:user", key: auth.user.id, max: 30, windowMs: 60_000 });
+    await assertRateLimit(request, { scope: "process:ip", max: 60, windowMs: 60_000 });
+    await assertRateLimit(request, { scope: "process:user", key: auth.user.id, max: 30, windowMs: 60_000 });
 
     const form = await request.formData();
     const audio = form.get("audio") || form.get("file");
@@ -46,7 +47,7 @@ export async function POST(request: Request) {
     const promptStyle = promptStyleSchema.parse(String(form.get("promptStyle") || "Clean"));
     const customPrompt = String(form.get("customPrompt") || "").slice(0, 4000);
     const enhanceText = parseBooleanFormValue(form.get("enhanceText"), true);
-    const estimatedAudioSeconds = Math.max(0, Number(form.get("audioSeconds") || 0) || 0);
+    const clientEstimatedAudioSeconds = Math.max(0, Number(form.get("audioSeconds") || 0) || 0);
 
     if (!(audio instanceof Blob) || audio.size === 0) {
       return apiError("BAD_REQUEST", "No audio file was uploaded.", 400);
@@ -55,6 +56,9 @@ export async function POST(request: Request) {
     if (audio.size > MAX_AUDIO_BYTES) {
       return apiError("AUDIO_TOO_LARGE", "Audio file too large. Keep uploads under 20 MB.", 413);
     }
+
+    const serverAudioSeconds = await deriveAudioSeconds(audio);
+    const billableAudioSeconds = serverAudioSeconds ?? clientEstimatedAudioSeconds;
 
     const existing = one<{
       id: string;
@@ -88,8 +92,17 @@ export async function POST(request: Request) {
       defaultMode: auth.user.defaultMode,
       requestedMode,
       devicePlatform: auth.device?.platform,
-      estimatedAudioSeconds,
+      estimatedAudioSeconds: billableAudioSeconds,
     });
+
+    if (resolvedMode.mode === "managed" && !serverAudioSeconds) {
+      throw new ApiError(
+        "BAD_REQUEST",
+        "Could not determine audio duration for managed processing.",
+        400,
+      );
+    }
+
     const apiKey = await resolveProviderApiKey(auth.user.id, resolvedMode);
 
     try {
@@ -108,7 +121,7 @@ export async function POST(request: Request) {
         model,
         rawText,
         refinedText,
-        audioSeconds: estimatedAudioSeconds,
+        audioSeconds: billableAudioSeconds,
       });
 
       await recordUsage({
@@ -118,7 +131,7 @@ export async function POST(request: Request) {
         resolvedMode,
         action: "process",
         model,
-        audioSeconds: estimatedAudioSeconds,
+        audioSeconds: billableAudioSeconds,
         inputChars: rawText.length,
         outputChars: refinedText.length,
         status: "success",
@@ -131,7 +144,7 @@ export async function POST(request: Request) {
         rawText,
         refinedText: refinedText || rawText,
         empty,
-        usage: { audioSecondsUsedThisRequest: estimatedAudioSeconds },
+        usage: { audioSecondsUsedThisRequest: billableAudioSeconds },
       };
 
       if (stream) {
@@ -155,7 +168,7 @@ export async function POST(request: Request) {
           resolvedMode,
           action: "process",
           model,
-          audioSeconds: estimatedAudioSeconds,
+          audioSeconds: billableAudioSeconds,
           status: "error",
           errorCode: error.code,
         });
