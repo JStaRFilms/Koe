@@ -51,6 +51,10 @@ export function handleApiError(error: unknown) {
     return apiError(error.code, error.message, error.status, error.retryable);
   }
 
+  if (process.env.KOE_DEBUG_API_ERRORS === "true") {
+    console.error("[Koe API] Unhandled API error", error);
+  }
+
   return apiError("INTERNAL_ERROR", "Request failed.", 500, true);
 }
 

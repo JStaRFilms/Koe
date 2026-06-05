@@ -56,7 +56,8 @@ const DEFAULT_SETTINGS = {
     customPrompt: DEFAULT_CUSTOM_PROMPT,
     model: 'whisper-large-v3-turbo',
     cloudProcessingEnabled: false,
-    cloudProcessingUrl: ''
+    cloudProcessingUrl: '',
+    accountApiUrl: ''
 };
 
 module.exports = {

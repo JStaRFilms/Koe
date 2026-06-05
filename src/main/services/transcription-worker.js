@@ -13,6 +13,7 @@ const { processViaAuthenticatedBackend, refineViaAuthenticatedBackend } = requir
 const REQUESTS_PER_MINUTE = 20;
 
 let requestTimestamps = [];
+const accountRefinementCache = new Map();
 
 function postMessage(type, payload = {}) {
     parentPort.postMessage({ type, ...payload });
@@ -182,7 +183,7 @@ async function processSegment(payload) {
             wavBuffer: payload.buffer,
             audioSeconds: payload.audioSeconds,
             language: payload.options.language,
-            enhanceText: false,
+            enhanceText: payload.options.enhanceText !== false && payload.sequence === 0,
             promptStyle: payload.options.promptStyle,
             customPrompt: payload.options.customPrompt,
             model: payload.options.model,
@@ -191,6 +192,13 @@ async function processSegment(payload) {
             clientSessionId: payload.sessionId,
             sessionId: payload.sessionId
         }, payload.options.accountProcessing);
+
+        const rawText = String(result.rawText || '').trim();
+        const refinedText = String(result.refinedText || '').trim();
+
+        if (rawText && refinedText && refinedText !== rawText) {
+            accountRefinementCache.set(String(payload.sessionId), { rawText, refinedText });
+        }
 
         postMessage('usage-recorded', {
             requestKind: 'transcription',
@@ -201,8 +209,8 @@ async function processSegment(payload) {
             segmentId: payload.segmentId,
             sequence: payload.sequence,
             audioSeconds: payload.audioSeconds,
-            empty: Boolean(result.empty) || !String(result.rawText || '').trim(),
-            rawText: String(result.rawText || '').trim()
+            empty: Boolean(result.empty) || !rawText,
+            rawText
         });
         return;
     }
@@ -221,13 +229,26 @@ async function processSegment(payload) {
 
 async function processSessionRefinement(payload) {
     if (payload.options?.accountProcessing?.sessionToken) {
-        const refinedText = await refineViaAuthenticatedBackend(payload.rawText, {
+        const sourceText = String(payload.rawText || '').trim();
+        const cached = accountRefinementCache.get(String(payload.sessionId));
+
+        if (cached && cached.rawText === sourceText && cached.refinedText) {
+            accountRefinementCache.delete(String(payload.sessionId));
+            postMessage('session-refined', {
+                sessionId: payload.sessionId,
+                refinedText: cached.refinedText
+            });
+            return;
+        }
+
+        const refinedText = await refineViaAuthenticatedBackend(sourceText, {
             requestId: payload.requestId,
             clientSessionId: payload.sessionId,
             sessionId: payload.sessionId,
             promptStyle: payload.options.promptStyle,
             customPrompt: payload.options.customPrompt
         }, payload.options.accountProcessing);
+        accountRefinementCache.delete(String(payload.sessionId));
 
         postMessage('usage-recorded', {
             requestKind: 'refinement',

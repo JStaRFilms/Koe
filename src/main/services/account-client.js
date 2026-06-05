@@ -6,13 +6,14 @@ const accountStorage = require('./account-storage');
 const logger = require('./logger');
 
 const DEFAULT_BACKEND_ORIGIN = new URL(PROD_PROXY_URL).origin;
+const LOCAL_DEV_BACKEND_API_BASE = 'http://localhost:3000/api/v1';
 
 const SYNCED_SETTINGS_KEYS = ['language', 'promptStyle', 'customPrompt', 'enhanceText', 'model'];
 
-function normalizeApiBase(rawValue) {
+function normalizeApiBase(rawValue, fallback = `${DEFAULT_BACKEND_ORIGIN}/api/v1`) {
     const raw = String(rawValue || '').trim();
     if (!raw) {
-        return `${DEFAULT_BACKEND_ORIGIN}/api/v1`;
+        return fallback;
     }
 
     try {
@@ -22,17 +23,25 @@ function normalizeApiBase(rawValue) {
         }
         return `${url.origin}/api/v1`;
     } catch (_error) {
-        return `${DEFAULT_BACKEND_ORIGIN}/api/v1`;
+        return fallback;
     }
 }
 
 function resolveBackendApiBase(settings = getSettings()) {
-    return normalizeApiBase(
-        process.env.KOE_BACKEND_URL
+    const configured = process.env.KOE_BACKEND_URL
         || process.env.KOE_PROCESSING_URL
-        || settings.cloudProcessingUrl
-        || PROD_PROXY_URL
-    );
+        || settings.accountApiUrl
+        || settings.cloudProcessingUrl;
+
+    if (configured) {
+        return normalizeApiBase(configured);
+    }
+
+    if (app && app.isPackaged === false) {
+        return LOCAL_DEV_BACKEND_API_BASE;
+    }
+
+    return normalizeApiBase(PROD_PROXY_URL);
 }
 
 function buildDeviceLabel() {
@@ -54,18 +63,26 @@ function getDeviceMetadata() {
     };
 }
 
-async function parseApiError(response, fallbackMessage) {
+async function parseApiError(response, fallbackMessage, requestUrl = '') {
     const contentType = String(response.headers.get('content-type') || '').toLowerCase();
     let payload = null;
 
     if (contentType.includes('application/json')) {
         payload = await response.json().catch(() => null);
     } else {
-        const text = await response.text().catch(() => '');
-        payload = text ? { error: { message: text } } : null;
+        await response.text().catch(() => '');
     }
 
-    const message = payload?.error?.message || fallbackMessage || `Request failed (${response.status}).`;
+    const isHtmlResponse = contentType.includes('text/html');
+    const routeHint = requestUrl
+        ? ` Account backend URL: ${requestUrl}`
+        : '';
+    const message = payload?.error?.message
+        || (isHtmlResponse
+            ? `Account backend returned a web page instead of API JSON.${routeHint} Check that the local website backend is running and that KOE_BACKEND_URL points to /api/v1.`
+            : null)
+        || fallbackMessage
+        || `Request failed (${response.status}).`;
     const error = new Error(message);
     error.code = payload?.error?.code || `HTTP_${response.status}`;
     error.status = response.status;
@@ -152,7 +169,7 @@ async function requestJson(path, options = {}) {
     });
 
     if (!response.ok) {
-        const error = await parseApiError(response, options.fallbackMessage);
+        const error = await parseApiError(response, options.fallbackMessage, url);
         if (error.code === 'INVALID_SESSION' || error.status === 401) {
             accountStorage.clearSession();
         }

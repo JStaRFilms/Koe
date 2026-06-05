@@ -1,4 +1,4 @@
-const { randomUUID } = require('crypto');
+const { randomBytes, randomUUID } = require('crypto');
 
 function buildProcessingHeaders(processingContext, extraHeaders = {}) {
     const headers = {
@@ -102,37 +102,71 @@ async function parseNdjsonStream(response, onStage) {
     throw createApiError('BAD_RESPONSE', 'Account processing ended before returning a result.');
 }
 
+function buildMultipartBody(fields, file) {
+    const boundary = `----koe-desktop-${randomBytes(12).toString('hex')}`;
+    const parts = [];
+
+    for (const [key, value] of Object.entries(fields)) {
+        if (value === undefined || value === null || value === '') {
+            continue;
+        }
+
+        parts.push(Buffer.from(
+            `--${boundary}\r\n` +
+            `Content-Disposition: form-data; name="${key}"\r\n\r\n` +
+            `${String(value)}\r\n`
+        ));
+    }
+
+    parts.push(Buffer.from(
+        `--${boundary}\r\n` +
+        `Content-Disposition: form-data; name="${file.fieldName}"; filename="${file.filename}"\r\n` +
+        `Content-Type: ${file.contentType}\r\n\r\n`
+    ));
+    parts.push(Buffer.from(file.bytes));
+    parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
+
+    return {
+        boundary,
+        body: Buffer.concat(parts)
+    };
+}
+
 async function processViaAuthenticatedBackend(taskItem, processingContext) {
     if (!processingContext?.sessionToken || !processingContext?.apiBaseUrl) {
         throw createApiError('INVALID_SESSION', 'You are signed out. Please sign in again.', false, 401);
     }
 
-    const formData = new FormData();
-    const blob = new Blob([taskItem.wavBuffer], { type: 'audio/wav' });
-    formData.append('audio', blob, 'audio.wav');
-    formData.append('requestId', taskItem.requestId || randomUUID());
-    formData.append('clientSessionId', taskItem.clientSessionId || taskItem.sessionId || 'desktop-session');
-    formData.append('language', taskItem.language || 'auto');
-    formData.append('model', taskItem.model || 'whisper-large-v3-turbo');
-    formData.append('promptStyle', taskItem.promptStyle || 'Clean');
-    formData.append('enhanceText', String(taskItem.enhanceText !== false));
-    formData.append('audioSeconds', String(Math.max(0, Number(taskItem.audioSeconds || 0) || 0)));
-
-    if (taskItem.customPrompt) {
-        formData.append('customPrompt', taskItem.customPrompt);
-    }
-
-    if (taskItem.mode) {
-        formData.append('mode', taskItem.mode);
-    }
-
-    const response = await fetch(`${processingContext.apiBaseUrl}/process`, {
-        method: 'POST',
-        headers: buildProcessingHeaders(processingContext, {
-            Accept: 'application/x-ndjson'
-        }),
-        body: formData
+    const multipart = buildMultipartBody({
+        requestId: taskItem.requestId || randomUUID(),
+        clientSessionId: taskItem.clientSessionId || taskItem.sessionId || 'desktop-session',
+        language: taskItem.language || 'auto',
+        model: taskItem.model || 'whisper-large-v3-turbo',
+        promptStyle: taskItem.promptStyle || 'Clean',
+        enhanceText: String(taskItem.enhanceText !== false),
+        audioSeconds: String(Math.max(0, Number(taskItem.audioSeconds || 0) || 0)),
+        customPrompt: taskItem.customPrompt || '',
+        mode: taskItem.mode || ''
+    }, {
+        fieldName: 'audio',
+        filename: 'audio.wav',
+        contentType: 'audio/wav',
+        bytes: taskItem.wavBuffer
     });
+
+    let response;
+    try {
+        response = await fetch(`${processingContext.apiBaseUrl}/process`, {
+            method: 'POST',
+            headers: buildProcessingHeaders(processingContext, {
+                Accept: 'application/x-ndjson',
+                'Content-Type': `multipart/form-data; boundary=${multipart.boundary}`
+            }),
+            body: new Blob([multipart.body], { type: `multipart/form-data; boundary=${multipart.boundary}` })
+        });
+    } catch (error) {
+        throw createApiError('NETWORK_ERROR', `Could not reach account processing backend: ${error.message || 'Network error'}`, true, 0);
+    }
 
     if (!response.ok) {
         throw await parseResponseError(response, 'Account processing failed.');
@@ -154,7 +188,7 @@ async function refineViaAuthenticatedBackend(rawText, options, processingContext
         }),
         body: JSON.stringify({
             requestId: options.requestId || randomUUID(),
-            clientSessionId: options.clientSessionId || options.sessionId || 'desktop-session',
+            clientSessionId: String(options.clientSessionId || options.sessionId || 'desktop-session'),
             mode: options.mode || undefined,
             rawText,
             promptStyle: options.promptStyle || 'Clean',
