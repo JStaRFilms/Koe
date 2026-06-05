@@ -11,6 +11,8 @@ const {
 } = require('@koe/core');
 
 const { getSetting, getSettings } = require('./settings');
+const accountClient = require('./account-client');
+const { processViaAuthenticatedBackend, refineViaAuthenticatedBackend } = require('./account-processing');
 const rateLimiter = require('./rate-limiter');
 const logger = require('./logger');
 
@@ -79,7 +81,7 @@ async function parseProxyStream(response, onStage) {
                         refinedText: String(message.refinedText || '').trim() || String(message.rawText || '').trim()
                     };
                 } else if (message.type === 'error') {
-                    throw new Error(message.error || 'Cloud processing failed.');
+                    throw new Error(message.error?.message || message.error || 'Cloud processing failed.');
                 }
             }
 
@@ -158,19 +160,40 @@ async function transcribeDirect(wavBuffer, language = 'auto', model = getSetting
 
 async function enhance(rawText, promptStyle = 'Clean', customPromptOverride = null) {
     const settings = getSettings();
-    const apiKey = settings.groqApiKey;
-    if (!apiKey) return rawText;
-
-    const customPrompt = typeof customPromptOverride === 'string'
-        ? customPromptOverride
-        : (settings.customPrompt || '');
-    const stylePrompt = resolveEnhancementPrompt(promptStyle, customPrompt);
-    const systemPrompt = `${REFINEMENT_GUARDRAILS} ${stylePrompt} Before you finish, check the final text and remove any transcript tags if any remain.`.trim();
+    const accountProcessing = accountClient.getProcessingContext();
     const sourceText = String(rawText || '').trim();
 
     if (!sourceText) {
         return '';
     }
+
+    const customPrompt = typeof customPromptOverride === 'string'
+        ? customPromptOverride
+        : (settings.customPrompt || '');
+
+    if (accountProcessing) {
+        try {
+            return await refineViaAuthenticatedBackend(sourceText, {
+                promptStyle,
+                customPrompt
+            }, accountProcessing);
+        } catch (error) {
+            if (error.code === 'INVALID_SESSION') {
+                accountClient.clearSession();
+            }
+
+            logger.warn(`[Enhance] Account refinement failed: ${error.message}`);
+            return rawText;
+        }
+    }
+
+    const apiKey = settings.groqApiKey;
+    if (!apiKey) {
+        return rawText;
+    }
+
+    const stylePrompt = resolveEnhancementPrompt(promptStyle, customPrompt);
+    const systemPrompt = `${REFINEMENT_GUARDRAILS} ${stylePrompt} Before you finish, check the final text and remove any transcript tags if any remain.`.trim();
 
     try {
         const response = await fetch(GROQ_CHAT_URL, {
@@ -271,6 +294,18 @@ async function processViaProxy(taskItem, settings) {
 
 async function processTask(taskItem) {
     const settings = getSettings();
+    const accountProcessing = taskItem.accountProcessing || accountClient.getProcessingContext();
+
+    if (accountProcessing) {
+        try {
+            return await processViaAuthenticatedBackend(taskItem, accountProcessing);
+        } catch (error) {
+            if (error.code === 'INVALID_SESSION') {
+                accountClient.clearSession();
+            }
+            throw error;
+        }
+    }
 
     if (shouldUseCloudProcessing(settings)) {
         try {
@@ -297,7 +332,12 @@ async function processAudio(wavBuffer, audioSeconds = 0, options = {}) {
         promptStyle: options.promptStyle || settings.promptStyle || 'Clean',
         customPrompt: options.customPrompt ?? (settings.customPrompt || ''),
         model: options.model || settings.model || DEFAULT_MODEL,
-        onStage: typeof options.onStage === 'function' ? options.onStage : null
+        onStage: typeof options.onStage === 'function' ? options.onStage : null,
+        accountProcessing: options.accountProcessing || accountClient.getProcessingContext(),
+        requestId: options.requestId,
+        clientSessionId: options.clientSessionId,
+        sessionId: options.sessionId,
+        mode: options.mode
     };
 
     return rateLimiter.enqueue(item, processTask);

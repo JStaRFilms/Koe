@@ -311,6 +311,80 @@ input[type="checkbox"] {
     margin-top: 2px;
 }
 
+.inline-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.inline-actions .secondary-btn,
+.inline-actions .primary-btn {
+    width: auto;
+}
+
+.inline-actions select {
+    min-width: 140px;
+    flex: 1;
+}
+
+.account-status-card,
+.account-snapshot {
+    background: var(--koe-input-bg);
+    border: 1px solid var(--koe-border-highlight);
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.account-status-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.account-status-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--koe-text);
+}
+
+.account-status-subtitle,
+.account-status-meta,
+.account-snapshot {
+    font-size: 12px;
+    color: var(--koe-text-muted);
+    line-height: 1.5;
+}
+
+.account-status-meta {
+    margin-top: 8px;
+}
+
+.account-status-chip {
+    border-radius: 999px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    white-space: nowrap;
+}
+
+.account-status-chip.signed-in {
+    background: rgba(0, 229, 191, 0.16);
+    color: var(--koe-accent);
+}
+
+.account-status-chip.signed-out {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--koe-text-muted);
+}
+
+.account-snapshot strong {
+    color: var(--koe-text);
+}
+
 /* Hotkey input styles */
 #hotkey {
     cursor: pointer;

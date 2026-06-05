@@ -7,6 +7,7 @@ const path = require('path');
 const { Worker } = require('worker_threads');
 const { CHANNELS } = require('../../shared/constants');
 const { getSettings } = require('./settings');
+const accountClient = require('./account-client');
 const { autoPaste, writeToClipboard } = require('./clipboard');
 const historyService = require('./history');
 const rateLimiter = require('./rate-limiter');
@@ -100,7 +101,8 @@ class TranscriptionSessionManager {
             customPrompt: settings.customPrompt || '',
             model: settings.model || 'whisper-large-v3-turbo',
             enhanceText: settings.enhanceText !== false,
-            autoPaste: settings.autoPaste !== false
+            autoPaste: settings.autoPaste !== false,
+            accountProcessing: accountClient.getProcessingContext()
         };
 
         return this.coordinator.createSession(sessionId, sessionSettings);
@@ -188,6 +190,10 @@ class TranscriptionSessionManager {
         }
 
         if (message.type === 'segment-error') {
+            if (message.code === 'INVALID_SESSION') {
+                accountClient.clearSession();
+            }
+
             await this.coordinator.handleSegmentError(
                 message.sessionId, 
                 message.sequence, 
@@ -202,6 +208,10 @@ class TranscriptionSessionManager {
         }
 
         if (message.type === 'session-refine-error') {
+            if (message.code === 'INVALID_SESSION') {
+                accountClient.clearSession();
+            }
+
             await this.handleSessionRefineError(message);
         }
     }

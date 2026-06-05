@@ -21,7 +21,6 @@ export class SettingsPanel {
         this.promptStyleGroup = document.getElementById('prompt-style-group');
         this.customPromptGroup = document.getElementById('custom-prompt-group');
 
-        // New UI elements
         this.selModel = document.getElementById('transcription-model');
         this.selTheme = document.getElementById('theme');
         this.inputHotkey = document.getElementById('hotkey');
@@ -31,6 +30,27 @@ export class SettingsPanel {
         this.shortcutSettingsTabs = document.getElementById('shortcut-settings-tabs');
         this.shortcutSettingsClose = document.getElementById('shortcut-settings-close');
 
+        this.accountStatusCard = document.getElementById('account-status-card');
+        this.accountStatusChip = document.getElementById('account-status-chip');
+        this.accountStatusSubtitle = document.getElementById('account-status-subtitle');
+        this.accountStatusMeta = document.getElementById('account-status-meta');
+        this.accountSnapshot = document.getElementById('account-snapshot');
+        this.accountActionResult = document.getElementById('account-action-result');
+        this.inputAccountEmail = document.getElementById('account-email');
+        this.inputAccountPassword = document.getElementById('account-password');
+        this.inputAccountDisplayName = document.getElementById('account-display-name');
+        this.accountModeSelect = document.getElementById('account-mode-select');
+        this.inputAccountByok = document.getElementById('account-byok-key');
+        this.accountByokHelp = document.getElementById('account-byok-help');
+        this.btnAccountSignUp = document.getElementById('btn-account-sign-up');
+        this.btnAccountSignIn = document.getElementById('btn-account-sign-in');
+        this.btnAccountSignOut = document.getElementById('btn-account-sign-out');
+        this.btnAccountRefresh = document.getElementById('btn-account-refresh');
+        this.btnAccountModeSave = document.getElementById('btn-account-mode-save');
+        this.btnAccountByokSave = document.getElementById('btn-account-byok-save');
+        this.btnAccountByokDelete = document.getElementById('btn-account-byok-delete');
+
+        this.accountState = null;
         this.isRecordingHotkey = false;
         this.pendingHotkey = null;
 
@@ -52,15 +72,14 @@ export class SettingsPanel {
 
     hide() {
         this.panel.classList.add('hide');
-        this.testResult.style.display = 'none';
-        this.testResult.className = 'test-result';
+        this.hideResult(this.testResult);
     }
 
     initListeners() {
-        this.btnClose.addEventListener('click', () => this.hide());
-        this.btnSave.addEventListener('click', () => this.saveSettings());
+        this.btnClose?.addEventListener('click', () => this.hide());
+        this.btnSave?.addEventListener('click', () => this.saveSettings());
 
-        this.btnToggleKey.addEventListener('click', () => {
+        this.btnToggleKey?.addEventListener('click', () => {
             if (this.inputApiKey.type === 'password') {
                 this.inputApiKey.type = 'text';
                 this.btnToggleKey.innerHTML = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
@@ -70,36 +89,29 @@ export class SettingsPanel {
             }
         });
 
-        this.btnTestKey.addEventListener('click', () => this.testApiKey());
+        this.btnTestKey?.addEventListener('click', () => this.testApiKey());
+        this.btnAccountSignUp?.addEventListener('click', () => this.handleAccountSignUp());
+        this.btnAccountSignIn?.addEventListener('click', () => this.handleAccountSignIn());
+        this.btnAccountSignOut?.addEventListener('click', () => this.handleAccountSignOut());
+        this.btnAccountRefresh?.addEventListener('click', () => this.loadAccountState(true));
+        this.btnAccountModeSave?.addEventListener('click', () => this.handleAccountModeSave());
+        this.btnAccountByokSave?.addEventListener('click', () => this.handleAccountByokSave());
+        this.btnAccountByokDelete?.addEventListener('click', () => this.handleAccountByokDelete());
 
-        if (this.chkCloudProcessing) {
-            this.chkCloudProcessing.addEventListener('change', () => {
-                this.updateCloudProcessingControls();
-            });
-        }
+        this.chkCloudProcessing?.addEventListener('change', () => this.updateCloudProcessingControls());
+        this.chkEnhance?.addEventListener('change', () => this.updateEnhancementControls());
 
-        this.chkEnhance.addEventListener('change', () => {
-            this.updateEnhancementControls();
+        this.selTheme?.addEventListener('change', () => {
+            this.applyThemePreview(this.selTheme.value);
         });
 
-        // Theme change listener - apply immediately for preview
-        if (this.selTheme) {
-            this.selTheme.addEventListener('change', () => {
-                this.applyThemePreview(this.selTheme.value);
-            });
-        }
-
-        // Hotkey recording
         if (this.inputHotkey) {
             this.inputHotkey.addEventListener('focus', () => this.startHotkeyRecording());
             this.inputHotkey.addEventListener('blur', () => this.stopHotkeyRecording());
             this.inputHotkey.addEventListener('keydown', (e) => this.handleHotkeyInput(e));
         }
 
-        // Open Logs button
-        if (this.btnOpenLogs) {
-            this.btnOpenLogs.addEventListener('click', () => this.openLogsFolder());
-        }
+        this.btnOpenLogs?.addEventListener('click', () => this.openLogsFolder());
     }
 
     startHotkeyRecording() {
@@ -111,9 +123,7 @@ export class SettingsPanel {
             this.inputHotkey.value = '';
         }
         this.renderShortcutReference();
-        if (this.hotkeyError) {
-            this.hotkeyError.classList.remove('show');
-        }
+        this.hotkeyError?.classList.remove('show');
     }
 
     stopHotkeyRecording() {
@@ -121,9 +131,12 @@ export class SettingsPanel {
         if (this.inputHotkey) {
             this.inputHotkey.classList.remove('recording');
             this.inputHotkey.placeholder = 'e.g., CommandOrControl+Shift+Space';
-            // Restore current hotkey if no new one was recorded
-            if (!this.pendingHotkey) {
-                this.loadSettings();
+            if (!this.pendingHotkey && window.api?.getSettings) {
+                window.api.getSettings().then((settings) => {
+                    const hotkey = settings?.hotkey || 'CommandOrControl+Shift+Space';
+                    this.inputHotkey.value = this.formatHotkeyForDisplay(hotkey);
+                    this.renderShortcutReference(hotkey);
+                }).catch(() => {});
             }
         }
     }
@@ -133,7 +146,6 @@ export class SettingsPanel {
 
         e.preventDefault();
 
-        // Build the accelerator string
         const modifiers = [];
         const isMac = this.isMacPlatform();
         if (e.ctrlKey) modifiers.push(isMac ? 'Control' : 'CommandOrControl');
@@ -142,12 +154,10 @@ export class SettingsPanel {
         if (e.metaKey) modifiers.push(isMac ? 'Command' : 'Super');
 
         let key = e.key;
-        // Handle special keys
         if (key === ' ') key = 'Space';
         if (key === 'Escape') key = 'Esc';
         if (key.length === 1) key = key.toUpperCase();
 
-        // Don't accept modifier-only combinations
         if (['Control', 'Alt', 'Shift', 'Meta'].includes(e.key)) {
             return;
         }
@@ -160,8 +170,6 @@ export class SettingsPanel {
         }
 
         this.renderShortcutReference(accelerator);
-
-        // Stop recording
         this.inputHotkey.blur();
     }
 
@@ -246,7 +254,6 @@ export class SettingsPanel {
     }
 
     applyThemePreview(theme) {
-        // Apply theme to document for immediate preview
         document.documentElement.setAttribute('data-theme', theme === 'system' ? 'dark' : theme);
     }
 
@@ -279,10 +286,171 @@ export class SettingsPanel {
         }
     }
 
+    hideResult(target) {
+        if (!target) {
+            return;
+        }
+
+        target.style.display = 'none';
+        target.className = 'test-result';
+        target.textContent = '';
+    }
+
+    showResult(target, message, isSuccess) {
+        if (!target) {
+            return;
+        }
+
+        target.textContent = message;
+        target.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+        target.style.display = 'block';
+    }
+
+    showTestResult(message, isSuccess) {
+        this.showResult(this.testResult, message, isSuccess);
+    }
+
+    showAccountResult(message, isSuccess) {
+        this.showResult(this.accountActionResult, message, isSuccess);
+    }
+
+    getAccountCredentials() {
+        const email = this.inputAccountEmail?.value.trim() || '';
+        const password = this.inputAccountPassword?.value || '';
+        const displayName = this.inputAccountDisplayName?.value.trim() || '';
+        return { email, password, displayName };
+    }
+
+    getSyncedSettingsPayload() {
+        return {
+            language: this.selLanguage.value,
+            enhanceText: true,
+            promptStyle: this.selPromptStyle.value,
+            customPrompt: this.inputCustomPrompt ? this.inputCustomPrompt.value.trim() : '',
+            model: this.selModel ? this.selModel.value : 'whisper-large-v3-turbo'
+        };
+    }
+
+    accountModeSummary(state) {
+        if (!state?.resolvedMode) {
+            return 'Signed out. Local desktop fallback is available when you save a Groq key below.';
+        }
+
+        const resolvedMode = `${state.resolvedMode.mode}${state.resolvedMode.available ? '' : ' (unavailable)'}`;
+        const byok = state.capabilities?.byok?.available
+            ? `BYOK ready${state.capabilities.byok.last4 ? ` ••••${state.capabilities.byok.last4}` : ''}`
+            : 'BYOK not saved';
+        const managed = state.capabilities?.managed?.available
+            ? 'Managed available'
+            : `Managed ${state.capabilities?.managed?.status || 'unavailable'}`;
+        return `Resolved mode: ${resolvedMode}. ${byok}. ${managed}.`;
+    }
+
+    renderAccountState(state) {
+        this.accountState = state || null;
+        const authenticated = state?.authenticated === true;
+
+        if (this.accountStatusChip) {
+            this.accountStatusChip.textContent = authenticated ? 'Signed in' : 'Signed out';
+            this.accountStatusChip.classList.toggle('signed-in', authenticated);
+            this.accountStatusChip.classList.toggle('signed-out', !authenticated);
+        }
+
+        const title = this.accountStatusCard?.querySelector('.account-status-title');
+        if (title) {
+            title.textContent = authenticated
+                ? `Signed in as ${state.user?.email || 'account user'}`
+                : 'Signed out';
+        }
+
+        if (this.accountStatusSubtitle) {
+            this.accountStatusSubtitle.textContent = authenticated
+                ? `Default mode: ${state.user?.defaultMode || 'managed'} • Session active until ${state.session?.expiresAt ? new Date(state.session.expiresAt).toLocaleString() : 'unknown'}`
+                : 'Use your Koe account to sync BYOK and mode across devices.';
+        }
+
+        if (this.accountStatusMeta) {
+            this.accountStatusMeta.textContent = this.accountModeSummary(state);
+        }
+
+        if (this.accountModeSelect) {
+            this.accountModeSelect.disabled = !authenticated;
+            this.accountModeSelect.value = state?.user?.defaultMode || 'managed';
+        }
+
+        if (this.btnAccountSignUp) {
+            this.btnAccountSignUp.disabled = authenticated;
+        }
+        if (this.btnAccountSignIn) {
+            this.btnAccountSignIn.disabled = authenticated;
+        }
+        if (this.btnAccountModeSave) {
+            this.btnAccountModeSave.disabled = !authenticated;
+        }
+        if (this.btnAccountSignOut) {
+            this.btnAccountSignOut.disabled = !authenticated;
+        }
+        if (this.btnAccountByokSave) {
+            this.btnAccountByokSave.disabled = !authenticated;
+        }
+        if (this.btnAccountByokDelete) {
+            this.btnAccountByokDelete.disabled = !authenticated;
+        }
+
+        if (this.accountByokHelp) {
+            const byok = state?.capabilities?.byok;
+            this.accountByokHelp.textContent = authenticated
+                ? (byok?.available
+                    ? `Saved to your account${byok.last4 ? ` as ••••${byok.last4}` : ''}. Metadata only is returned to the app.`
+                    : 'No synced Groq key saved yet for this account.')
+                : 'Stored server-side for signed-in desktop/mobile use. Metadata only is returned to the app.';
+        }
+
+        if (this.accountSnapshot) {
+            if (!authenticated) {
+                this.accountSnapshot.innerHTML = `
+                    <strong>Signed out.</strong><br>
+                    Local Groq fallback: ${state?.localFallback?.hasLocalGroqKey ? 'configured' : 'not configured'}<br>
+                    Cloud proxy override: ${state?.localFallback?.cloudProcessingEnabled ? 'enabled' : 'disabled'}
+                `;
+            } else {
+                const managedUsage = state?.capabilities?.managed?.usage;
+                this.accountSnapshot.innerHTML = `
+                    <strong>User:</strong> ${state.user?.email || 'Unknown'}<br>
+                    <strong>Resolved mode:</strong> ${state.resolvedMode?.mode || 'unknown'}${state.resolvedMode?.available === false ? ' (currently unavailable)' : ''}<br>
+                    <strong>Synced BYOK:</strong> ${state.capabilities?.byok?.available ? `available${state.capabilities.byok.last4 ? ` ••••${state.capabilities.byok.last4}` : ''}` : 'not saved'}<br>
+                    <strong>Managed:</strong> ${state.capabilities?.managed?.status || 'unallocated'}${state.capabilities?.managed?.available ? ' • available' : ''}<br>
+                    <strong>Managed usage:</strong> ${managedUsage ? `${managedUsage.audioSecondsUsed}/${managedUsage.audioSecondsLimit} seconds, ${managedUsage.requestCountUsed}/${managedUsage.requestCountLimit} requests` : 'n/a'}<br>
+                    <strong>Desktop fallback key:</strong> ${state.localFallback?.hasLocalGroqKey ? 'configured' : 'not configured'}
+                `;
+            }
+        }
+    }
+
+    async loadAccountState(showSuccessMessage = false) {
+        if (!window.api?.getAccountState) {
+            return;
+        }
+
+        try {
+            const state = await window.api.getAccountState();
+            this.renderAccountState(state);
+            if (showSuccessMessage) {
+                this.showAccountResult(state?.authenticated ? 'Account snapshot refreshed ✓' : 'Account state refreshed ✓', true);
+            }
+            return state;
+        } catch (error) {
+            console.error('Failed to load account state', error);
+            this.showAccountResult(error.message || 'Failed to load account state', false);
+        }
+    }
+
     async loadSettings() {
         if (!window.api) return;
         try {
+            await this.loadAccountState(false);
             const settings = await window.api.getSettings();
+
             if (settings) {
                 this.inputApiKey.value = settings.groqApiKey || '';
                 if (this.chkCloudProcessing) {
@@ -305,8 +473,6 @@ export class SettingsPanel {
                 if (this.chkAutoUpdate) {
                     this.chkAutoUpdate.checked = settings.autoUpdate !== false;
                 }
-
-                // Load new settings
                 if (this.selModel) {
                     this.selModel.value = settings.model || 'whisper-large-v3-turbo';
                 }
@@ -317,8 +483,6 @@ export class SettingsPanel {
                     this.inputHotkey.value = this.formatHotkeyForDisplay(settings.hotkey || 'CommandOrControl+Shift+Space');
                 }
                 this.renderShortcutReference(settings.hotkey || 'CommandOrControl+Shift+Space');
-
-                // Trigger change to update style group opacity
                 this.updateCloudProcessingControls();
                 this.updateEnhancementControls();
             }
@@ -348,10 +512,20 @@ export class SettingsPanel {
 
         try {
             await window.api.saveSettings(newSettings);
+
+            if (this.accountState?.authenticated && window.api.saveAccountSettings) {
+                try {
+                    await window.api.saveAccountSettings(this.getSyncedSettingsPayload());
+                    this.showAccountResult('Local settings saved and synced to your account ✓', true);
+                } catch (accountError) {
+                    console.error('Failed to sync account settings', accountError);
+                    this.showAccountResult(`Local settings saved, but account sync failed: ${accountError.message}`, false);
+                }
+            }
+
             this.hide();
         } catch (e) {
             console.error('Failed to save settings', e);
-            // Show error in the hotkey error area if it's a hotkey error
             if (e.message && e.message.includes('hotkey')) {
                 if (this.hotkeyError) {
                     this.hotkeyError.textContent = e.message;
@@ -379,6 +553,119 @@ export class SettingsPanel {
             .replace(/\s*\+\s*/g, '+');
     }
 
+    async withBusyButton(button, busyText, action, options = {}) {
+        if (!button) {
+            return action();
+        }
+
+        const original = button.innerHTML;
+        button.disabled = true;
+        button.textContent = busyText;
+
+        let succeeded = false;
+
+        try {
+            const result = await action();
+            succeeded = true;
+            return result;
+        } finally {
+            if (options.restoreDisabled !== false || !succeeded) {
+                button.disabled = false;
+            }
+            button.innerHTML = original;
+        }
+    }
+
+    async handleAccountSignUp() {
+        const { email, password, displayName } = this.getAccountCredentials();
+        if (!email || !password) {
+            this.showAccountResult('Email and password are required.', false);
+            return;
+        }
+
+        await this.withBusyButton(this.btnAccountSignUp, 'Signing Up...', async () => {
+            const state = await window.api.signUp({ email, password, displayName });
+            this.renderAccountState(state);
+            await this.loadSettings();
+            this.inputAccountPassword.value = '';
+            this.showAccountResult('Account created and signed in ✓', true);
+        }, { restoreDisabled: false }).catch((error) => {
+            this.showAccountResult(error.message || 'Sign up failed.', false);
+        });
+    }
+
+    async handleAccountSignIn() {
+        const { email, password } = this.getAccountCredentials();
+        if (!email || !password) {
+            this.showAccountResult('Email and password are required.', false);
+            return;
+        }
+
+        await this.withBusyButton(this.btnAccountSignIn, 'Signing In...', async () => {
+            const state = await window.api.signIn({ email, password });
+            this.renderAccountState(state);
+            await this.loadSettings();
+            this.inputAccountPassword.value = '';
+            this.showAccountResult('Signed in successfully ✓', true);
+        }, { restoreDisabled: false }).catch((error) => {
+            this.showAccountResult(error.message || 'Sign in failed.', false);
+        });
+    }
+
+    async handleAccountSignOut() {
+        await this.withBusyButton(this.btnAccountSignOut, 'Signing Out...', async () => {
+            const state = await window.api.signOut();
+            this.renderAccountState(state);
+            this.inputAccountPassword.value = '';
+            this.inputAccountByok.value = '';
+            this.showAccountResult('Signed out ✓', true);
+        }, { restoreDisabled: false }).catch((error) => {
+            this.showAccountResult(error.message || 'Sign out failed.', false);
+        });
+    }
+
+    async handleAccountModeSave() {
+        if (!this.accountModeSelect?.value) {
+            return;
+        }
+
+        await this.withBusyButton(this.btnAccountModeSave, 'Saving...', async () => {
+            const state = await window.api.setAccountMode({ defaultMode: this.accountModeSelect.value });
+            this.renderAccountState(state);
+            this.showAccountResult(`Default mode set to ${this.accountModeSelect.value} ✓`, true);
+        }, { restoreDisabled: false }).catch((error) => {
+            this.showAccountResult(error.message || 'Failed to update account mode.', false);
+        });
+    }
+
+    async handleAccountByokSave() {
+        const apiKey = this.inputAccountByok?.value.trim() || '';
+        if (!apiKey) {
+            this.showAccountResult('Enter a Groq API key to save to your account.', false);
+            return;
+        }
+
+        await this.withBusyButton(this.btnAccountByokSave, 'Saving...', async () => {
+            const state = await window.api.saveAccountByok({ apiKey, validate: true });
+            this.renderAccountState(state);
+            this.inputAccountByok.value = '';
+            this.showAccountResult('Synced Groq BYOK saved to your account ✓', true);
+        }, { restoreDisabled: false }).catch((error) => {
+            this.showAccountResult(error.message || 'Failed to save account Groq key.', false);
+        });
+    }
+
+    async handleAccountByokDelete() {
+        await this.withBusyButton(this.btnAccountByokDelete, 'Deleting...', async () => {
+            const state = await window.api.deleteAccountByok();
+            this.renderAccountState(state);
+            this.inputAccountByok.value = '';
+            this.showAccountResult('Synced Groq BYOK deleted from your account ✓', true);
+        }, { restoreDisabled: false }).catch((error) => {
+            this.showAccountResult(error.message || 'Failed to delete account Groq key.', false);
+        });
+    }
+
     async testApiKey() {
         if (!window.api) return;
         const key = this.inputApiKey.value.trim();
@@ -390,7 +677,7 @@ export class SettingsPanel {
         const testIconSvg = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>';
         this.btnTestKey.innerHTML = testIconSvg + ' Testing...';
         this.btnTestKey.disabled = true;
-        this.testResult.style.display = 'none';
+        this.hideResult(this.testResult);
 
         try {
             const isValid = await window.api.testGroqKey(key);
@@ -399,7 +686,7 @@ export class SettingsPanel {
             } else {
                 this.showTestResult('Invalid API Key ✗', false);
             }
-        } catch (e) {
+        } catch (_error) {
             this.showTestResult('Connection failed ✗', false);
         } finally {
             this.btnTestKey.innerHTML = testIconSvg + ' Test Connection';
@@ -407,15 +694,6 @@ export class SettingsPanel {
         }
     }
 
-    showTestResult(message, isSuccess) {
-        this.testResult.textContent = message;
-        this.testResult.className = `test-result ${isSuccess ? 'success' : 'error'}`;
-        this.testResult.style.display = 'block';
-    }
-
-    /**
-     * Open the logs folder in the system file explorer
-     */
     async openLogsFolder() {
         if (!window.api || !window.api.openLogsFolder) {
             console.error('openLogsFolder API not available');
@@ -436,7 +714,6 @@ export class SettingsPanel {
 
             if (!result.success) {
                 console.error('Failed to open logs folder:', result.error);
-                // Show error toast
                 const toast = document.getElementById('toast');
                 if (toast) {
                     toast.querySelector('.toast-text').innerText = 'Failed to open logs folder';
@@ -447,7 +724,6 @@ export class SettingsPanel {
         } catch (error) {
             console.error('Error opening logs folder:', error);
         } finally {
-            // Restore button state
             this.btnOpenLogs.disabled = false;
             this.btnOpenLogs.innerHTML = `
                 <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">

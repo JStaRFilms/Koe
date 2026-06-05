@@ -8,7 +8,13 @@ import {
   type ProviderOptions,
   type TranscriptionProvider,
 } from '@koe/core';
-import { getGroqApiKey } from '../storage/secure-storage';
+import {
+  isInvalidSessionError,
+  normalizeAccountApiError,
+  processAccountAudio,
+  refineAccountTranscript,
+} from '../api/account-client';
+import { clearAccountSession, getAccountSession, getGroqApiKey } from '../storage/secure-storage';
 
 function normalizeApiError(status: number, payload: unknown, fallback: string): Error {
   const parsed = parseErrorMessage(payload, fallback);
@@ -52,8 +58,50 @@ async function appendAudioFile(formData: FormData, audioUri: string): Promise<vo
   } as never);
 }
 
+function createRequestId() {
+  const bytes = Array.from({ length: 16 }, () => Math.floor(Math.random() * 256));
+  bytes[6] = (bytes[6] & 0x0f) | 0x40;
+  bytes[8] = (bytes[8] & 0x3f) | 0x80;
+  const hex = bytes.map((byte) => byte.toString(16).padStart(2, '0'));
+
+  return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`;
+}
+
+async function normalizeAuthenticatedError(error: unknown, fallback: string) {
+  if (isInvalidSessionError(error)) {
+    await clearAccountSession();
+  }
+
+  return normalizeAccountApiError(error, fallback);
+}
+
 export class MobileGroqProvider implements TranscriptionProvider {
   async transcribeSegment(audioUri: string, options: ProviderOptions): Promise<string> {
+    const accountSession = await getAccountSession();
+    if (accountSession?.token) {
+      options.onStage?.({
+        stage: 'transcribing',
+        label: 'Sending audio to your account backend...',
+        progress: 32,
+      });
+
+      try {
+        const response = await processAccountAudio({
+          session: accountSession,
+          audioUri,
+          requestId: createRequestId(),
+          language: options.language,
+          model: options.model || DEFAULT_WHISPER_MODEL,
+          enhanceText: false,
+          audioSeconds: options.audioSeconds,
+        });
+
+        return response.rawText || '';
+      } catch (error) {
+        throw await normalizeAuthenticatedError(error, 'Account transcription failed.');
+      }
+    }
+
     const apiKey = options.apiKey || (await getGroqApiKey());
     if (!apiKey) {
       throw new Error('No API key is saved on this device.');
@@ -97,6 +145,29 @@ export class MobileGroqProvider implements TranscriptionProvider {
     const trimmed = text.trim();
     if (!trimmed) {
       return '';
+    }
+
+    const accountSession = await getAccountSession();
+    if (accountSession?.token) {
+      options.onStage?.({
+        stage: 'refining',
+        label: 'Refining transcript through your account...',
+        progress: 82,
+      });
+
+      try {
+        const response = await refineAccountTranscript({
+          session: accountSession,
+          requestId: createRequestId(),
+          rawText: trimmed,
+          promptStyle: options.promptStyle,
+          customPrompt: options.customPrompt,
+        });
+
+        return response.refinedText || trimmed;
+      } catch (error) {
+        throw await normalizeAuthenticatedError(error, 'Transcript refinement failed.');
+      }
     }
 
     const apiKey = options.apiKey || (await getGroqApiKey());

@@ -4,6 +4,7 @@ import { authWithDeviceSchema } from "@/lib/server/contracts";
 import { normalizeEmail, one, sql } from "@/lib/server/db";
 import { apiError, handleApiError, readJson } from "@/lib/server/errors";
 import { attachDeviceToSession, createSession, hashPassword, registerOrTouchDevice, toAuthResponse } from "@/lib/server/auth";
+import { assertRateLimit } from "@/lib/server/rate-limit";
 import { ensureDefaultManagedAllocation } from "@/lib/server/usage";
 
 export const runtime = "nodejs";
@@ -12,6 +13,9 @@ export async function POST(request: Request) {
   try {
     const body = authWithDeviceSchema.parse(await readJson<unknown>(request));
     const email = normalizeEmail(body.email);
+    assertRateLimit(request, { scope: "auth:signup:ip", max: 10, windowMs: 60_000 });
+    assertRateLimit(request, { scope: "auth:signup:email", key: email, max: 5, windowMs: 10 * 60_000 });
+
     const passwordHash = await hashPassword(body.password);
     const db = sql();
 

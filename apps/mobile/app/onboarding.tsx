@@ -5,6 +5,7 @@ import { loadAppSettings, saveAppSettings } from '../src/storage/settings-storag
 import { GridBackground } from '../src/components/GridBackground';
 import { ScanlineOverlay } from '../src/components/ScanlineOverlay';
 import { BrutalButton } from '../src/components/BrutalButton';
+import { AccountAuthCard } from '../src/components/AccountAuthCard';
 
 const { width } = Dimensions.get('window');
 
@@ -41,41 +42,38 @@ export default function OnboardingScreen() {
             <Text style={[styles.title, { color: theme.text, fontFamily: Typography.fonts.deco }]}>
               Koe <Text style={{ color: theme.accent }}>{'\u58F0'}</Text>
             </Text>
-            <Text style={[styles.subtitle, { color: theme.textMuted }]}>
-              Speak, polish, paste.
-            </Text>
+            <Text style={[styles.subtitle, { color: theme.textMuted }]}>Speak, polish, paste.</Text>
           </View>
 
           <View style={styles.cardContainer}>
             <View style={[styles.infoBlock, { borderColor: theme.border }]}>
-              <Text style={[styles.infoTitle, { color: theme.text }]}>Add your key</Text>
-              <Text style={[styles.infoDesc, { color: theme.textDim }]}>
-                Koe uses your own API key to process audio. No subscriptions required.
-              </Text>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>Sign in once</Text>
+              <Text style={[styles.infoDesc, { color: theme.textDim }]}>Use the same account on mobile and desktop.</Text>
             </View>
 
             <View style={[styles.infoBlock, { borderColor: theme.border }]}>
-              <Text style={[styles.infoTitle, { color: theme.text }]}>Voice to Clipboard</Text>
-              <Text style={[styles.infoDesc, { color: theme.textDim }]}>
-                Record, stop, and your refined text is ready to paste anywhere.
-              </Text>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>Managed or BYOK</Text>
+              <Text style={[styles.infoDesc, { color: theme.textDim }]}>Pick Koe-managed mode or save your own Groq key to your account vault.</Text>
             </View>
 
             <View style={[styles.infoBlock, { borderColor: theme.border }]}>
-              <Text style={[styles.infoTitle, { color: theme.text }]}>Always Resilient</Text>
-              <Text style={[styles.infoDesc, { color: theme.textDim }]}>
-                Koe saves your last session if a connection drops. Never lose a thought.
-              </Text>
+              <Text style={[styles.infoTitle, { color: theme.text }]}>Offline fallback</Text>
+              <Text style={[styles.infoDesc, { color: theme.textDim }]}>You can still keep a device-only Groq key later in Settings for legacy fallback.</Text>
             </View>
           </View>
 
-          <Text style={[styles.helpText, { color: theme.textDim }]}>
-            Configure your own API key in Settings to begin.
-          </Text>
+          <AccountAuthCard
+            headerTitle="Account // Optional"
+            initialMode="signup"
+            helperText="Create an account to use managed mode without a local Groq key. You can also skip this and continue with local fallback later."
+            onAuthenticated={handleFinish}
+          />
+
+          <Text style={[styles.helpText, { color: theme.textDim }]}>You can always sign in later from Settings.</Text>
         </View>
 
         <View style={styles.footer}>
-          <BrutalButton onPress={handleFinish} title="Open Koe" style={{ width: '100%' }} />
+          <BrutalButton onPress={() => void handleFinish()} title="Continue to Koe" style={{ width: '100%' }} />
           <Text style={[styles.footerNote, { color: theme.textDim }]}>Ready when you are</Text>
         </View>
       </ScrollView>
@@ -102,7 +100,7 @@ const styles = StyleSheet.create({
     padding: Spacing.xl,
     paddingTop: 80,
     justifyContent: 'center',
-    gap: 40,
+    gap: 32,
   },
   hero: {
     alignItems: 'center',

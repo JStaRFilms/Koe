@@ -4,6 +4,7 @@ import { authWithDeviceSchema } from "@/lib/server/contracts";
 import { normalizeEmail, one, sql } from "@/lib/server/db";
 import { apiError, handleApiError, readJson } from "@/lib/server/errors";
 import { attachDeviceToSession, createSession, registerOrTouchDevice, toAuthResponse, verifyPassword } from "@/lib/server/auth";
+import { assertRateLimit } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -11,6 +12,9 @@ export async function POST(request: Request) {
   try {
     const body = authWithDeviceSchema.omit({ displayName: true }).parse(await readJson<unknown>(request));
     const email = normalizeEmail(body.email);
+    assertRateLimit(request, { scope: "auth:signin:ip", max: 20, windowMs: 60_000 });
+    assertRateLimit(request, { scope: "auth:signin:email", key: email, max: 8, windowMs: 10 * 60_000 });
+
     const db = sql();
     const user = one<{
       id: string;

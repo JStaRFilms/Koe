@@ -2,6 +2,7 @@ const { ipcMain, dialog, shell, app } = require('electron');
 const { CHANNELS } = require('../shared/constants');
 const { getSettings, setSettings } = require('./services/settings');
 const { validateApiKey } = require('./services/groq');
+const accountClient = require('./services/account-client');
 const rateLimiter = require('./services/rate-limiter');
 const historyService = require('./services/history');
 const { retryAndPasteTranscript } = require('./services/retry-transcript');
@@ -72,6 +73,23 @@ function setupIpcHandlers(mainWindow) {
     });
 
     ipcMain.handle(CHANNELS.TEST_GROQ_KEY, async (event, apiKey) => validateApiKey(apiKey));
+    ipcMain.handle(CHANNELS.GET_ACCOUNT_STATE, async () => accountClient.getAccountState());
+    ipcMain.handle(CHANNELS.ACCOUNT_SIGN_UP, async (event, payload) => accountClient.signUp(payload || {}));
+    ipcMain.handle(CHANNELS.ACCOUNT_SIGN_IN, async (event, payload) => accountClient.signIn(payload || {}));
+    ipcMain.handle(CHANNELS.ACCOUNT_SIGN_OUT, async () => accountClient.signOut());
+    ipcMain.handle(CHANNELS.ACCOUNT_SAVE_BYOK, async (event, payload) => {
+        await accountClient.saveAccountCredential(String(payload?.apiKey || '').trim(), payload?.validate !== false);
+        return accountClient.getAccountState();
+    });
+    ipcMain.handle(CHANNELS.ACCOUNT_DELETE_BYOK, async () => {
+        await accountClient.deleteAccountCredential();
+        return accountClient.getAccountState();
+    });
+    ipcMain.handle(CHANNELS.ACCOUNT_SET_MODE, async (event, payload) => {
+        await accountClient.setAccountMode(payload?.defaultMode);
+        return accountClient.getAccountState();
+    });
+    ipcMain.handle(CHANNELS.ACCOUNT_SAVE_SYNCED_SETTINGS, async (event, payload) => accountClient.saveAccountSettings(payload || {}));
     ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => rateLimiter.getUsageStats());
     ipcMain.handle(CHANNELS.GET_HISTORY, async () => historyService.getHistory());
     ipcMain.handle(CHANNELS.CLEAR_HISTORY, async () => historyService.clearHistory());

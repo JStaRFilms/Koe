@@ -35,7 +35,7 @@ export async function recordUsage(args: {
   const inputChars = Math.max(0, args.inputChars || 0);
   const outputChars = Math.max(0, args.outputChars || 0);
 
-  await db`
+  const chargeableUsage = await db`
     INSERT INTO usage_events (
       user_id, device_id, request_id, mode, provider, action, model,
       audio_seconds, input_chars, output_chars, status, error_code
@@ -45,10 +45,19 @@ export async function recordUsage(args: {
       ${args.resolvedMode.provider}, ${args.action}, ${args.model || null}, ${audioSeconds},
       ${inputChars}, ${outputChars}, ${args.status}, ${args.errorCode || null}
     )
-    ON CONFLICT (user_id, request_id, action) DO NOTHING
+    ON CONFLICT (user_id, request_id, action)
+    DO UPDATE SET
+      status = EXCLUDED.status,
+      error_code = EXCLUDED.error_code,
+      audio_seconds = EXCLUDED.audio_seconds,
+      input_chars = EXCLUDED.input_chars,
+      output_chars = EXCLUDED.output_chars,
+      model = EXCLUDED.model
+    WHERE usage_events.status <> 'success' AND EXCLUDED.status = 'success'
+    RETURNING id
   `;
 
-  if (args.resolvedMode.mode === "managed" && args.status === "success") {
+  if (args.resolvedMode.mode === "managed" && args.status === "success" && chargeableUsage.length > 0) {
     const periodKey = currentPeriodKey();
     await db`
       INSERT INTO managed_usage_periods (user_id, allocation_id, period_key, audio_seconds_used, request_count_used)

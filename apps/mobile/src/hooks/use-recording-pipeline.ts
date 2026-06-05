@@ -22,7 +22,7 @@ import {
   saveUsageTracker,
   type PersistedRetryState,
 } from '../storage/pipeline-storage';
-import { getGroqApiKey } from '../storage/secure-storage';
+import { getAccountSession, getGroqApiKey } from '../storage/secure-storage';
 import { addToHistory } from '../storage/history-storage';
 import { loadAppSettings } from '../storage/settings-storage';
 
@@ -41,6 +41,7 @@ interface ActiveRecordingSession {
   createdAt: number;
   totalDurationMillis: number;
   chunkUris: string[];
+  chunkDurationsMillis: number[];
 }
 
 const CHUNK_MIN_DURATION_MS = 10_000;
@@ -83,12 +84,14 @@ function buildRetryState(
   audioUris: string[],
   durationMillis: number,
   createdAt: number,
+  audioDurationsMillis: number[] = [],
   rawText?: string | null
 ): PersistedRetryState {
   return {
     sessionId,
     audioUri: audioUris[0] ?? null,
     audioUris,
+    audioDurationsMillis,
     durationMillis,
     createdAt,
     rawText: rawText ?? null,
@@ -262,6 +265,7 @@ export function useRecordingPipeline() {
 
       if (completed.uri && completed.durationMillis >= MIN_CHUNK_DURATION_MS) {
         activeSession.chunkUris.push(completed.uri);
+        activeSession.chunkDurationsMillis.push(completed.durationMillis);
         activeSession.totalDurationMillis += completed.durationMillis;
         setSessionDurationMillis(activeSession.totalDurationMillis);
       }
@@ -418,6 +422,9 @@ export function useRecordingPipeline() {
         lastError: null,
       };
       let pendingAudioUris = getRetryAudioUris(currentRetryState);
+      let pendingAudioDurationsMillis = Array.isArray(currentRetryState.audioDurationsMillis)
+        ? currentRetryState.audioDurationsMillis.slice(0, pendingAudioUris.length)
+        : [];
       let rawText = currentRetryState.rawText?.trim() ?? '';
 
       retryStateRef.current = currentRetryState;
@@ -444,11 +451,14 @@ export function useRecordingPipeline() {
           const completedChunkCount = totalChunkCount - pendingAudioUris.length;
           const chunkNumber = completedChunkCount + 1;
           const chunkProgressBase = 18 + Math.round((completedChunkCount / Math.max(totalChunkCount, 1)) * 48);
+          const fallbackChunkDuration = currentRetryState.durationMillis / Math.max(totalChunkCount, 1);
+          const chunkDurationMillis = pendingAudioDurationsMillis[0] ?? fallbackChunkDuration;
 
           const chunkText = await mobileProvider.transcribeSegment(audioUri, {
             apiKey,
             language: settings.language === 'auto' ? undefined : settings.language,
             model: settings.model,
+            audioSeconds: Math.max(1, Math.round(chunkDurationMillis / 1000)),
             onStage: (nextStage) =>
               setStatus({
                 stage: 'processing',
@@ -463,10 +473,12 @@ export function useRecordingPipeline() {
 
           rawText = appendTranscript(rawText, chunkText);
           pendingAudioUris = pendingAudioUris.slice(1);
+          pendingAudioDurationsMillis = pendingAudioDurationsMillis.slice(1);
           currentRetryState = {
             ...currentRetryState,
             audioUri: pendingAudioUris[0] ?? null,
             audioUris: pendingAudioUris,
+            audioDurationsMillis: pendingAudioDurationsMillis,
             rawText,
             interrupted: false,
             lastError: null,
@@ -525,6 +537,7 @@ export function useRecordingPipeline() {
           ...currentRetryState,
           audioUri: pendingAudioUris[0] ?? currentRetryState.audioUri ?? null,
           audioUris: pendingAudioUris,
+          audioDurationsMillis: pendingAudioDurationsMillis,
           rawText: rawText || currentRetryState.rawText || null,
           lastError: message,
           interrupted: false,
@@ -560,12 +573,12 @@ export function useRecordingPipeline() {
       return;
     }
 
-    const apiKey = await getGroqApiKey();
-    if (!apiKey?.trim()) {
+    const [apiKey, accountSession] = await Promise.all([getGroqApiKey(), getAccountSession()]);
+    if (!accountSession?.token && !apiKey?.trim()) {
       setStatus({
         stage: 'error',
-        label: 'API key required',
-        error: 'Open Settings and save your API key before recording.',
+        label: 'Sign in or save a key',
+        error: 'Sign in for managed/account processing, or save a local Groq key in Settings.',
         progress: 0,
       });
       return;
@@ -589,6 +602,7 @@ export function useRecordingPipeline() {
         createdAt: Date.now(),
         totalDurationMillis: 0,
         chunkUris: [],
+        chunkDurationsMillis: [],
       };
       finalRecordingRef.current = { url: null, error: null };
       rotationGuardRef.current = false;
@@ -666,6 +680,7 @@ export function useRecordingPipeline() {
 
       if (finalUri && finalDurationMillis >= MIN_CHUNK_DURATION_MS) {
         activeSession.chunkUris.push(finalUri);
+        activeSession.chunkDurationsMillis.push(finalDurationMillis);
         activeSession.totalDurationMillis += finalDurationMillis;
         setSessionDurationMillis(activeSession.totalDurationMillis);
       }
@@ -711,7 +726,8 @@ export function useRecordingPipeline() {
         activeSession.sessionId,
         [...activeSession.chunkUris],
         activeSession.totalDurationMillis,
-        activeSession.createdAt
+        activeSession.createdAt,
+        [...activeSession.chunkDurationsMillis]
       );
 
       retryStateRef.current = retryState;

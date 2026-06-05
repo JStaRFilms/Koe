@@ -11,6 +11,7 @@ export interface ProviderOptions {
     enhanceText?: boolean;
     promptStyle?: string;
     customPrompt?: string;
+    audioSeconds?: number;
     onStage?: (stage: { stage: string; label: string; progress?: number }) => void;
 }
 

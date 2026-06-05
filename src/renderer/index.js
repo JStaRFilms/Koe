@@ -297,11 +297,16 @@ async function init() {
         });
     }
 
-    const settings = await window.api.getSettings();
+    const [settings, accountState] = await Promise.all([
+        window.api.getSettings(),
+        window.api.getAccountState ? window.api.getAccountState().catch(() => null) : Promise.resolve(null)
+    ]);
     window.api.log(`Loaded settings. Hotkey: ${settings.hotkey}`);
 
-    if (!settings.groqApiKey) {
-        window.api.log('No API key found. User should configure it via the tray settings window.');
+    if (accountState?.authenticated) {
+        window.api.log(`Signed in as ${accountState.user?.email || 'desktop-user'}. Using authenticated backend processing when available.`);
+    } else if (!settings.groqApiKey) {
+        window.api.log('No local Groq API key found. User can sign in or configure a fallback key via the settings window.');
     }
 }
 

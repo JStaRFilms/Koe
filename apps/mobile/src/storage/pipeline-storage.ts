@@ -8,6 +8,7 @@ export interface PersistedRetryState {
   sessionId: string;
   audioUri?: string | null;
   audioUris?: string[];
+  audioDurationsMillis?: number[];
   durationMillis: number;
   createdAt: number;
   lastError?: string | null;

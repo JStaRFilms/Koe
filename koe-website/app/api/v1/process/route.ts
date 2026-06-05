@@ -6,6 +6,7 @@ import { getAuthContext } from "@/lib/server/auth";
 import { one, sql } from "@/lib/server/db";
 import { ApiError, apiError, handleApiError } from "@/lib/server/errors";
 import { refineWithGroq, transcribeWithGroq } from "@/lib/server/provider/groq";
+import { assertRateLimit } from "@/lib/server/rate-limit";
 import { recordTranscriptHistory, recordUsage } from "@/lib/server/usage";
 
 export const runtime = "nodejs";
@@ -31,6 +32,9 @@ export async function POST(request: Request) {
 
   try {
     const auth = await getAuthContext(request);
+    assertRateLimit(request, { scope: "process:ip", max: 60, windowMs: 60_000 });
+    assertRateLimit(request, { scope: "process:user", key: auth.user.id, max: 30, windowMs: 60_000 });
+
     const form = await request.formData();
     const audio = form.get("audio") || form.get("file");
     const requestId = z.string().uuid().parse(String(form.get("requestId") || ""));

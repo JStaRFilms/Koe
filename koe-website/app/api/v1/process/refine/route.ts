@@ -5,6 +5,7 @@ import { resolveAccountMode, resolveProviderApiKey } from "@/lib/server/account-
 import { getAuthContext } from "@/lib/server/auth";
 import { ApiError, apiError, handleApiError, readJson } from "@/lib/server/errors";
 import { refineWithGroq } from "@/lib/server/provider/groq";
+import { assertRateLimit } from "@/lib/server/rate-limit";
 import { recordTranscriptHistory, recordUsage } from "@/lib/server/usage";
 
 export const runtime = "nodejs";
@@ -12,6 +13,9 @@ export const runtime = "nodejs";
 export async function POST(request: Request) {
   try {
     const auth = await getAuthContext(request);
+    assertRateLimit(request, { scope: "process-refine:ip", max: 80, windowMs: 60_000 });
+    assertRateLimit(request, { scope: "process-refine:user", key: auth.user.id, max: 60, windowMs: 60_000 });
+
     const body = refineRequestSchema.parse(await readJson<unknown>(request));
     const resolvedMode = await resolveAccountMode({
       userId: auth.user.id,

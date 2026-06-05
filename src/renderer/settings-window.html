@@ -390,7 +390,73 @@
             <button id="btn-close-settings" style="display: none;"></button>
             <div class="settings-panel" id="settings-panel">
                 <div class="settings-body">
-                    <div class="section-header">API Configuration</div>
+                    <div class="section-header">Account</div>
+                    <div class="setting-group">
+                        <div class="account-status-card" id="account-status-card">
+                            <div class="account-status-header">
+                                <div>
+                                    <div class="account-status-title">Signed out</div>
+                                    <div class="account-status-subtitle" id="account-status-subtitle">Use your Koe account to sync BYOK and mode across devices.</div>
+                                </div>
+                                <span class="account-status-chip signed-out" id="account-status-chip">Signed out</span>
+                            </div>
+                            <div class="account-status-meta" id="account-status-meta">Local desktop fallback remains available when you save a Groq key below.</div>
+                        </div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Email</label>
+                        <input type="text" id="account-email" placeholder="you@example.com">
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Password</label>
+                        <input type="password" id="account-password" placeholder="At least 12 characters">
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Display Name <small class="input-help" style="display:inline; margin-left:6px;">Optional for sign up</small></label>
+                        <input type="text" id="account-display-name" placeholder="Optional display name">
+                    </div>
+
+                    <div class="setting-group">
+                        <div class="inline-actions">
+                            <button class="secondary-btn" id="btn-account-sign-up">Sign Up</button>
+                            <button class="secondary-btn" id="btn-account-sign-in">Sign In</button>
+                            <button class="secondary-btn" id="btn-account-sign-out">Sign Out</button>
+                            <button class="secondary-btn" id="btn-account-refresh">Refresh Account</button>
+                        </div>
+                        <div class="test-result" id="account-action-result"></div>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Account Mode</label>
+                        <div class="inline-actions">
+                            <select id="account-mode-select">
+                                <option value="managed">Managed</option>
+                                <option value="byok">BYOK</option>
+                            </select>
+                            <button class="secondary-btn" id="btn-account-mode-save">Apply Mode</button>
+                        </div>
+                        <small class="input-help">The backend decides whether the selected mode is currently available.</small>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Synced Groq BYOK</label>
+                        <div class="input-with-button">
+                            <input type="password" id="account-byok-key" placeholder="Save a Groq key to your account vault">
+                            <button class="secondary-btn" id="btn-account-byok-save">Save to Account</button>
+                            <button class="secondary-btn" id="btn-account-byok-delete">Delete</button>
+                        </div>
+                        <small class="input-help" id="account-byok-help">Stored server-side for signed-in desktop/mobile use. Metadata only is returned to the app.</small>
+                    </div>
+
+                    <div class="setting-group">
+                        <label>Account Snapshot</label>
+                        <div class="account-snapshot" id="account-snapshot">Loading account state...</div>
+                    </div>
+
+                    <div class="section-header">Local Desktop Fallback</div>
                     <div class="setting-group">
                         <label>Groq API Key</label>
                         <div class="input-with-button">

@@ -9,6 +9,7 @@ const {
     sanitizeRefinedText,
     resolveEnhancementPrompt
 } = require('@koe/core');
+const { processViaAuthenticatedBackend, refineViaAuthenticatedBackend } = require('./account-processing');
 const REQUESTS_PER_MINUTE = 20;
 
 let requestTimestamps = [];
@@ -176,6 +177,36 @@ async function refineText(rawText, options) {
 }
 
 async function processSegment(payload) {
+    if (payload.options?.accountProcessing?.sessionToken) {
+        const result = await processViaAuthenticatedBackend({
+            wavBuffer: payload.buffer,
+            audioSeconds: payload.audioSeconds,
+            language: payload.options.language,
+            enhanceText: false,
+            promptStyle: payload.options.promptStyle,
+            customPrompt: payload.options.customPrompt,
+            model: payload.options.model,
+            onStage: null,
+            requestId: payload.requestId,
+            clientSessionId: payload.sessionId,
+            sessionId: payload.sessionId
+        }, payload.options.accountProcessing);
+
+        postMessage('usage-recorded', {
+            requestKind: 'transcription',
+            audioSeconds: Number(payload.audioSeconds || 0)
+        });
+        postMessage('segment-result', {
+            sessionId: payload.sessionId,
+            segmentId: payload.segmentId,
+            sequence: payload.sequence,
+            audioSeconds: payload.audioSeconds,
+            empty: Boolean(result.empty) || !String(result.rawText || '').trim(),
+            rawText: String(result.rawText || '').trim()
+        });
+        return;
+    }
+
     const rawText = await transcribeAudio(payload.buffer, payload.options);
 
     postMessage('segment-result', {
@@ -189,6 +220,26 @@ async function processSegment(payload) {
 }
 
 async function processSessionRefinement(payload) {
+    if (payload.options?.accountProcessing?.sessionToken) {
+        const refinedText = await refineViaAuthenticatedBackend(payload.rawText, {
+            requestId: payload.requestId,
+            clientSessionId: payload.sessionId,
+            sessionId: payload.sessionId,
+            promptStyle: payload.options.promptStyle,
+            customPrompt: payload.options.customPrompt
+        }, payload.options.accountProcessing);
+
+        postMessage('usage-recorded', {
+            requestKind: 'refinement',
+            audioSeconds: 0
+        });
+        postMessage('session-refined', {
+            sessionId: payload.sessionId,
+            refinedText
+        });
+        return;
+    }
+
     const refinedText = await refineText(payload.rawText, payload.options);
     postMessage('session-refined', {
         sessionId: payload.sessionId,
@@ -208,6 +259,7 @@ parentPort.on('message', (message) => {
                 segmentId: message.payload.segmentId,
                 sequence: message.payload.sequence,
                 audioSeconds: message.payload.audioSeconds,
+                code: error.code || null,
                 error: error.message || 'Segment processing failed.'
             });
         });
@@ -218,6 +270,7 @@ parentPort.on('message', (message) => {
         processSessionRefinement(message.payload).catch((error) => {
             postMessage('session-refine-error', {
                 sessionId: message.payload.sessionId,
+                code: error.code || null,
                 error: error.message || 'Session refinement failed.'
             });
         });

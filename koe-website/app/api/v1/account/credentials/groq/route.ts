@@ -6,12 +6,15 @@ import { encryptSecret, secretLast4 } from "@/lib/server/crypto";
 import { one, sql, toIso } from "@/lib/server/db";
 import { apiError, handleApiError, readJson } from "@/lib/server/errors";
 import { validateGroqApiKey } from "@/lib/server/provider/groq";
+import { assertRateLimit } from "@/lib/server/rate-limit";
 
 export const runtime = "nodejs";
 
 export async function PUT(request: Request) {
   try {
     const auth = await getAuthContext(request);
+    assertRateLimit(request, { scope: "credential:groq:user", key: auth.user.id, max: 10, windowMs: 10 * 60_000 });
+
     const body = credentialPutSchema.parse(await readJson<unknown>(request));
 
     if (body.validate) {

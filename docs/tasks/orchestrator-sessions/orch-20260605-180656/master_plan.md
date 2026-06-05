@@ -59,10 +59,10 @@
 | 01 | Foundation intake and session setup | Orchestrator | vibe-genesis | none | completed |
 | 02 | Neon auth + account-mode architecture | Architect | vibe-design | 01 | completed |
 | 03 | GPT-OSS model audit and switch plan | Code | vibe-build | 01 | completed |
-| 04 | Backend foundation for email/password, Neon, sessions, account modes | Code | vibe-build | 02 | in-progress |
-| 05 | Desktop account/account-mode integration | Code | vibe-build | 02,04 | pending |
-| 06 | Mobile account/account-mode integration | Code | vibe-build | 02,04 | pending |
-| 07 | Cross-device verification, security review, handoff docs | Review | vibe-build | 03,04,05,06 | pending |
+| 04 | Backend foundation for email/password, Neon, sessions, account modes | Code | vibe-build | 02 | completed |
+| 05 | Desktop account/account-mode integration | Code | vibe-build | 02,04 | completed |
+| 06 | Mobile account/account-mode integration | Code | vibe-build | 02,04 | completed |
+| 07 | Cross-device verification, security review, handoff docs | Review | vibe-build | 03,04,05,06 | completed |
 
 ## Progress Checklist
 
@@ -70,13 +70,13 @@
 - [x] Create orchestration session and task packets.
 - [x] Produce Neon/auth/account-mode architecture report.
 - [x] Verify active app code already uses GPT-OSS (`openai/gpt-oss-120b`) and no runtime Kimi/K2 references remain.
-- [ ] Implement Neon migrations and backend auth/account-mode scaffold.
-- [ ] Add authenticated BYOK vault and account snapshot.
-- [ ] Add server-side mode resolver and managed allocation scaffold.
-- [ ] Add authenticated processing route scaffold.
-- [ ] Wire desktop account UI/session/processing.
-- [ ] Wire mobile account UI/session/processing.
-- [ ] Run final security/regression review.
+- [x] Implement Neon migrations and backend auth/account-mode scaffold.
+- [x] Add authenticated BYOK vault and account snapshot.
+- [x] Add server-side mode resolver and managed allocation scaffold.
+- [x] Add authenticated processing route scaffold.
+- [x] Wire desktop account UI/session/processing.
+- [x] Wire mobile account UI/session/processing.
+- [x] Run final security/regression review.
 
 ## Notes
 
