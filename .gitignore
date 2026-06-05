@@ -52,3 +52,5 @@ android/
 *.p12
 *.key
 *.mobileprovision
+
+.pi/
