@@ -3,6 +3,7 @@ export type AppPhase = "idle" | "recording" | "processing" | "done" | "error";
 export type AuthMode = "signin" | "signup" | "reset";
 export type WebAppTab = "record" | "account" | "history";
 export type BillingPlanCode = "managed_lite" | "managed_plus" | "managed_pro";
+export type BillingPlanTarget = BillingPlanCode | "managed_free";
 
 export type AuthResponse = {
   user: { id: string; email: string; displayName: string | null; defaultMode: AccountMode; emailVerifiedAt: string | null };
@@ -53,6 +54,14 @@ export type Snapshot = {
       monthlyAudioSeconds: number;
       monthlyRequestCount: number;
     }>;
+    pendingPlanChange: {
+      id: string;
+      fromPlanCode: BillingPlanCode;
+      toPlanCode: BillingPlanTarget;
+      changeType: "upgrade" | "downgrade" | "cancel";
+      status: "pending" | "applied" | "canceled";
+      effectiveAt: string | null;
+    } | null;
   };
   settings: {
     language: string;

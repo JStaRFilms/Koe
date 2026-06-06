@@ -16,18 +16,47 @@ export async function markSubscriptionPastDue(subscriptionCode: string | null) {
 export async function disablePaidSubscription(subscriptionCode: string | null) {
   if (!subscriptionCode) return false;
   const rows = await sql()`
-    WITH changed AS (
-      UPDATE billing_subscriptions
-      SET status = 'disabled', updated_at = now()
+    WITH target AS (
+      SELECT id, user_id, plan_id
+      FROM billing_subscriptions
       WHERE provider_subscription_code = ${subscriptionCode}
         AND status IN ('pending', 'active', 'past_due')
-      RETURNING user_id
+      LIMIT 1
+    ),
+    pending_change AS (
+      SELECT 1
+      FROM billing_plan_changes
+      WHERE user_id IN (SELECT user_id FROM target)
+        AND subscription_id IN (SELECT id FROM target)
+        AND status = 'pending'
+      LIMIT 1
+    ),
+    current_subscription AS (
+      SELECT id
+      FROM billing_subscriptions
+      WHERE user_id IN (SELECT user_id FROM target)
+        AND status IN ('pending', 'active', 'past_due')
+      ORDER BY updated_at DESC
+      LIMIT 1
+    ),
+    changed AS (
+      UPDATE billing_subscriptions
+      SET status = 'disabled', updated_at = now()
+      WHERE id IN (SELECT id FROM target)
+        AND NOT EXISTS (SELECT 1 FROM pending_change)
+        AND id IN (SELECT id FROM current_subscription)
+      RETURNING user_id, plan_id
     )
     UPDATE managed_allocations
     SET status = 'suspended', updated_at = now()
     WHERE source = 'paystack'
       AND status = 'active'
       AND user_id IN (SELECT user_id FROM changed)
+      AND plan_code IN (
+        SELECT billing_plans.code
+        FROM billing_plans
+        JOIN changed ON changed.plan_id = billing_plans.id
+      )
     RETURNING id
   `;
   return rows.length > 0;

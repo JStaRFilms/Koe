@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCapabilities, snapshotResolvedMode } from "@/lib/server/account-mode";
 import { getAuthContext } from "@/lib/server/auth";
 import { getActiveBillingSubscription, listBillingPlans } from "@/lib/server/billing";
+import { applyDuePlanChanges, getPendingPlanChange } from "@/lib/server/billing-plan-changes";
 import { one, sql, toIso } from "@/lib/server/db";
 import { handleApiError } from "@/lib/server/errors";
 
@@ -9,14 +10,16 @@ export const runtime = "nodejs";
 
 async function getBillingSnapshot(userId: string) {
   try {
-    const [subscription, plans] = await Promise.all([
+    await applyDuePlanChanges(userId);
+    const [subscription, plans, pendingPlanChange] = await Promise.all([
       getActiveBillingSubscription(userId),
       listBillingPlans(),
+      getPendingPlanChange(userId),
     ]);
-    return { subscription, plans };
+    return { subscription, plans, pendingPlanChange };
   } catch (error) {
     console.error("[AccountSnapshot] Billing data unavailable.", error);
-    return { subscription: null, plans: [] };
+    return { subscription: null, plans: [], pendingPlanChange: null };
   }
 }
 
@@ -63,6 +66,7 @@ export async function GET(request: Request) {
         provider: "paystack",
         subscription: billing.subscription,
         plans: billing.plans,
+        pendingPlanChange: billing.pendingPlanChange,
       },
       settings: {
         language: settings?.language || "auto",

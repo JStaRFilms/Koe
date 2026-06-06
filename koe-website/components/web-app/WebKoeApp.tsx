@@ -57,7 +57,7 @@ export function WebKoeApp() {
       setBusyLabel("");
     }
   }, [token]);
-  const { startCheckout } = usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatus });
+  const { startCheckout, changePlan, cancelPlan } = usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatus });
 
   const processAudio = useCallback(async (audioBlob: Blob, audioSeconds: number) => {
     if (!token || !snapshot) {
@@ -179,7 +179,7 @@ export function WebKoeApp() {
     );
   }
 
-  const accountPanel = <AccountPanel snapshot={snapshot} modeCopy={modeCopy} busyLabel={busyLabel} onRefresh={() => void loadSnapshot()} onRequestVerification={() => void requestVerification()} onSignOut={() => void signOut()} onSwitchMode={(mode) => void switchMode(mode)} onStartCheckout={(planCode) => void startCheckout(planCode)} />;
+  const accountPanel = <AccountPanel snapshot={snapshot} modeCopy={modeCopy} busyLabel={busyLabel} onRefresh={() => void loadSnapshot()} onRequestVerification={() => void requestVerification()} onSignOut={() => void signOut()} onSwitchMode={(mode) => void switchMode(mode)} onStartCheckout={(planCode) => void startCheckout(planCode)} onChangePlan={(planCode) => void changePlan(planCode)} onCancelPlan={() => void cancelPlan()} />;
   const recorderPanel = <RecorderPanel phase={phase} transcript={transcript} inputLevel={recorder.inputLevel} busyLabel={busyLabel} isSupported={recorder.isSupported} copyState={copyState} onRecordToggle={phase === "recording" ? recorder.stopRecording : () => void recorder.startRecording()} onCopy={() => void copyText(transcript)} onClear={() => { setTranscript(""); setPhase("idle"); setStatus("Transcript cleared."); }} />;
   const historyPanel = <HistoryPanel history={snapshot.recentHistory} copiedEntryId={copiedEntryId} onCopyEntry={(id, text) => void copyText(text, id)} />;
 

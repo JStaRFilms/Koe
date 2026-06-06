@@ -129,6 +129,22 @@ export async function updatePaystackPlan(planCode: string, args: {
   });
 }
 
+export async function disablePaystackSubscription(code: string, token: string) {
+  const response = await fetch(`${PAYSTACK_API}/subscription/disable`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${secretKey()}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ code, token }),
+  });
+  const payload = (await response.json().catch(() => ({}))) as { status?: boolean; message?: string };
+  if (!response.ok || !payload.status) {
+    throw new ApiError("UPSTREAM_ERROR", payload.message || "Could not disable Paystack subscription.", 502, true);
+  }
+  return true;
+}
+
 export function verifyPaystackSignature(rawBody: string, signature: string | null) {
   const secret = (process.env.PAYSTACK_WEBHOOK_SECRET || process.env.PAYSTACK_SECRET_KEY || "").trim();
   if (!secret || !signature) return false;

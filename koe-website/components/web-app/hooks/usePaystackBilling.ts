@@ -13,6 +13,11 @@ export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatu
   const verifiedReferenceRef = useRef("");
   const startedCheckoutRef = useRef("");
 
+  const openCheckout = useCallback((url: string) => {
+    setStatus("Opening Paystack checkout...");
+    window.location.href = url;
+  }, [setStatus]);
+
   const startCheckout = useCallback(async (planCode: BillingPlanCode) => {
     if (!token) return;
     setBusyLabel("Preparing Paystack checkout...");
@@ -29,13 +34,57 @@ export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatu
       if (!response.ok || !payload.checkout?.authorization_url) {
         throw new Error(payload.error?.message || `Request failed with HTTP ${response.status}.`);
       }
-      setStatus("Opening Paystack checkout...");
-      window.location.href = payload.checkout.authorization_url;
+      openCheckout(payload.checkout.authorization_url);
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Could not start Paystack checkout.");
       setBusyLabel("");
     }
-  }, [setBusyLabel, setStatus, token]);
+  }, [openCheckout, setBusyLabel, setStatus, token]);
+
+  const changePlan = useCallback(async (planCode: BillingPlanCode) => {
+    if (!token) return;
+    setBusyLabel("Updating managed plan...");
+    try {
+      const response = await fetch("/api/v1/billing/paystack/change-plan", {
+        method: "POST",
+        headers: { ...authHeaders(token), "Content-Type": "application/json" },
+        body: JSON.stringify({ planCode }),
+      });
+      if (!response.ok) throw new Error(await readApiError(response));
+      const payload = (await response.json().catch(() => ({}))) as {
+        action?: "checkout" | "scheduled";
+        checkout?: { authorization_url?: string };
+      };
+      if (payload.action === "checkout" && payload.checkout?.authorization_url) {
+        openCheckout(payload.checkout.authorization_url);
+        return;
+      }
+      await loadSnapshot(token);
+      setStatus("Plan change scheduled for the next billing period.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not update managed plan.");
+    } finally {
+      setBusyLabel("");
+    }
+  }, [loadSnapshot, openCheckout, setBusyLabel, setStatus, token]);
+
+  const cancelPlan = useCallback(async () => {
+    if (!token) return;
+    setBusyLabel("Canceling paid renewal...");
+    try {
+      const response = await fetch("/api/v1/billing/paystack/cancel", {
+        method: "POST",
+        headers: authHeaders(token),
+      });
+      if (!response.ok) throw new Error(await readApiError(response));
+      await loadSnapshot(token);
+      setStatus("Paid renewal canceled. Your quota remains available until the period ends.");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Could not cancel paid renewal.");
+    } finally {
+      setBusyLabel("");
+    }
+  }, [loadSnapshot, setBusyLabel, setStatus, token]);
 
   const verifyCheckoutReference = useCallback(async (reference: string) => {
     if (!token || verifiedReferenceRef.current === reference) return;
@@ -82,7 +131,7 @@ export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatu
     void startCheckout(checkoutPlan);
   }, [setStatus, startCheckout, token, verifyCheckoutReference]);
 
-  return { startCheckout };
+  return { startCheckout, changePlan, cancelPlan };
 }
 
 function parseCheckoutPlan(value: string | null): BillingPlanCode | null {

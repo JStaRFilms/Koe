@@ -11,6 +11,14 @@ type AccountPanelProps = {
   onSignOut: () => void;
   onSwitchMode: (mode: AccountMode) => void;
   onStartCheckout: (planCode: BillingPlanCode) => void;
+  onChangePlan: (planCode: BillingPlanCode) => void;
+  onCancelPlan: () => void;
+};
+
+const PLAN_RANK: Record<BillingPlanCode, number> = {
+  managed_lite: 1,
+  managed_plus: 2,
+  managed_pro: 3,
 };
 
 function managedQuotaCopy(usage: Snapshot["capabilities"]["managed"]["usage"]) {
@@ -29,12 +37,20 @@ function formatNaira(kobo: number) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(kobo / 100);
 }
 
-export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onRequestVerification, onSignOut, onSwitchMode, onStartCheckout }: AccountPanelProps) {
+function planTargetCopy(target: string) {
+  if (target === "managed_free") return "Free";
+  return target.replace("managed_", "Managed ");
+}
+
+export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onRequestVerification, onSignOut, onSwitchMode, onStartCheckout, onChangePlan, onCancelPlan }: AccountPanelProps) {
   const managedUsage = snapshot.capabilities.managed.usage;
   const dynamicQuota = managedQuotaCopy(managedUsage);
   const isVerified = Boolean(snapshot.user.emailVerifiedAt);
   const subscription = snapshot.billing.subscription;
-  const paidActive = subscription?.status === "active";
+  const pendingPlanChange = snapshot.billing.pendingPlanChange;
+  const currentPlanCode = subscription?.planCode;
+  const billingBusy = Boolean(busyLabel) || Boolean(pendingPlanChange);
+  const canCancel = subscription?.status === "active" && !pendingPlanChange;
 
   return (
     <aside className="space-y-4 md:space-y-6">
@@ -123,21 +139,49 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
           </p>
         )}
         <div className="space-y-3">
-          {snapshot.billing.plans.map((plan) => (
-            <button
-              key={plan.code}
-              type="button"
-              className="webapp-utility-button w-full justify-between"
-              onClick={() => onStartCheckout(plan.code)}
-              disabled={Boolean(busyLabel) || paidActive}
-            >
-              <span className="flex items-center gap-2">
-                <CreditCard className="w-4 h-4" />
-                {plan.name}
-              </span>
-              <span>{formatNaira(plan.amountKobo)}/mo · {formatSeconds(plan.monthlyAudioSeconds)}</span>
-            </button>
-          ))}
+          {pendingPlanChange ? (
+            <p className="text-xs text-muted leading-relaxed">
+              Pending {pendingPlanChange.changeType} to {planTargetCopy(pendingPlanChange.toPlanCode)} on {pendingPlanChange.effectiveAt ? new Date(pendingPlanChange.effectiveAt).toLocaleDateString() : "the next billing period"}.
+            </p>
+          ) : null}
+          <div className="hidden md:block space-y-3">
+            {snapshot.billing.plans.map((plan) => {
+              const isCurrent = currentPlanCode === plan.code;
+              const isUpgrade = currentPlanCode ? PLAN_RANK[plan.code] > PLAN_RANK[currentPlanCode] : false;
+              const actionLabel = !currentPlanCode ? "Buy" : isCurrent ? "Current" : isUpgrade ? "Upgrade" : "Downgrade next period";
+              const clickHandler = !currentPlanCode ? () => onStartCheckout(plan.code) : () => onChangePlan(plan.code);
+              return (
+                <button
+                  key={plan.code}
+                  type="button"
+                  className="webapp-utility-button w-full justify-between"
+                  onClick={clickHandler}
+                  disabled={billingBusy || isCurrent}
+                >
+                  <span className="flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" />
+                    {actionLabel}: {plan.name}
+                  </span>
+                  <span>{formatNaira(plan.amountKobo)}/mo · {formatSeconds(plan.monthlyAudioSeconds)}</span>
+                </button>
+              );
+            })}
+            {subscription ? (
+              <button
+                type="button"
+                className="webapp-utility-button w-full justify-center"
+                onClick={() => {
+                  if (window.confirm("Cancel paid renewal? Your paid quota stays available until the period ends.")) onCancelPlan();
+                }}
+                disabled={!canCancel}
+              >
+                CANCEL TO FREE NEXT PERIOD
+              </button>
+            ) : null}
+          </div>
+          <p className="md:hidden text-xs text-muted leading-relaxed">
+            Paid plan checkout and plan changes are available from desktop web for now.
+          </p>
         </div>
       </div>
     </aside>

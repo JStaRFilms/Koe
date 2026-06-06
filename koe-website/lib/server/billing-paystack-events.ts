@@ -6,9 +6,10 @@ import {
   getBillingPlan,
   publicPlan,
 } from "./billing";
+import { cancelPendingPlanChanges, getInternalActiveSubscription } from "./billing-plan-changes";
 import { sql } from "./db";
 import { ApiError } from "./errors";
-import { PaystackTransactionData } from "./paystack";
+import { disablePaystackSubscription, PaystackTransactionData } from "./paystack";
 
 export function extractPaystackMetadata(data: PaystackTransactionData) {
   if (typeof data.metadata === "string") {
@@ -39,6 +40,9 @@ export async function activatePaidPlanFromTransaction(data: PaystackTransactionD
   }
 
   const plan = await getBillingPlan(planCode);
+  const previousSubscription = metadata.koeChangeType === "upgrade"
+    ? await getInternalActiveSubscription(userId)
+    : null;
   await activateSubscription({
     userId,
     plan,
@@ -48,6 +52,11 @@ export async function activatePaidPlanFromTransaction(data: PaystackTransactionD
     emailToken: subscriptionEmailToken(data.subscription),
     paidAt: data.paid_at || null,
   });
+  await cancelPendingPlanChanges(userId);
+
+  if (previousSubscription?.provider_subscription_code && previousSubscription.provider_email_token) {
+    await disablePaystackSubscription(previousSubscription.provider_subscription_code, previousSubscription.provider_email_token);
+  }
 
   return { plan: publicPlan(plan), subscription: await getActiveBillingSubscription(userId) };
 }
