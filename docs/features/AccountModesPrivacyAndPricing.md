@@ -46,6 +46,12 @@ Koe has two browser paths:
 
 ## Data handling
 
+### Admin usage dashboard
+
+- The admin usage dashboard exposes account emails, usage metadata, and transcript snippets.
+- In production, `KOE_ADMIN_DASHBOARD_TOKEN` must be configured before the dashboard can render.
+- If production dashboard access is enabled without a token, the route must stay unavailable rather than failing open.
+
 ### Signed out + local BYOK
 
 - Transcript history stays on the device.

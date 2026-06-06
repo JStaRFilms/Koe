@@ -33,8 +33,14 @@ Errors use `{ "error": { "code": "...", "message": "...", "retryable": false } }
 ## Processing scaffold
 
 - `POST /api/v1/public-demo/process` accepts short multipart audio from the landing-page public demo. It uses `GROQ_MANAGED_API_KEY` server-side, enforces per-IP rate limits and a short duration cap, and does not store transcript history.
-- `POST /api/v1/process` accepts multipart audio or JSON/base64 audio, `requestId`, optional `mode`, settings, `audioSeconds`, and an optional `Accept: application/x-ndjson`. The server resolves BYOK/managed mode, decrypts BYOK only server-side, calls Groq, and records history/usage. For browser media blobs where server duration parsing is unavailable, the route can use the client-recorded `audioSeconds` estimate for managed quota billing.
+- `POST /api/v1/process` accepts multipart audio or JSON/base64 audio, `requestId`, optional `mode`, settings, `audioSeconds`, and an optional `Accept: application/x-ndjson`. JSON/base64 uploads are rejected before decoding when their encoded payload would exceed the 20 MB audio cap. The server resolves BYOK/managed mode, decrypts BYOK only server-side, calls Groq, and records history/usage. For browser media blobs where server duration parsing is unavailable, the route can use the client-recorded `audioSeconds` estimate for managed quota billing.
 - `POST /api/v1/process/refine` accepts JSON `{ requestId, rawText, mode?, promptStyle?, customPrompt? }` and records refinement usage/history.
+
+## Admin usage dashboard
+
+- `/admin/usage` is disabled by default in production unless `KOE_ADMIN_DASHBOARD_ENABLED=true`.
+- Production dashboard rendering also requires `KOE_ADMIN_DASHBOARD_TOKEN`; without it, the route returns not found instead of showing account data.
+- When a token is configured, callers must pass it with `?token=...`.
 
 Managed mode requires a server-side allocation plus `GROQ_MANAGED_API_KEY`; clients cannot self-grant allocations or receive managed provider keys.
 

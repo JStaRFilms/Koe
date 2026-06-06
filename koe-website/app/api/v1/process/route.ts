@@ -13,6 +13,7 @@ import { recordTranscriptHistory, recordUsage } from "@/lib/server/usage";
 export const runtime = "nodejs";
 
 const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
+const MAX_JSON_AUDIO_BASE64_CHARS = Math.ceil((MAX_AUDIO_BYTES * 4) / 3) + 4;
 
 const jsonProcessSchema = z.object({
   audioBase64: z.string().min(1),
@@ -60,6 +61,10 @@ async function parseProcessInput(request: Request): Promise<ProcessInput> {
 
   if (contentType.toLowerCase().includes("application/json")) {
     const body = jsonProcessSchema.parse(await request.json());
+    if (body.audioBase64.length > MAX_JSON_AUDIO_BASE64_CHARS) {
+      throw new ApiError("AUDIO_TOO_LARGE", "Audio file too large. Keep uploads under 20 MB.", 413);
+    }
+
     const audioBytes = Buffer.from(body.audioBase64, "base64");
 
     return {

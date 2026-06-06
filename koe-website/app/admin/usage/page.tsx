@@ -113,6 +113,10 @@ function dashboardEnabled() {
   return process.env.NODE_ENV !== "production";
 }
 
+function requiresProductionToken() {
+  return process.env.NODE_ENV === "production";
+}
+
 function firstParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -223,6 +227,10 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
 
   const params = await searchParams;
   const requiredToken = process.env.KOE_ADMIN_DASHBOARD_TOKEN?.trim();
+  if (requiresProductionToken() && !requiredToken) {
+    notFound();
+  }
+
   const providedToken = firstParam(params.token)?.trim();
   if (requiredToken && providedToken !== requiredToken) {
     return (
