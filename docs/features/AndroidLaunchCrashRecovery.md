@@ -45,8 +45,8 @@ No database schema changes.
 3. [x] Identify the smallest root-cause fix for the startup crash.
 4. [x] Update release/version metadata for a new Android build.
 5. [x] Run release verification checks from `docs/release-process.md`.
-6. [ ] Commit and push to `master`.
-7. [ ] Run the Android release build and attach the fixed APK to GitHub Releases.
+6. [x] Commit and push to `master`.
+7. [x] Run the Android release build and attach the fixed APK to GitHub Releases.
 
 ## Root Cause
 
@@ -77,6 +77,17 @@ The most serious mismatch was `expo-intent-launcher`, because Koe imports it for
 Attempted:
 
 - `pnpm --filter koe-mobile lint` currently cannot run because the mobile package script calls `eslint .`, but no `eslint` binary is available in the mobile package execution context.
+
+## Release Results
+
+- Fix commit: `d2af84a0cd5c08e7fed05a2bfc7e41ee34b09c4e`
+- Release tag: `v1.1.7`
+- Release URL: `https://github.com/JStaRFilms/Koe/releases/tag/v1.1.7`
+- GitHub Actions release run: `27055161069`, conclusion `success`
+- EAS Android build: `354f05d1-0493-43f0-9eef-ba0c67252149`, status `FINISHED`
+- EAS app version: `1.1.7`
+- EAS Android build version: `3`
+- Uploaded APK asset: `koe-android-v1.1.7.apk`
 
 ## Notes
 
