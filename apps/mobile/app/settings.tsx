@@ -8,6 +8,7 @@ import {
   Switch,
   useColorScheme,
   Dimensions,
+  Platform,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -34,6 +35,15 @@ import { ScanlineOverlay } from '../src/components/ScanlineOverlay';
 import { BrutalCard } from '../src/components/BrutalCard';
 import { BrutalButton } from '../src/components/BrutalButton';
 import { AccountAuthCard } from '../src/components/AccountAuthCard';
+import {
+  type AndroidUpdateInfo,
+  checkForAndroidUpdate,
+  downloadAndInstallAndroidUpdate,
+  getAndroidUpdateErrorMessage,
+  getCurrentAndroidAppVersionLabel,
+  openAndroidUnknownAppSourcesSettings,
+  openAndroidUpdateRelease,
+} from '../src/updates/android-updates';
 
 const { width } = Dimensions.get('window');
 
@@ -107,6 +117,10 @@ export default function SettingsScreen() {
   const [isSavingLocalKey, setIsSavingLocalKey] = useState(false);
   const [isClearingLocalKey, setIsClearingLocalKey] = useState(false);
   const [showDeviceFallback, setShowDeviceFallback] = useState(false);
+  const [availableUpdate, setAvailableUpdate] = useState<AndroidUpdateInfo | null>(null);
+  const [updateStatusMessage, setUpdateStatusMessage] = useState('Checking Android release feed...');
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [isInstallingUpdate, setIsInstallingUpdate] = useState(false);
 
   const notifySuccess = async () => {
     try {
@@ -123,6 +137,56 @@ export default function SettingsScreen() {
       // Optional.
     }
   };
+
+  const refreshAndroidUpdate = useCallback(async (manual = false) => {
+    if (Platform.OS !== 'android') {
+      setUpdateStatusMessage('APK updates are only available on Android.');
+      return;
+    }
+
+    setIsCheckingUpdate(true);
+    if (manual) {
+      setFeedbackMessage('Checking GitHub for Android updates...');
+      setErrorMessage(null);
+    }
+
+    const result = await checkForAndroidUpdate();
+
+    if (result.status === 'available') {
+      setAvailableUpdate(result.update);
+      setUpdateStatusMessage(`Version ${result.update.versionName} is ready to install.`);
+      if (manual) {
+        setFeedbackMessage('Android update found.');
+      }
+    } else if (result.status === 'up-to-date') {
+      setAvailableUpdate(null);
+      setUpdateStatusMessage(`You are up to date on ${result.currentVersionName}.`);
+      if (manual) {
+        setFeedbackMessage('Koe Android is up to date.');
+      }
+    } else if (result.status === 'unsupported') {
+      setAvailableUpdate(null);
+      setUpdateStatusMessage(result.reason);
+      if (manual) {
+        setFeedbackMessage(null);
+      }
+    } else if (result.status === 'skipped') {
+      setAvailableUpdate(result.update);
+      setUpdateStatusMessage(`Version ${result.update.versionName} is available. You skipped the launch prompt for this version.`);
+      if (manual) {
+        setFeedbackMessage('Android update found.');
+      }
+    } else {
+      setAvailableUpdate(null);
+      setUpdateStatusMessage(result.message);
+      if (manual) {
+        setFeedbackMessage(null);
+        setErrorMessage(result.message);
+      }
+    }
+
+    setIsCheckingUpdate(false);
+  }, []);
 
   const loadData = useCallback(async () => {
     const [existingKey, localSettings, storedSession] = await Promise.all([
@@ -155,7 +219,8 @@ export default function SettingsScreen() {
   useFocusEffect(
     useCallback(() => {
       void loadData();
-    }, [loadData])
+      void refreshAndroidUpdate(false);
+    }, [loadData, refreshAndroidUpdate])
   );
 
   const saveLocalKey = async () => {
@@ -376,6 +441,47 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleInstallAndroidUpdate = async () => {
+    if (!availableUpdate || isInstallingUpdate) {
+      return;
+    }
+
+    setIsInstallingUpdate(true);
+    setFeedbackMessage(`Downloading Koe ${availableUpdate.versionName} APK...`);
+    setErrorMessage(null);
+
+    try {
+      await downloadAndInstallAndroidUpdate(availableUpdate);
+      setFeedbackMessage('Android installer opened. Approve the install to finish updating Koe.');
+      await notifySuccess();
+    } catch (error) {
+      setErrorMessage(getAndroidUpdateErrorMessage(error));
+      setFeedbackMessage(null);
+    } finally {
+      setIsInstallingUpdate(false);
+    }
+  };
+
+  const handleOpenUpdateRelease = async () => {
+    if (!availableUpdate) {
+      return;
+    }
+
+    try {
+      await openAndroidUpdateRelease(availableUpdate);
+    } catch (error) {
+      setErrorMessage(getAndroidUpdateErrorMessage(error));
+    }
+  };
+
+  const handleOpenInstallSettings = async () => {
+    try {
+      await openAndroidUnknownAppSourcesSettings();
+    } catch (error) {
+      setErrorMessage(getAndroidUpdateErrorMessage(error));
+    }
+  };
+
   if (!settings) {
     return (
       <View style={styles.outer}>
@@ -408,6 +514,75 @@ export default function SettingsScreen() {
         ) : null}
         {errorMessage ? (
           <Text style={[styles.banner, { color: theme.danger, borderColor: theme.danger }]}>{errorMessage}</Text>
+        ) : null}
+
+        {Platform.OS === 'android' ? (
+          <BrutalCard headerTitle="Android Updates // GitHub APK">
+            <View style={styles.itemBody}>
+              <View style={styles.metaRow}>
+                <Text style={[styles.label, { color: theme.textDim }]}>Installed version</Text>
+                <Text style={[styles.accountValue, { color: theme.text }]}>Koe {getCurrentAndroidAppVersionLabel()}</Text>
+              </View>
+
+              <Text style={[styles.statusMsg, { color: availableUpdate ? theme.accent : theme.textDim }]}> 
+                {isCheckingUpdate ? 'Checking GitHub release feed...' : updateStatusMessage}
+              </Text>
+
+              {availableUpdate ? (
+                <View style={styles.metaRow}>
+                  <Text style={[styles.label, { color: theme.textDim }]}>Available APK</Text>
+                  <Text style={[styles.statusMsg, { color: theme.text }]}> 
+                    {availableUpdate.assetName ?? `Koe ${availableUpdate.versionName}`}
+                    {availableUpdate.assetSize ? ` // ${(availableUpdate.assetSize / 1024 / 1024).toFixed(1)} MB` : ''}
+                  </Text>
+                  {availableUpdate.releaseNotes ? (
+                    <Text style={[styles.helperCopy, { color: theme.textDim }]} numberOfLines={4}>
+                      {availableUpdate.releaseNotes}
+                    </Text>
+                  ) : null}
+                </View>
+              ) : null}
+
+              <View style={styles.actionRow}>
+                <BrutalButton
+                  onPress={() => void refreshAndroidUpdate(true)}
+                  title={isCheckingUpdate ? 'Checking...' : 'Check now'}
+                  variant="outline"
+                  disabled={isCheckingUpdate || isInstallingUpdate}
+                  style={{ flex: 1 }}
+                />
+                {availableUpdate ? (
+                  <BrutalButton
+                    onPress={() => void handleInstallAndroidUpdate()}
+                    title={isInstallingUpdate ? 'Downloading...' : 'Download & install'}
+                    disabled={isInstallingUpdate || isCheckingUpdate}
+                    style={{ flex: 1 }}
+                  />
+                ) : null}
+              </View>
+
+              <View style={styles.actionRow}>
+                <BrutalButton
+                  onPress={() => void handleOpenInstallSettings()}
+                  title="Install permission"
+                  variant="outline"
+                  style={{ flex: 1 }}
+                />
+                {availableUpdate ? (
+                  <BrutalButton
+                    onPress={() => void handleOpenUpdateRelease()}
+                    title="Open release"
+                    variant="outline"
+                    style={{ flex: 1 }}
+                  />
+                ) : null}
+              </View>
+
+              <Text style={[styles.helperCopy, { color: theme.textDim }]}> 
+                Updates are sideloaded from the latest GitHub Release APK. Android will always ask you to approve the install.
+              </Text>
+            </View>
+          </BrutalCard>
         ) : null}
 
         {!accountSession ? (
