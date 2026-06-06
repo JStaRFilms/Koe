@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCapabilities, snapshotResolvedMode } from "@/lib/server/account-mode";
 import { getAuthContext } from "@/lib/server/auth";
+import { getActiveBillingSubscription, listBillingPlans } from "@/lib/server/billing";
 import { one, sql, toIso } from "@/lib/server/db";
 import { handleApiError } from "@/lib/server/errors";
 
@@ -36,6 +37,10 @@ export async function GET(request: Request) {
 
     const capabilities = await getCapabilities(auth.user.id);
     const resolvedMode = await snapshotResolvedMode(auth.user.id, auth.user.defaultMode);
+    const [billingSubscription, billingPlans] = await Promise.all([
+      getActiveBillingSubscription(auth.user.id),
+      listBillingPlans(),
+    ]);
 
     return NextResponse.json({
       user: auth.user,
@@ -43,6 +48,11 @@ export async function GET(request: Request) {
       capabilities: {
         byok: capabilities.byok,
         managed: capabilities.managed,
+      },
+      billing: {
+        provider: "paystack",
+        subscription: billingSubscription,
+        plans: billingPlans,
       },
       settings: {
         language: settings?.language || "auto",

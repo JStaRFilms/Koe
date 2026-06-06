@@ -49,7 +49,9 @@ export class SettingsPanel {
         this.accountByokSavedLabel = document.getElementById('account-byok-saved-label');
         this.btnAccountSignUp = document.getElementById('btn-account-sign-up');
         this.btnAccountSignIn = document.getElementById('btn-account-sign-in');
+        this.btnAccountPasswordReset = document.getElementById('btn-account-password-reset');
         this.btnAccountSignOut = document.getElementById('btn-account-sign-out');
+        this.btnAccountEmailVerify = document.getElementById('btn-account-email-verify');
         this.btnAccountRefresh = document.getElementById('btn-account-refresh');
         this.btnAccountModeSave = document.getElementById('btn-account-mode-save');
         this.btnAccountByokSave = document.getElementById('btn-account-byok-save');
@@ -103,7 +105,9 @@ export class SettingsPanel {
         this.btnTestKey?.addEventListener('click', () => this.testApiKey());
         this.btnAccountSignUp?.addEventListener('click', () => this.handleAccountSignUp());
         this.btnAccountSignIn?.addEventListener('click', () => this.handleAccountSignIn());
+        this.btnAccountPasswordReset?.addEventListener('click', () => this.handleAccountPasswordReset());
         this.btnAccountSignOut?.addEventListener('click', () => this.handleAccountSignOut());
+        this.btnAccountEmailVerify?.addEventListener('click', () => this.handleAccountEmailVerification());
         this.btnAccountRefresh?.addEventListener('click', () => this.handleAccountRefresh());
         this.btnAccountModeSave?.addEventListener('click', () => this.handleAccountModeSave());
         this.btnAccountByokSave?.addEventListener('click', () => this.handleAccountByokSave());
@@ -425,6 +429,20 @@ export class SettingsPanel {
         return 'No account key saved';
     }
 
+    isEmailVerified(state) {
+        return Boolean(state?.user?.emailVerifiedAt);
+    }
+
+    describeEmailVerification(state) {
+        if (!state?.authenticated) {
+            return 'Sign in to check email status';
+        }
+
+        return this.isEmailVerified(state)
+            ? `Verified${state.user.emailVerifiedAt ? ` on ${new Date(state.user.emailVerifiedAt).toLocaleDateString()}` : ''}`
+            : 'Unverified';
+    }
+
     formatDuration(seconds) {
         const value = Math.max(0, Math.round(Number(seconds || 0)));
         if (value < 60) return `${value}s`;
@@ -529,6 +547,7 @@ export class SettingsPanel {
         }
 
         const busy = this.accountActionBusy === true;
+        const emailVerified = this.isEmailVerified(state);
 
         if (this.accountModeSelect) {
             this.accountModeSelect.disabled = busy || !authenticated;
@@ -541,11 +560,18 @@ export class SettingsPanel {
         if (this.btnAccountSignIn) {
             this.btnAccountSignIn.disabled = busy || authenticated;
         }
+        if (this.btnAccountPasswordReset) {
+            this.btnAccountPasswordReset.disabled = busy || authenticated;
+        }
         if (this.btnAccountModeSave) {
             this.btnAccountModeSave.disabled = busy || !authenticated;
         }
         if (this.btnAccountSignOut) {
             this.btnAccountSignOut.disabled = busy || !authenticated;
+        }
+        if (this.btnAccountEmailVerify) {
+            this.btnAccountEmailVerify.disabled = busy || !authenticated || emailVerified;
+            this.btnAccountEmailVerify.textContent = emailVerified ? 'Email Verified' : 'Verify Email';
         }
         if (this.btnAccountRefresh) {
             this.btnAccountRefresh.disabled = busy;
@@ -583,6 +609,10 @@ export class SettingsPanel {
                             <span class="snapshot-value">Signed out</span>
                         </div>
                         <div class="snapshot-row">
+                            <span class="snapshot-label">Email Status</span>
+                            <span class="snapshot-value">${this.describeEmailVerification(state)}</span>
+                        </div>
+                        <div class="snapshot-row">
                             <span class="snapshot-label">Local Fallback</span>
                             <span class="snapshot-value">${state?.localFallback?.hasLocalGroqKey ? 'Configured' : 'Not configured'}</span>
                         </div>
@@ -600,6 +630,10 @@ export class SettingsPanel {
                         <div class="snapshot-row">
                             <span class="snapshot-label">User</span>
                             <span class="snapshot-value">${state.user?.email || 'Unknown'}</span>
+                        </div>
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">Email Status</span>
+                            <span class="snapshot-value">${this.describeEmailVerification(state)}</span>
                         </div>
                         <div class="snapshot-row">
                             <span class="snapshot-label">Resolved Mode</span>
@@ -650,6 +684,35 @@ export class SettingsPanel {
             await this.loadAccountState(true);
         }).catch((error) => {
             this.showAccountResult(this.cleanActionErrorMessage(error, 'Failed to refresh account.'), false);
+        });
+    }
+
+    async handleAccountPasswordReset() {
+        const { email } = this.getAccountCredentials();
+        if (!email) {
+            this.showAccountResult('Enter your email address first.', false);
+            return;
+        }
+
+        await this.withAccountAction(this.btnAccountPasswordReset, 'Sending...', async () => {
+            await window.api.requestAccountPasswordReset({ email });
+            this.showAccountResult('If that email has a Koe account, a reset link is on the way.', true);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Could not request a password reset email.'), false);
+        });
+    }
+
+    async handleAccountEmailVerification() {
+        if (!this.accountState?.authenticated) {
+            this.showAccountResult('Sign in before requesting a verification email.', false);
+            return;
+        }
+
+        await this.withAccountAction(this.btnAccountEmailVerify, 'Sending...', async () => {
+            await window.api.requestAccountEmailVerification();
+            this.showAccountResult('Verification email sent. Open the link in your inbox to confirm this address.', true);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Could not send a verification email.'), false);
         });
     }
 

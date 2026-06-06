@@ -90,6 +90,7 @@ export async function getCapabilities(userId: string) {
   const audioLimit = dynamicFree?.audioSecondsLimit ?? (allocation ? Number(allocation.monthly_audio_seconds || 0) : 0);
   const requestLimit = dynamicFree?.requestCountLimit ?? (allocation ? Number(allocation.monthly_request_count || 0) : 0);
   const providerAvailable = hasManagedProviderKey();
+  const quotaSource = dynamicFree?.source || (allocation?.source === "paystack" ? "paid" : "allocation");
   const withinAudio = audioLimit > 0 && audioUsed < audioLimit;
   const withinRequests = requestLimit > 0 && requestsUsed < requestLimit;
 
@@ -119,7 +120,7 @@ export async function getCapabilities(userId: string) {
             bonusCeilingSeconds: dynamicFree?.bonusCeilingSeconds,
             activeManagedUsers24h: dynamicFree?.activeManagedUsers24h,
             safeDailyPoolSeconds: dynamicFree?.safeDailyPoolSeconds,
-            source: dynamicFree?.source || "allocation",
+            source: quotaSource,
           },
         }
       : {

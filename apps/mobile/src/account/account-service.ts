@@ -6,6 +6,8 @@ import {
   patchAccountMode,
   patchAccountSettings,
   putAccountGroqCredential,
+  requestEmailVerification,
+  requestPasswordReset,
   signInWithAccount,
   signOutAccount,
   signUpWithAccount,
@@ -91,6 +93,28 @@ export async function signOutStoredAccount(): Promise<void> {
     }
   } finally {
     await clearAccountSession();
+  }
+}
+
+export async function requestAccountPasswordReset(email: string): Promise<void> {
+  const trimmed = email.trim();
+  if (!trimmed) {
+    throw new Error('Enter your email address first.');
+  }
+
+  await requestPasswordReset(trimmed);
+}
+
+export async function requestStoredEmailVerification(): Promise<void> {
+  const session = await getStoredAccountSessionOrThrow();
+
+  try {
+    await requestEmailVerification(session);
+  } catch (error) {
+    if (isInvalidSessionError(error)) {
+      await clearAccountSession();
+    }
+    throw error;
   }
 }
 

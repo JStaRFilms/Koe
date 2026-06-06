@@ -12,6 +12,7 @@ export interface AccountUser {
   email: string;
   displayName: string | null;
   defaultMode: AccountMode;
+  emailVerifiedAt: string | null;
 }
 
 export interface AccountDevice {
@@ -458,6 +459,21 @@ export async function signInWithAccount(input: AuthRequestInput & { installation
       }),
     },
   );
+}
+
+export async function requestPasswordReset(email: string): Promise<void> {
+  await requestVoid(
+    '/api/v1/auth/request-password-reset',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.trim() }),
+    },
+  );
+}
+
+export async function requestEmailVerification(session: StoredAccountSession): Promise<void> {
+  await requestVoid('/api/v1/auth/request-email-verification', { method: 'POST' }, { session });
 }
 
 export async function getAccountSessionDetails(session: StoredAccountSession): Promise<AccountSessionResponse> {

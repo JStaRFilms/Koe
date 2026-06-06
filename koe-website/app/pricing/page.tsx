@@ -30,32 +30,63 @@ const tiers = [
     },
     {
         name: "Managed Starter",
-        price: "Free allowance",
+        price: "NGN 0",
         eyebrow: "NO API KEY NEEDED",
-        description: "For people who just want to sign in and start dictating. Includes a limited starter allowance when managed access is available.",
+        description: "For people who just want to sign in and test managed processing before choosing a paid monthly quota.",
         features: [
             "No provider key setup",
-            "Account mode sync across devices",
+            "5 min/day guaranteed when managed free is enabled",
+            "Bonus free time while the shared pool is quiet",
             "Server-side processing key stays private",
             "Usage tracked against your account quota",
-            "Designed for casual testing and first-time users",
+            "Designed for casual testing",
         ],
         cta: "Create account in app",
         highlighted: true,
     },
     {
-        name: "Managed Paid",
-        price: "Coming later",
-        eyebrow: "FOR REGULAR USE",
-        description: "For users who want Koe to handle cloud processing at higher volumes. Billing support is planned after the managed account system is fully live.",
+        name: "Managed Lite",
+        price: "NGN 5,000/mo",
+        eyebrow: "CASUAL PAID",
+        description: "For light daily dictation without setting up a provider account.",
         features: [
             "No API key required",
-            "Higher monthly usage limits",
-            "Desktop and mobile account support",
-            "Usage dashboard and account history",
-            "Built for people who use dictation every day",
+            "10 hours of managed audio per month",
+            "1,000 managed requests per month",
+            "Account history and usage dashboard",
+            "Paystack monthly billing",
         ],
-        cta: "Coming soon",
+        cta: "Open app",
+        highlighted: false,
+    },
+    {
+        name: "Managed Plus",
+        price: "NGN 9,000/mo",
+        eyebrow: "BEST FIT",
+        description: "For regular voice-first writing and everyday cross-app dictation.",
+        features: [
+            "No API key required",
+            "25 hours of managed audio per month",
+            "2,500 managed requests per month",
+            "Usage dashboard and account history",
+            "Paystack monthly billing",
+        ],
+        cta: "Open app",
+        highlighted: false,
+    },
+    {
+        name: "Managed Pro",
+        price: "NGN 15,000/mo",
+        eyebrow: "HEAVIER USE",
+        description: "For users who rely on Koe throughout the workday and want a larger cap.",
+        features: [
+            "No API key required",
+            "40 hours of managed audio per month",
+            "4,000 managed requests per month",
+            "Usage dashboard and account history",
+            "Paystack monthly billing",
+        ],
+        cta: "Open app",
         highlighted: false,
     },
 ];
@@ -79,7 +110,7 @@ export default function PricingPage() {
                         </p>
                     </div>
 
-                    <div className="grid gap-6 md:grid-cols-3">
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-5">
                         {tiers.map((tier) => (
                             <div
                                 key={tier.name}
@@ -108,9 +139,9 @@ export default function PricingPage() {
                                         className="block w-full px-6 py-4 bg-amber text-void font-bold text-base uppercase tracking-wider hover:bg-bone transition-colors border-2 border-amber text-center"
                                     />
                                 ) : (
-                                    <div className="block w-full px-6 py-4 border-2 border-zinc text-muted font-bold text-base uppercase tracking-wider text-center">
+                                    <a href="/app" className="block w-full px-6 py-4 border-2 border-zinc text-muted font-bold text-base uppercase tracking-wider text-center hover:border-amber hover:text-amber transition-colors">
                                         {tier.cta}
-                                    </div>
+                                    </a>
                                 )}
                             </div>
                         ))}
