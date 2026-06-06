@@ -18,6 +18,7 @@ import {
   pushAccountMode,
   pushAccountSettings,
   refreshStoredAccountSnapshot,
+  requestStoredEmailVerification,
   saveAccountGroqKey,
   signOutStoredAccount,
 } from '../src/account/account-service';
@@ -87,6 +88,15 @@ function describeAccountKey(snapshot: AccountSnapshot | null) {
   return snapshot.capabilities.byok.last4 ? `Saved ending in ${snapshot.capabilities.byok.last4}` : 'Saved in account vault';
 }
 
+function getEmailVerifiedAt(snapshot: AccountSnapshot | null, session: StoredAccountSession | null) {
+  return snapshot?.user.emailVerifiedAt ?? session?.user.emailVerifiedAt ?? null;
+}
+
+function describeEmailVerification(snapshot: AccountSnapshot | null, session: StoredAccountSession | null) {
+  const verifiedAt = getEmailVerifiedAt(snapshot, session);
+  return verifiedAt ? `Verified ${new Date(verifiedAt).toLocaleDateString()}` : 'Unverified';
+}
+
 export default function SettingsScreen() {
   const colorScheme = useColorScheme() || 'dark';
   const theme = Colors[colorScheme as keyof typeof Colors];
@@ -102,6 +112,7 @@ export default function SettingsScreen() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [pendingMode, setPendingMode] = useState<AccountMode | null>(null);
   const [isRefreshingAccount, setIsRefreshingAccount] = useState(false);
+  const [isRequestingEmailVerification, setIsRequestingEmailVerification] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isSavingAccountKey, setIsSavingAccountKey] = useState(false);
   const [isDeletingAccountKey, setIsDeletingAccountKey] = useState(false);
@@ -348,6 +359,30 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleRequestEmailVerification = async () => {
+    if (isRequestingEmailVerification) {
+      return;
+    }
+
+    setIsRequestingEmailVerification(true);
+    setFeedbackMessage('Sending verification email...');
+    setErrorMessage(null);
+
+    try {
+      await requestStoredEmailVerification();
+      setFeedbackMessage('Verification email sent. Open the link in your inbox to confirm this address.');
+      await notifySuccess();
+    } catch (error) {
+      setErrorMessage(normalizeAccountApiError(error, 'Could not send a verification email.').message);
+      if (!await getAccountSession()) {
+        setAccountSession(null);
+        setSnapshot(null);
+      }
+    } finally {
+      setIsRequestingEmailVerification(false);
+    }
+  };
+
   const handleSaveAccountKey = async () => {
     const trimmed = accountKeyInput.trim();
     if (!trimmed) {
@@ -486,6 +521,8 @@ export default function SettingsScreen() {
   }
 
   const showLocalFallbackControls = !accountSession || showDeviceFallback;
+  const accountEmailVerifiedAt = getEmailVerifiedAt(snapshot, accountSession);
+  const accountEmailVerified = Boolean(accountEmailVerifiedAt);
 
   return (
     <View style={styles.outer}>
@@ -593,6 +630,23 @@ export default function SettingsScreen() {
                     {snapshot?.user.email || accountSession.user.email}
                   </Text>
                 </View>
+
+                <View style={styles.metaRow}>
+                  <Text style={[styles.label, { color: theme.textDim }]}>Email status</Text>
+                  <Text style={[styles.statusMsg, { color: accountEmailVerified ? theme.success : theme.accent }]}>
+                    {describeEmailVerification(snapshot, accountSession)}
+                  </Text>
+                </View>
+
+                {!accountEmailVerified ? (
+                  <BrutalButton
+                    onPress={() => void handleRequestEmailVerification()}
+                    title={isRequestingEmailVerification ? 'Sending...' : 'Resend verification'}
+                    variant="outline"
+                    disabled={isRequestingEmailVerification || isRefreshingAccount || isSigningOut}
+                    style={{ width: '100%' }}
+                  />
+                ) : null}
 
                 <View style={styles.metaRow}>
                   <Text style={[styles.label, { color: theme.textDim }]}>Resolved mode</Text>

@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, View, useColorScheme } from 'react-native';
+import { Text, TextInput, View, useColorScheme } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { normalizeAccountApiError, type AccountSnapshot } from '../api/account-client';
-import { authenticateAccount } from '../account/account-service';
-import { Colors, Spacing, Typography } from '../constants/Theme';
+import { authenticateAccount, requestAccountPasswordReset } from '../account/account-service';
+import { Colors } from '../constants/Theme';
 import { BrutalButton } from './BrutalButton';
 import { BrutalCard } from './BrutalCard';
+import { styles } from './AccountAuthCard.styles';
 
 interface AccountAuthCardProps {
   headerTitle?: string;
@@ -13,6 +14,8 @@ interface AccountAuthCardProps {
   helperText?: string;
   onAuthenticated?: (snapshot: AccountSnapshot | null) => Promise<void> | void;
 }
+
+type AuthMode = 'signin' | 'signup' | 'reset';
 
 export function AccountAuthCard({
   headerTitle = 'Account // Sign in',
@@ -23,23 +26,29 @@ export function AccountAuthCard({
   const colorScheme = useColorScheme() || 'dark';
   const theme = Colors[colorScheme as keyof typeof Colors];
 
-  const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     const trimmedEmail = email.trim();
     const trimmedName = displayName.trim();
 
-    if (!trimmedEmail || !password.trim()) {
-      setErrorMessage('Enter your email and password to continue.');
+    if (!trimmedEmail) {
+      setErrorMessage('Enter your email address first.');
       return;
     }
 
-    if (password.length < 12) {
+    if (mode !== 'reset' && !password.trim()) {
+      setErrorMessage('Enter your password to continue.');
+      return;
+    }
+
+    if (mode !== 'reset' && password.length < 12) {
       setErrorMessage('Use at least 12 characters for your password.');
       return;
     }
@@ -51,17 +60,27 @@ export function AccountAuthCard({
 
     setIsSubmitting(true);
     setErrorMessage(null);
+    setSuccessMessage(null);
 
     try {
-      const snapshot = await authenticateAccount(mode, {
-        email: trimmedEmail,
-        password,
-        displayName: trimmedName || undefined,
-      });
+      if (mode === 'reset') {
+        await requestAccountPasswordReset(trimmedEmail);
+        setPassword('');
+        setSuccessMessage('If that email has a Koe account, a reset link is on the way.');
+        setMode('signin');
+      } else {
+        const snapshot = await authenticateAccount(mode, {
+          email: trimmedEmail,
+          password,
+          displayName: trimmedName || undefined,
+        });
 
-      setPassword('');
-      if (mode === 'signup') {
-        setDisplayName('');
+        setPassword('');
+        if (mode === 'signup') {
+          setDisplayName('');
+        }
+
+        await onAuthenticated?.(snapshot);
       }
 
       try {
@@ -69,8 +88,6 @@ export function AccountAuthCard({
       } catch {
         // Optional.
       }
-
-      await onAuthenticated?.(snapshot);
     } catch (error) {
       setErrorMessage(normalizeAccountApiError(error, 'Could not complete account sign-in.').message);
     } finally {
@@ -78,10 +95,19 @@ export function AccountAuthCard({
     }
   };
 
-  const switchMode = (nextMode: 'signin' | 'signup') => {
+  const switchMode = (nextMode: AuthMode) => {
     setMode(nextMode);
     setErrorMessage(null);
+    setSuccessMessage(null);
   };
+
+  const submitTitle = isSubmitting
+    ? 'Working...'
+    : mode === 'reset'
+      ? 'Send reset email'
+      : mode === 'signup'
+        ? 'Create account'
+        : 'Sign in';
 
   return (
     <BrutalCard headerTitle={headerTitle}>
@@ -98,6 +124,13 @@ export function AccountAuthCard({
             onPress={() => switchMode('signup')}
             title="Create"
             variant={mode === 'signup' ? 'primary' : 'outline'}
+            small
+            style={styles.modeButton}
+          />
+          <BrutalButton
+            onPress={() => switchMode('reset')}
+            title="Reset"
+            variant={mode === 'reset' ? 'primary' : 'outline'}
             small
             style={styles.modeButton}
           />
@@ -126,61 +159,38 @@ export function AccountAuthCard({
           style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
         />
 
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Password (12+ chars)"
-          placeholderTextColor={theme.textDim}
-          autoCapitalize="none"
-          autoCorrect={false}
-          secureTextEntry
-          textContentType={mode === 'signup' ? 'newPassword' : 'password'}
-          style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
-        />
+        {mode !== 'reset' && (
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Password (12+ chars)"
+            placeholderTextColor={theme.textDim}
+            autoCapitalize="none"
+            autoCorrect={false}
+            secureTextEntry
+            textContentType={mode === 'signup' ? 'newPassword' : 'password'}
+            style={[styles.input, { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text }]}
+          />
+        )}
 
         <BrutalButton
           onPress={() => void handleSubmit()}
-          title={isSubmitting ? 'Working...' : mode === 'signup' ? 'Create account' : 'Sign in'}
+          title={submitTitle}
           disabled={isSubmitting}
           style={{ width: '100%' }}
         />
 
         <Text style={[styles.copy, { color: theme.textDim }]}>
-          {helperText ||
+          {mode === 'reset'
+            ? 'Koe sends reset links by email. Complete the reset in the browser, then sign in here again.'
+            : helperText ||
             'Sign in once to use managed mode or save your Groq key in your account vault.'}
         </Text>
 
+        {successMessage ? <Text style={[styles.success, { color: theme.success }]}>{successMessage}</Text> : null}
         {errorMessage ? <Text style={[styles.error, { color: theme.danger }]}>{errorMessage}</Text> : null}
       </View>
     </BrutalCard>
   );
 }
 
-const styles = StyleSheet.create({
-  body: {
-    gap: Spacing.md,
-  },
-  modeRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  modeButton: {
-    flex: 1,
-  },
-  input: {
-    borderWidth: 1,
-    padding: Spacing.md,
-    fontSize: Typography.sizes.md,
-    fontFamily: Typography.fonts.mono,
-    borderRadius: 2,
-  },
-  copy: {
-    fontSize: Typography.sizes.xs,
-    lineHeight: 18,
-  },
-  error: {
-    fontSize: Typography.sizes.xs,
-    lineHeight: 18,
-    fontWeight: '700',
-  },
-});

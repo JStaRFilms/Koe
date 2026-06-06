@@ -234,6 +234,7 @@ async function fetchAccountSnapshot() {
         device: sessionState?.device || null,
         resolvedMode: snapshot?.resolvedMode || null,
         capabilities: snapshot?.capabilities || null,
+        billing: snapshot?.billing || null,
         settings: snapshot?.settings || null,
         recentHistory: snapshot?.recentHistory || [],
         policy: snapshot?.policy || null,
@@ -306,6 +307,34 @@ async function signOut() {
     }
 
     return buildSignedOutState();
+}
+
+async function requestPasswordReset(email) {
+    const trimmedEmail = String(email || '').trim();
+    if (!trimmedEmail) {
+        const error = new Error('Enter your email address first.');
+        error.code = 'BAD_REQUEST';
+        error.status = 400;
+        throw error;
+    }
+
+    await requestJson('/auth/request-password-reset', {
+        auth: false,
+        method: 'POST',
+        body: { email: trimmedEmail },
+        fallbackMessage: 'Could not request a password reset email.'
+    });
+
+    return { ok: true };
+}
+
+async function requestEmailVerification() {
+    await requestJson('/auth/request-email-verification', {
+        method: 'POST',
+        fallbackMessage: 'Could not send a verification email.'
+    });
+
+    return { ok: true };
 }
 
 async function saveAccountCredential(apiKey, validate = true) {
@@ -393,6 +422,8 @@ module.exports = {
     deleteAccountCredential,
     getAccountState,
     getProcessingContext,
+    requestEmailVerification,
+    requestPasswordReset,
     resolveBackendApiBase,
     saveAccountCredential,
     saveAccountSettings,

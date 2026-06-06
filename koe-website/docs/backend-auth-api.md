@@ -16,6 +16,10 @@ Errors use `{ "error": { "code": "...", "message": "...", "retryable": false } }
 - `POST /api/v1/auth/signin` with `{ email, password, platform?, installationId?, deviceLabel? }` returns the same shape.
 - `POST /api/v1/auth/signout` revokes the current bearer session and returns `204`.
 - `GET /api/v1/auth/session` returns authenticated user/session/device metadata without the raw token.
+- `POST /api/v1/auth/request-password-reset` with `{ email }` creates a password reset token when an active account exists and sends `/reset-password?token=...`; responses are intentionally generic to avoid account enumeration.
+- `POST /api/v1/auth/reset-password` with `{ token, password }` consumes a password reset token, updates the password, and revokes existing sessions.
+- `POST /api/v1/auth/request-email-verification` requires bearer auth, creates an email verification token, and sends `/verify-email?token=...`.
+- `POST /api/v1/auth/verify-email` with `{ token }` consumes an email verification token and marks `users.email_verified_at`.
 
 ## Devices and account
 

@@ -1,15 +1,16 @@
 export type AccountMode = "byok" | "managed";
 export type AppPhase = "idle" | "recording" | "processing" | "done" | "error";
-export type AuthMode = "signin" | "signup";
+export type AuthMode = "signin" | "signup" | "reset";
 export type WebAppTab = "record" | "account" | "history";
+export type BillingPlanCode = "managed_lite" | "managed_plus" | "managed_pro";
 
 export type AuthResponse = {
-  user: { id: string; email: string; displayName: string | null; defaultMode: AccountMode };
+  user: { id: string; email: string; displayName: string | null; defaultMode: AccountMode; emailVerifiedAt: string | null };
   session: { token: string; expiresAt: string };
 };
 
 export type Snapshot = {
-  user: { id: string; email: string; displayName: string | null; defaultMode: AccountMode };
+  user: { id: string; email: string; displayName: string | null; defaultMode: AccountMode; emailVerifiedAt: string | null };
   resolvedMode: { mode: AccountMode; available: boolean; reason: string };
   capabilities: {
     byok: { available: boolean; provider: "groq"; last4: string | null; updatedAt: string | null };
@@ -32,6 +33,26 @@ export type Snapshot = {
         source?: "dynamic_free" | "allocation" | "paid";
       };
     };
+  };
+  billing: {
+    provider: "paystack";
+    subscription: {
+      id: string;
+      planCode: BillingPlanCode;
+      planName: string;
+      status: "pending" | "active" | "past_due" | "canceled" | "disabled";
+      currentPeriodStart: string | null;
+      currentPeriodEnd: string | null;
+      lastPaymentReference: string | null;
+    } | null;
+    plans: Array<{
+      code: BillingPlanCode;
+      name: string;
+      currency: "NGN";
+      amountKobo: number;
+      monthlyAudioSeconds: number;
+      monthlyRequestCount: number;
+    }>;
   };
   settings: {
     language: string;

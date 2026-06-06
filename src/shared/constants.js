@@ -30,6 +30,8 @@ const CHANNELS = {
     ACCOUNT_SIGN_UP: 'account:sign-up',
     ACCOUNT_SIGN_IN: 'account:sign-in',
     ACCOUNT_SIGN_OUT: 'account:sign-out',
+    ACCOUNT_REQUEST_PASSWORD_RESET: 'account:request-password-reset',
+    ACCOUNT_REQUEST_EMAIL_VERIFICATION: 'account:request-email-verification',
     ACCOUNT_SAVE_BYOK: 'account:save-byok',
     ACCOUNT_DELETE_BYOK: 'account:delete-byok',
     ACCOUNT_SET_MODE: 'account:set-mode',

@@ -89,7 +89,8 @@ export class UsageMeter {
             return;
         }
 
-        this.accountQuotaNote.textContent = `Managed account: ${this.formatDuration(usage.audioSecondsUsed)} / ${this.formatDuration(usage.audioSecondsLimit)} used this ${usage.quotaWindow || 'period'}.`;
+        const label = usage.source === 'paid' ? 'Managed paid' : 'Managed account';
+        this.accountQuotaNote.textContent = `${label}: ${this.formatDuration(usage.audioSecondsUsed)} / ${this.formatDuration(usage.audioSecondsLimit)} used this ${usage.quotaWindow || 'period'}.`;
     }
 
     updateTimeStr() {

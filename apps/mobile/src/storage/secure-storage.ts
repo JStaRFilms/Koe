@@ -11,6 +11,7 @@ export interface StoredAccountUser {
   email: string;
   displayName: string | null;
   defaultMode: AccountMode;
+  emailVerifiedAt: string | null;
 }
 
 export interface StoredAccountDevice {

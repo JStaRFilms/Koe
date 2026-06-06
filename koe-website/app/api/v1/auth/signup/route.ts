@@ -29,12 +29,13 @@ export async function POST(request: Request) {
       email: string;
       display_name: string | null;
       default_account_mode: "byok" | "managed";
+      email_verified_at: string | null;
       disabled_at: string | null;
     }>(
       await db`
         INSERT INTO users (email, password_hash, password_algo, display_name)
         VALUES (${email}, ${passwordHash}, 'bcryptjs', ${body.displayName || null})
-        RETURNING id, email, display_name, default_account_mode, disabled_at
+        RETURNING id, email, display_name, default_account_mode, email_verified_at, disabled_at
       `,
     );
 

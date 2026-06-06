@@ -78,6 +78,8 @@ function setupIpcHandlers(mainWindow) {
     ipcMain.handle(CHANNELS.ACCOUNT_SIGN_UP, async (event, payload) => accountClient.signUp(payload || {}));
     ipcMain.handle(CHANNELS.ACCOUNT_SIGN_IN, async (event, payload) => accountClient.signIn(payload || {}));
     ipcMain.handle(CHANNELS.ACCOUNT_SIGN_OUT, async () => accountClient.signOut());
+    ipcMain.handle(CHANNELS.ACCOUNT_REQUEST_PASSWORD_RESET, async (event, payload) => accountClient.requestPasswordReset(payload?.email));
+    ipcMain.handle(CHANNELS.ACCOUNT_REQUEST_EMAIL_VERIFICATION, async () => accountClient.requestEmailVerification());
     ipcMain.handle(CHANNELS.ACCOUNT_SAVE_BYOK, async (event, payload) => {
         await accountClient.saveAccountCredential(String(payload?.apiKey || '').trim(), payload?.validate !== false);
         return accountClient.getAccountState();

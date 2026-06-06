@@ -7,7 +7,9 @@ import { HistoryPanel } from "./HistoryPanel";
 import { RecorderPanel } from "./RecorderPanel";
 import { StatusNotice } from "./StatusNotice";
 import { WebAppTabs } from "./WebAppTabs";
+import { useAuthEmailFlows } from "./hooks/useAuthEmailFlows";
 import { useCopyFeedback } from "./hooks/useCopyFeedback";
+import { usePaystackBilling } from "./hooks/usePaystackBilling";
 import { useWebRecorder } from "./hooks/useWebRecorder";
 import { AccountMode, AppPhase, AuthMode, AuthResponse, Snapshot, WebAppTab } from "./types";
 import { authHeaders, getInstallationId, getStoredToken, readApiError, setStoredToken } from "./webAppUtils";
@@ -25,7 +27,7 @@ export function WebKoeApp() {
   const [status, setStatus] = useState("Sign in to use Koe in the browser.");
   const [transcript, setTranscript] = useState("");
   const { copiedEntryId, copyState, copyText, setCopyState } = useCopyFeedback(setStatus);
-
+  const { requestPasswordReset, requestVerification } = useAuthEmailFlows({ email, token, setBusyLabel, setStatus });
   const modeCopy = useMemo(() => {
     if (!snapshot) return "Sign in to load account mode.";
     if (snapshot.user.defaultMode === "managed") {
@@ -55,6 +57,7 @@ export function WebKoeApp() {
       setBusyLabel("");
     }
   }, [token]);
+  const { startCheckout } = usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatus });
 
   const processAudio = useCallback(async (audioBlob: Blob, audioSeconds: number) => {
     if (!token || !snapshot) {
@@ -129,7 +132,10 @@ export function WebKoeApp() {
       setStoredToken(payload.session.token);
       setToken(payload.session.token);
       setPassword("");
-      setStatus("Signed in. Loading account state...");
+      if (authMode === "signup") {
+        void requestVerification(payload.session.token);
+      }
+      setStatus(authMode === "signup" ? "Account created. Sending verification email..." : "Signed in. Loading account state...");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : "Authentication failed.");
     } finally {
@@ -169,11 +175,11 @@ export function WebKoeApp() {
 
   if (!token || !snapshot) {
     return (
-      <AuthPanel authMode={authMode} email={email} displayName={displayName} password={password} busyLabel={busyLabel} status={status} onAuthModeChange={setAuthMode} onEmailChange={setEmail} onDisplayNameChange={setDisplayName} onPasswordChange={setPassword} onSubmit={() => void submitAuth()} />
+      <AuthPanel authMode={authMode} email={email} displayName={displayName} password={password} busyLabel={busyLabel} status={status} onAuthModeChange={setAuthMode} onEmailChange={setEmail} onDisplayNameChange={setDisplayName} onPasswordChange={setPassword} onSubmit={() => void submitAuth()} onPasswordReset={() => void requestPasswordReset()} />
     );
   }
 
-  const accountPanel = <AccountPanel snapshot={snapshot} modeCopy={modeCopy} busyLabel={busyLabel} onRefresh={() => void loadSnapshot()} onSignOut={() => void signOut()} onSwitchMode={(mode) => void switchMode(mode)} />;
+  const accountPanel = <AccountPanel snapshot={snapshot} modeCopy={modeCopy} busyLabel={busyLabel} onRefresh={() => void loadSnapshot()} onRequestVerification={() => void requestVerification()} onSignOut={() => void signOut()} onSwitchMode={(mode) => void switchMode(mode)} onStartCheckout={(planCode) => void startCheckout(planCode)} />;
   const recorderPanel = <RecorderPanel phase={phase} transcript={transcript} inputLevel={recorder.inputLevel} busyLabel={busyLabel} isSupported={recorder.isSupported} copyState={copyState} onRecordToggle={phase === "recording" ? recorder.stopRecording : () => void recorder.startRecording()} onCopy={() => void copyText(transcript)} onClear={() => { setTranscript(""); setPhase("idle"); setStatus("Transcript cleared."); }} />;
   const historyPanel = <HistoryPanel history={snapshot.recentHistory} copiedEntryId={copiedEntryId} onCopyEntry={(id, text) => void copyText(text, id)} />;
 

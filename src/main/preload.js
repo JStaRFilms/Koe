@@ -25,6 +25,8 @@ contextBridge.exposeInMainWorld('api', {
     signUp: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SIGN_UP, payload),
     signIn: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SIGN_IN, payload),
     signOut: () => ipcRenderer.invoke(CHANNELS.ACCOUNT_SIGN_OUT),
+    requestAccountPasswordReset: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_REQUEST_PASSWORD_RESET, payload),
+    requestAccountEmailVerification: () => ipcRenderer.invoke(CHANNELS.ACCOUNT_REQUEST_EMAIL_VERIFICATION),
     saveAccountByok: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SAVE_BYOK, payload),
     deleteAccountByok: () => ipcRenderer.invoke(CHANNELS.ACCOUNT_DELETE_BYOK),
     setAccountMode: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SET_MODE, payload),

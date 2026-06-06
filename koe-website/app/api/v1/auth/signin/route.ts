@@ -22,10 +22,11 @@ export async function POST(request: Request) {
       password_hash: string;
       display_name: string | null;
       default_account_mode: "byok" | "managed";
+      email_verified_at: string | null;
       disabled_at: string | null;
     }>(
       await db`
-        SELECT id, email, password_hash, display_name, default_account_mode, disabled_at
+        SELECT id, email, password_hash, display_name, default_account_mode, email_verified_at, disabled_at
         FROM users
         WHERE email = ${email}
         LIMIT 1
