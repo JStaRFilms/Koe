@@ -14,6 +14,7 @@ const navLinks = [
   { href: "/#specs", label: "SYS.SPECS" },
   { href: "/#faq", label: "SYS.FAQ" },
   { href: "/pricing/", label: "SYS.PRICING" },
+  { href: "/app/", label: "SYS.APP" },
 ];
 
 export function Header() {

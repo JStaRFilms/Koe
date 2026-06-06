@@ -137,12 +137,23 @@ class TranscriptionSessionManager {
         this.mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, payload);
     }
 
-    sendUsageStats() {
+    async sendUsageStats() {
         if (!this.mainWindow || this.mainWindow.isDestroyed()) {
             return;
         }
 
-        this.mainWindow.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
+        const stats = rateLimiter.getUsageStats();
+        try {
+            const accountState = await accountClient.getAccountState();
+            this.mainWindow.webContents.send(CHANNELS.USAGE_STATS, {
+                ...stats,
+                accountManagedUsage: accountState?.capabilities?.managed?.usage || null,
+                accountDefaultMode: accountState?.user?.defaultMode || null,
+                accountAuthenticated: accountState?.authenticated === true
+            });
+        } catch (_error) {
+            this.mainWindow.webContents.send(CHANNELS.USAGE_STATS, stats);
+        }
     }
 
     async handleSegment(audioData) {
@@ -175,7 +186,7 @@ class TranscriptionSessionManager {
 
         if (message.type === 'usage-recorded') {
             rateLimiter.recordRequest(safeAudioSeconds(message.audioSeconds));
-            this.sendUsageStats();
+            await this.sendUsageStats();
             return;
         }
 

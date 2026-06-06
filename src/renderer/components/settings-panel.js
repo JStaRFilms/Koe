@@ -425,6 +425,24 @@ export class SettingsPanel {
         return 'No account key saved';
     }
 
+    formatDuration(seconds) {
+        const value = Math.max(0, Math.round(Number(seconds || 0)));
+        if (value < 60) return `${value}s`;
+        if (value < 3600) return `${Math.round(value / 60)}m`;
+        return `${Math.round((value / 3600) * 10) / 10}h`;
+    }
+
+    managedUsageSummary(usage) {
+        if (!usage) return 'N/A';
+        if (usage.source !== 'dynamic_free') {
+            return `${this.formatDuration(usage.audioSecondsUsed)}/${this.formatDuration(usage.audioSecondsLimit)} used • ${usage.requestCountUsed}/${usage.requestCountLimit} reqs`;
+        }
+
+        const remaining = Math.max(0, Number(usage.audioSecondsLimit || 0) - Number(usage.audioSecondsUsed || 0));
+        const floor = this.formatDuration(usage.guaranteedFloorSeconds || 300);
+        return `${this.formatDuration(remaining)} left today • ${floor} guaranteed • ${this.formatDuration(usage.audioSecondsLimit)} quiet-pool limit`;
+    }
+
     updateLocalFallbackVisibility() {
         const authenticated = this.accountState?.authenticated === true;
         const shouldCollapse = authenticated && !this.showLocalFallbackControls;
@@ -597,7 +615,7 @@ export class SettingsPanel {
                         </div>
                         <div class="snapshot-row">
                             <span class="snapshot-label">Managed Usage</span>
-                            <span class="snapshot-value">${managedUsage ? `${managedUsage.audioSecondsUsed}/${managedUsage.audioSecondsLimit}s used • ${managedUsage.requestCountUsed}/${managedUsage.requestCountLimit} reqs` : 'N/A'}</span>
+                            <span class="snapshot-value">${this.managedUsageSummary(managedUsage)}</span>
                         </div>
                         <div class="snapshot-row">
                             <span class="snapshot-label">Local Fallback Key</span>

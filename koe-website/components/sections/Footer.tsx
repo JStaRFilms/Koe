@@ -41,6 +41,11 @@ export function Footer() {
                                     </Link>
                                 </li>
                                 <li>
+                                    <Link href="/app/" className="text-muted hover:text-amber transition-colors text-sm uppercase">
+                                        Web App
+                                    </Link>
+                                </li>
+                                <li>
                                     <Link href="/privacy/" className="text-muted hover:text-amber transition-colors text-sm uppercase">
                                         Privacy Policy
                                     </Link>

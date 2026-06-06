@@ -54,6 +54,12 @@ export interface AccountSnapshot {
         audioSecondsLimit: number;
         requestCountUsed: number;
         requestCountLimit: number;
+        quotaWindow?: 'daily' | 'monthly';
+        guaranteedFloorSeconds?: number;
+        bonusCeilingSeconds?: number;
+        activeManagedUsers24h?: number;
+        safeDailyPoolSeconds?: number;
+        source?: 'dynamic_free' | 'allocation' | 'paid';
       };
     };
   };

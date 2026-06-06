@@ -21,6 +21,7 @@ import {
   saveAccountGroqKey,
   signOutStoredAccount,
 } from '../src/account/account-service';
+import { describeManagedQuota } from '../src/account/managed-quota-copy';
 import { Colors, Spacing, Typography } from '../src/constants/Theme';
 import {
   deleteGroqApiKey,
@@ -84,16 +85,6 @@ function describeAccountKey(snapshot: AccountSnapshot | null) {
   }
 
   return snapshot.capabilities.byok.last4 ? `Saved ending in ${snapshot.capabilities.byok.last4}` : 'Saved in account vault';
-}
-
-function describeManaged(snapshot: AccountSnapshot | null) {
-  const managed = snapshot?.capabilities.managed;
-  if (!managed) {
-    return 'Managed mode unavailable';
-  }
-
-  const usage = managed.usage;
-  return `${managed.available ? 'Available' : 'Unavailable'} // ${usage.requestCountUsed}/${usage.requestCountLimit} requests // ${Math.round(usage.audioSecondsUsed)}/${Math.round(usage.audioSecondsLimit)}s`;
 }
 
 export default function SettingsScreen() {
@@ -613,7 +604,7 @@ export default function SettingsScreen() {
 
                 <View style={styles.metaRow}>
                   <Text style={[styles.label, { color: theme.textDim }]}>Managed</Text>
-                  <Text style={[styles.statusMsg, { color: theme.textDim }]}>{describeManaged(snapshot)}</Text>
+                  <Text style={[styles.statusMsg, { color: theme.textDim }]}>{describeManagedQuota(snapshot)}</Text>
                 </View>
 
                 <View style={styles.metaRow}>

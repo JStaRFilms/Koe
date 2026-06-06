@@ -164,7 +164,7 @@ export async function POST(request: Request) {
       estimatedAudioSeconds: billableAudioSeconds,
     });
 
-    if (resolvedMode.mode === "managed" && !serverAudioSeconds) {
+    if (resolvedMode.mode === "managed" && !billableAudioSeconds) {
       throw new ApiError(
         "BAD_REQUEST",
         "Could not determine audio duration for managed processing.",

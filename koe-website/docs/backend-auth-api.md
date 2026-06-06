@@ -32,7 +32,8 @@ Errors use `{ "error": { "code": "...", "message": "...", "retryable": false } }
 
 ## Processing scaffold
 
-- `POST /api/v1/process` accepts multipart audio or JSON/base64 audio, `requestId`, optional `mode`, settings, and an optional `Accept: application/x-ndjson`. The server resolves BYOK/managed mode, decrypts BYOK only server-side, calls Groq, and records history/usage.
+- `POST /api/v1/public-demo/process` accepts short multipart audio from the landing-page public demo. It uses `GROQ_MANAGED_API_KEY` server-side, enforces per-IP rate limits and a short duration cap, and does not store transcript history.
+- `POST /api/v1/process` accepts multipart audio or JSON/base64 audio, `requestId`, optional `mode`, settings, `audioSeconds`, and an optional `Accept: application/x-ndjson`. The server resolves BYOK/managed mode, decrypts BYOK only server-side, calls Groq, and records history/usage. For browser media blobs where server duration parsing is unavailable, the route can use the client-recorded `audioSeconds` estimate for managed quota billing.
 - `POST /api/v1/process/refine` accepts JSON `{ requestId, rawText, mode?, promptStyle?, customPrompt? }` and records refinement usage/history.
 
 Managed mode requires a server-side allocation plus `GROQ_MANAGED_API_KEY`; clients cannot self-grant allocations or receive managed provider keys.

@@ -497,21 +497,21 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
                   <tr key={user.id} className="border-b border-zinc-900 align-top hover:bg-zinc-950">
                     <td className="p-2 normal-case">
                       <div className="font-bold text-bone">{user.email}</div>
-                      <div className="text-zinc-500">created {formatDate(user.created_at)} // {user.email_verified_at ? "verified" : "unverified"}</div>
-                      <div className="text-zinc-500">{user.devices_count} devices // {user.active_sessions_count} sessions</div>
+                      <div className="text-zinc-500">created {formatDate(user.created_at)} {"//"} {user.email_verified_at ? "verified" : "unverified"}</div>
+                      <div className="text-zinc-500">{user.devices_count} devices {"//"} {user.active_sessions_count} sessions</div>
                       <div className="text-zinc-500">platforms: {user.device_platforms || "none"}</div>
                     </td>
                     <td className="p-2"><span className="border border-zinc-700 px-2 py-1 text-amber">{user.default_account_mode}</span></td>
                     <td className="p-2 normal-case">{user.has_byok ? `ready${user.byok_last4 ? ` ••••${user.byok_last4}` : ""}` : "not saved"}</td>
                     <td className="p-2 normal-case">
                       <div>{user.managed_status || "none"} {user.managed_source ? `// ${user.managed_source}` : ""}</div>
-                      <div className="text-zinc-500">{user.plan_code || "no plan"} // ends {formatDate(user.period_end)}</div>
+                      <div className="text-zinc-500">{user.plan_code || "no plan"} {"//"} ends {formatDate(user.period_end)}</div>
                     </td>
                     <td className="p-2"><UsagePill row={user} /></td>
                     <td className="p-2 normal-case">
                       <div>{user.transcript_count} transcripts</div>
                       <div>{formatDuration(user.total_audio_seconds)} total audio</div>
-                      <div>{user.total_requests} events // {user.error_count} errors</div>
+                      <div>{user.total_requests} events {"//"} {user.error_count} errors</div>
                     </td>
                     <td className="p-2 normal-case">
                       <div>seen {formatDate(user.last_seen_at)}</div>
@@ -530,8 +530,8 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
             <div className="space-y-2">
               {recentEvents.map((event, index) => (
                 <div key={`${event.created_at}-${index}`} className="border border-zinc-900 p-3 text-xs normal-case">
-                  <div className="flex justify-between gap-3 uppercase"><span className="text-bone">{event.action} // {event.mode}</span><span className={event.status === "error" ? "text-red-300" : "text-emerald-300"}>{event.status}</span></div>
-                  <div className="mt-1 text-zinc-400">{event.email} // {formatDate(event.created_at)} // {formatDuration(event.audio_seconds)} // {event.model || "n/a"}</div>
+                  <div className="flex justify-between gap-3 uppercase"><span className="text-bone">{event.action} {"//"} {event.mode}</span><span className={event.status === "error" ? "text-red-300" : "text-emerald-300"}>{event.status}</span></div>
+                  <div className="mt-1 text-zinc-400">{event.email} {"//"} {formatDate(event.created_at)} {"//"} {formatDuration(event.audio_seconds)} {"//"} {event.model || "n/a"}</div>
                   {event.error_code ? <div className="mt-1 text-red-300">error: {event.error_code}</div> : null}
                 </div>
               ))}
@@ -543,7 +543,7 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
             <div className="space-y-2">
               {recentTranscripts.map((transcript, index) => (
                 <div key={`${transcript.created_at}-${index}`} className="border border-zinc-900 p-3 text-xs normal-case">
-                  <div className="flex justify-between gap-3 uppercase"><span>{transcript.email}</span><span className="text-amber">{transcript.mode} // {formatDuration(transcript.audio_seconds)}</span></div>
+                  <div className="flex justify-between gap-3 uppercase"><span>{transcript.email}</span><span className="text-amber">{transcript.mode} {"//"} {formatDuration(transcript.audio_seconds)}</span></div>
                   <div className="mt-1 text-zinc-500">{formatDate(transcript.created_at)}</div>
                   <div className="mt-2 text-zinc-300">Raw: {truncate(transcript.raw_text)}</div>
                   <div className="mt-1 text-zinc-400">Refined: {truncate(transcript.refined_text)}</div>

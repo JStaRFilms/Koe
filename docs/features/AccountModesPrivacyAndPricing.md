@@ -19,12 +19,30 @@ Do not describe Koe broadly as "free forever" or "no subscriptions" anymore. The
 
 > Koe is free with your own API key. Managed cloud processing is available for users who do not want to manage API keys, with free and paid tiers as the product matures.
 
+## Browser experiences
+
+Koe has two browser paths:
+
+1. **Public demo**
+   - Available from the marketing page.
+   - Uses Koe-managed processing server-side.
+   - Strictly limited by recording duration and per-IP quotas.
+   - Does not store transcript history.
+
+2. **Signed-in web app**
+   - Available at `/app`.
+   - Uses the same Koe account as desktop and mobile.
+   - Managed mode uses the server-side managed key.
+   - Account BYOK mode can use an already-saved encrypted BYOK credential without exposing the raw key to the browser.
+   - The first signed-in web implementation should not include raw BYOK entry in the browser; users can add/update BYOK from desktop/mobile until web BYOK setup is explicitly approved.
+
 ## Mode behavior
 
 - Signed in + `managed` mode uses Koe-managed server-side processing if the account has allocation and quota.
 - Signed in + `byok` mode uses the encrypted account BYOK credential.
 - Signed in + `byok` mode with no saved account key returns a clear error. It must not silently fall back to managed.
 - Signed out uses local/device BYOK only if a local key is saved.
+- Browser audio duration is derived server-side when possible. If browser `webm` metadata cannot be parsed, the signed-in web app can fall back to its own recorded duration estimate for managed quota billing instead of rejecting otherwise valid audio.
 
 ## Data handling
 

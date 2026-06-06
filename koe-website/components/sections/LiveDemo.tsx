@@ -58,6 +58,7 @@ export function LiveDemo() {
   const lastSpeechAtRef = useRef<number | null>(null);
   const chunkBoundaryPendingRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const recordingStartedAtRef = useRef<number | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const sourceNodeRef = useRef<MediaStreamAudioSourceNode | null>(null);
   const analysisFrameRef = useRef<number | null>(null);
@@ -212,9 +213,54 @@ export function LiveDemo() {
     };
   }, []);
 
-  const transcribeAudio = async (_audioBlob: Blob) => {
-    setPhase("error");
-    setStatus("The browser demo is temporarily disabled while Koe moves to signed-in account processing. Please use the desktop or mobile app.");
+  const transcribeAudio = async (audioBlob: Blob) => {
+    const startedAt = recordingStartedAtRef.current;
+    const audioSeconds = startedAt ? Math.max(1, Math.round((performance.now() - startedAt) / 1000)) : 0;
+
+    try {
+      setPhase("transcribing");
+      setStatus("Transcribing with Koe managed demo processing...");
+
+      const form = new FormData();
+      form.append("audio", audioBlob, "koe-demo.webm");
+      form.append("requestId", crypto.randomUUID());
+      form.append("audioSeconds", String(audioSeconds));
+      form.append("language", "auto");
+      form.append("model", "whisper-large-v3-turbo");
+      form.append("promptStyle", "Clean");
+      form.append("enhanceText", "true");
+
+      const response = await fetch("/api/v1/public-demo/process", {
+        method: "POST",
+        body: form,
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as {
+        rawText?: string;
+        refinedText?: string;
+        empty?: boolean;
+        error?: { message?: string };
+      };
+
+      if (!response.ok) {
+        throw new Error(payload.error?.message || "Demo transcription failed.");
+      }
+
+      const text = (payload.refinedText || payload.rawText || "").trim();
+      setTranscript(text);
+      setPhase("done");
+      setStatus(
+        payload.empty || !text
+          ? "No clear speech detected. Try again with a shorter, louder phrase."
+          : "Demo transcript ready. This public demo does not store your transcript history.",
+      );
+      incrementUsage();
+    } catch (error) {
+      setPhase("error");
+      setStatus(error instanceof Error ? error.message : "Demo transcription failed. Please retry.");
+    } finally {
+      recordingStartedAtRef.current = null;
+    }
   };
 
   const startRecording = async () => {
@@ -285,6 +331,7 @@ export function LiveDemo() {
 
       mediaRecorderRef.current = recorder;
       recorder.start(250);
+      recordingStartedAtRef.current = performance.now();
       startAudioAnalysis(stream);
       setPhase("recording");
       setStatus("Recording...");
@@ -353,7 +400,7 @@ export function LiveDemo() {
             <span>{transcript}</span>
           ) : (
             <span className="text-muted">
-              Press Start Recording, speak, then Stop Recording to transcribe.
+              Press Start Recording, speak for up to 30 seconds, then Stop Recording to try Koe managed processing.
             </span>
           )}
         </div>
@@ -385,7 +432,7 @@ export function LiveDemo() {
         <AlertTriangle className="w-4 h-4 text-amber shrink-0" />
         <span className="text-muted">
           {status}
-          {isClient && !isSupported ? " Browser recording is unavailable in this environment." : ""}
+          {isClient && !isSupported ? " Browser recording is unavailable in this environment." : ""} Public demo audio is processed for the request only; signed-in app history is separate.
         </span>
       </div>
     </section>

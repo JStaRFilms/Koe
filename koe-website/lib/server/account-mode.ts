@@ -2,15 +2,13 @@ import { one, sql, toIso } from "./db";
 import { ApiError } from "./errors";
 import { AccountMode, Platform } from "./contracts";
 import { decryptSecret } from "./crypto";
+import { getManagedFreeQuota, isDynamicFreeAllocation } from "./managed-free-quota";
 
 type CredentialRow = {
   id: string;
   provider: "groq";
-  encrypted_secret: string;
-  encryption_iv: string;
-  encryption_tag: string;
-  encryption_key_id: string;
-  encryption_version: number;
+  encrypted_secret: string; encryption_iv: string; encryption_tag: string;
+  encryption_key_id: string; encryption_version: number;
   secret_last4: string | null;
   updated_at: string;
 };
@@ -20,10 +18,8 @@ type AllocationRow = {
   status: "active" | "suspended" | "canceled";
   source: string;
   plan_code: string | null;
-  period_start: string;
-  period_end: string | null;
-  monthly_audio_seconds: number;
-  monthly_request_count: number;
+  period_start: string; period_end: string | null;
+  monthly_audio_seconds: number; monthly_request_count: number;
 };
 
 type UsagePeriodRow = {
@@ -87,11 +83,12 @@ export async function getCapabilities(userId: string) {
     getActiveManagedAllocation(userId),
   ]);
 
-  const usage = allocation ? await getManagedUsage(allocation.id) : null;
-  const audioUsed = usage ? Number(usage.audio_seconds_used || 0) : 0;
-  const requestsUsed = usage ? Number(usage.request_count_used || 0) : 0;
-  const audioLimit = allocation ? Number(allocation.monthly_audio_seconds || 0) : 0;
-  const requestLimit = allocation ? Number(allocation.monthly_request_count || 0) : 0;
+  const dynamicFree = isDynamicFreeAllocation(allocation) ? await getManagedFreeQuota(userId) : null;
+  const usage = allocation && !dynamicFree ? await getManagedUsage(allocation.id) : null;
+  const audioUsed = dynamicFree?.audioSecondsUsed ?? (usage ? Number(usage.audio_seconds_used || 0) : 0);
+  const requestsUsed = dynamicFree?.requestCountUsed ?? (usage ? Number(usage.request_count_used || 0) : 0);
+  const audioLimit = dynamicFree?.audioSecondsLimit ?? (allocation ? Number(allocation.monthly_audio_seconds || 0) : 0);
+  const requestLimit = dynamicFree?.requestCountLimit ?? (allocation ? Number(allocation.monthly_request_count || 0) : 0);
   const providerAvailable = hasManagedProviderKey();
   const withinAudio = audioLimit > 0 && audioUsed < audioLimit;
   const withinRequests = requestLimit > 0 && requestsUsed < requestLimit;
@@ -115,10 +112,14 @@ export async function getCapabilities(userId: string) {
           planCode: allocation.plan_code,
           periodEndsAt: toIso(allocation.period_end),
           usage: {
-            audioSecondsUsed: audioUsed,
-            audioSecondsLimit: audioLimit,
-            requestCountUsed: requestsUsed,
-            requestCountLimit: requestLimit,
+            audioSecondsUsed: audioUsed, audioSecondsLimit: audioLimit,
+            requestCountUsed: requestsUsed, requestCountLimit: requestLimit,
+            quotaWindow: dynamicFree?.quotaWindow || "monthly",
+            guaranteedFloorSeconds: dynamicFree?.guaranteedFloorSeconds,
+            bonusCeilingSeconds: dynamicFree?.bonusCeilingSeconds,
+            activeManagedUsers24h: dynamicFree?.activeManagedUsers24h,
+            safeDailyPoolSeconds: dynamicFree?.safeDailyPoolSeconds,
+            source: dynamicFree?.source || "allocation",
           },
         }
       : {
@@ -127,12 +128,7 @@ export async function getCapabilities(userId: string) {
           source: null,
           planCode: null,
           periodEndsAt: null,
-          usage: {
-            audioSecondsUsed: 0,
-            audioSecondsLimit: 0,
-            requestCountUsed: 0,
-            requestCountLimit: 0,
-          },
+          usage: { audioSecondsUsed: 0, audioSecondsLimit: 0, requestCountUsed: 0, requestCountLimit: 0, quotaWindow: "monthly", source: "allocation" },
         },
   };
 }

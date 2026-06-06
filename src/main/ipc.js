@@ -91,7 +91,21 @@ function setupIpcHandlers(mainWindow) {
         return accountClient.getAccountState();
     });
     ipcMain.handle(CHANNELS.ACCOUNT_SAVE_SYNCED_SETTINGS, async (event, payload) => accountClient.saveAccountSettings(payload || {}));
-    ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => rateLimiter.getUsageStats());
+    ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => {
+        const stats = rateLimiter.getUsageStats();
+        try {
+            const accountState = await accountClient.getAccountState();
+            return {
+                ...stats,
+                accountManagedUsage: accountState?.capabilities?.managed?.usage || null,
+                accountDefaultMode: accountState?.user?.defaultMode || null,
+                accountAuthenticated: accountState?.authenticated === true
+            };
+        } catch (error) {
+            logger.warn('[Usage] Could not load account quota snapshot:', error.message);
+            return stats;
+        }
+    });
     ipcMain.handle(CHANNELS.GET_HISTORY, async () => historyService.getHistory());
     ipcMain.handle(CHANNELS.CLEAR_HISTORY, async () => historyService.clearHistory());
 
