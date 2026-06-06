@@ -77,7 +77,7 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onSignO
         </p>
         {dynamicQuota ? (
           <p className="mt-3 text-xs text-muted leading-relaxed">
-            {dynamicQuota.floor} guaranteed daily. {dynamicQuota.remaining} remains from today's {dynamicQuota.currentLimit} quiet-pool limit.
+            {dynamicQuota.floor} guaranteed daily. {dynamicQuota.remaining} remains from today&apos;s {dynamicQuota.currentLimit} quiet-pool limit.
           </p>
         ) : null}
       </div>

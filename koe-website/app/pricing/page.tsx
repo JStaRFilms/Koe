@@ -4,14 +4,13 @@ import { Footer } from "@/components/sections/Footer";
 import { ContextAwareDownloadLink } from "@/components/ContextAwareDownloadLink";
 import { Check } from "lucide-react";
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-    title: "Pricing",
+export const metadata: Metadata = pageMetadata({
+    title: "Koe Pricing",
     description: "Use Koe free with your own API key, or choose managed cloud processing when you want Koe to handle the key.",
-    alternates: {
-        canonical: "/pricing/",
-    },
-};
+    path: "/pricing/",
+});
 
 const tiers = [
     {

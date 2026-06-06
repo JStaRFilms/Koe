@@ -278,7 +278,7 @@ class TranscriptionSessionManager {
         });
 
         pendingRetryService.clearPendingRetry();
-        this.sendUsageStats();
+        await this.sendUsageStats();
         this.sendPreview({
             sessionId: session.sessionId,
             text: ''
@@ -329,7 +329,7 @@ class TranscriptionSessionManager {
         });
 
         pendingRetryService.clearPendingRetry();
-        this.sendUsageStats();
+        await this.sendUsageStats();
         this.sendPreview({
             sessionId: session.sessionId,
             text: ''

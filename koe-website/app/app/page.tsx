@@ -3,14 +3,14 @@ import { Header } from "@/components/Header";
 import { StatusBar } from "@/components/StatusBar";
 import { Footer } from "@/components/sections/Footer";
 import { WebKoeApp } from "@/components/web-app/WebKoeApp";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-  title: "Web App",
+export const metadata: Metadata = pageMetadata({
+  title: "Koe Web App",
   description: "Use Koe in the browser with your signed-in account, managed processing, and account BYOK.",
-  alternates: {
-    canonical: "/app/",
-  },
-};
+  path: "/app/",
+  index: false,
+});
 
 export default function AppPage() {
   return (

@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
-import { Menu, X, Download, Github, Star, Terminal } from "lucide-react";
+import { Menu, X, Download, Github, Star } from "lucide-react";
 
 import { ThemeToggle } from "./ThemeToggle";
 import { ContextAwareDownloadLink } from "./ContextAwareDownloadLink";
-
-const GITHUB_REPO_URL = "https://github.com/JStaRFilms/Koe";
+import { GITHUB_REPO_URL } from "@/lib/site";
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);

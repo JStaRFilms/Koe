@@ -1,13 +1,11 @@
-import { Check, X } from "lucide-react";
-
 const comparisons = [
-    { feature: "COST STRUCTURE", koe: "$0 FOREVER", whisperflow: "$8-12/mo", osNative: "$0", koeHighlight: true },
-    { feature: "ENGINE TYPE", koe: "WHISPER (HIGH)", whisperflow: "WHISHER (HIGH)", osNative: "NATIVE (LOW)", koeHighlight: false },
-    { feature: "PRIVACY", koe: "LOCAL VAD", whisperflow: "CLOUD", osNative: "LOCAL", koeHighlight: true },
+    { feature: "COST STRUCTURE", koe: "FREE BYOK", whisperflow: "$8-12/mo", osNative: "$0", koeHighlight: true },
+    { feature: "ENGINE TYPE", koe: "WHISPER (HIGH)", whisperflow: "WHISPER (HIGH)", osNative: "NATIVE (LOW)", koeHighlight: false },
+    { feature: "PRIVACY", koe: "LOCAL VAD + BYOK", whisperflow: "CLOUD", osNative: "LOCAL", koeHighlight: true },
     { feature: "UNIVERSAL", koe: "ALL APPS", whisperflow: "ALL APPS", osNative: "LIMITED", koeHighlight: true },
     { feature: "OPEN SOURCE", koe: "YES", whisperflow: "NO", osNative: "NO", koeHighlight: true },
     { feature: "CUSTOM HOTKEY", koe: "YES", whisperflow: "FIXED", osNative: "FIXED", koeHighlight: true },
-    { feature: "HISTORY", koe: "UNLIMITED", whisperflow: "LIMITED", osNative: "NO", koeHighlight: true },
+    { feature: "HISTORY", koe: "DEVICE + ACCOUNT", whisperflow: "LIMITED", osNative: "NO", koeHighlight: true },
 ];
 
 export function Comparison() {

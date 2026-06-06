@@ -1,7 +1,15 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { sql } from "@/lib/server/db";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  title: "Admin Usage Dashboard",
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

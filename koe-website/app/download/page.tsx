@@ -5,14 +5,13 @@ import { DownloadButton } from "@/components/DownloadButton";
 import { Github, Monitor, Cpu, Wifi, Mic, ExternalLink, KeyRound, Settings, Keyboard, CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import { getIosReleaseTarget } from "@/lib/release-targets";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-    title: "Download",
-    description: "Download Koe for desktop and check current iPhone or Android availability.",
-    alternates: {
-        canonical: "/download/",
-    },
-};
+export const metadata: Metadata = pageMetadata({
+    title: "Download Koe",
+    description: "Download Koe for desktop and check current iPhone and Android availability.",
+    path: "/download/",
+});
 
 export default function DownloadPage() {
     const iosReleaseTarget = getIosReleaseTarget();

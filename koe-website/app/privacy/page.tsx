@@ -2,14 +2,13 @@ import type { Metadata } from "next";
 import { StatusBar } from "@/components/StatusBar";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/sections/Footer";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
     title: "Privacy Policy",
     description: "How Koe handles audio, transcripts, account data, BYOK credentials, and managed processing.",
-    alternates: {
-        canonical: "/privacy/",
-    },
-};
+    path: "/privacy/",
+});
 
 const sections = [
     {

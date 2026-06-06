@@ -548,7 +548,7 @@ details>summary::-webkit-details-marker {
 
   body {
     @apply bg-[var(--color-void)] text-[var(--color-bone)] uppercase;
-    font-family: 'IBM Plex Mono', monospace;
+    font-family: var(--font-mono), monospace;
   }
 
   h1,
@@ -557,22 +557,24 @@ details>summary::-webkit-details-marker {
   h4,
   h5,
   h6 {
-    font-family: 'Righteous', cursive;
+    font-family: var(--font-deco), cursive;
     text-transform: uppercase;
   }
 }
 
 /* Font Family Utilities */
+.font-display,
 .font-deco {
-  font-family: 'Righteous', cursive;
+  font-family: var(--font-deco), cursive;
 }
 
 .font-mono {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono), monospace;
 }
 
+.font-serif,
 .font-jp {
-  font-family: 'Noto Serif JP', serif;
+  font-family: var(--font-jp), serif;
 }
 
 /* Color Utilities */
