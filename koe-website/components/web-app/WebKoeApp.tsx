@@ -15,7 +15,7 @@ import { AccountMode, AppPhase, AuthMode, AuthResponse, Snapshot, WebAppTab } fr
 import { authHeaders, getInstallationId, getStoredToken, readApiError, setStoredToken } from "./webAppUtils";
 
 export function WebKoeApp() {
-  const [token, setToken] = useState<string | null>(() => getStoredToken());
+  const [token, setToken] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [activeTab, setActiveTab] = useState<WebAppTab>("record");
   const [authMode, setAuthMode] = useState<AuthMode>("signin");

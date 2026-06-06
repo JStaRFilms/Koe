@@ -7,6 +7,19 @@ import { handleApiError } from "@/lib/server/errors";
 
 export const runtime = "nodejs";
 
+async function getBillingSnapshot(userId: string) {
+  try {
+    const [subscription, plans] = await Promise.all([
+      getActiveBillingSubscription(userId),
+      listBillingPlans(),
+    ]);
+    return { subscription, plans };
+  } catch (error) {
+    console.error("[AccountSnapshot] Billing data unavailable.", error);
+    return { subscription: null, plans: [] };
+  }
+}
+
 export async function GET(request: Request) {
   try {
     const auth = await getAuthContext(request);
@@ -37,10 +50,7 @@ export async function GET(request: Request) {
 
     const capabilities = await getCapabilities(auth.user.id);
     const resolvedMode = await snapshotResolvedMode(auth.user.id, auth.user.defaultMode);
-    const [billingSubscription, billingPlans] = await Promise.all([
-      getActiveBillingSubscription(auth.user.id),
-      listBillingPlans(),
-    ]);
+    const billing = await getBillingSnapshot(auth.user.id);
 
     return NextResponse.json({
       user: auth.user,
@@ -51,8 +61,8 @@ export async function GET(request: Request) {
       },
       billing: {
         provider: "paystack",
-        subscription: billingSubscription,
-        plans: billingPlans,
+        subscription: billing.subscription,
+        plans: billing.plans,
       },
       settings: {
         language: settings?.language || "auto",
