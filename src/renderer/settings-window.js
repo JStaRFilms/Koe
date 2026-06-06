@@ -20,6 +20,7 @@ class SettingsWindow {
         this.themeManager = getThemeManager();
 
         this.setupTabSwitching();
+        this.setupSettingsSectionNav();
         this.setupWindowControls();
         this.setupKeyboardShortcuts();
         this.initializePanels();
@@ -41,10 +42,58 @@ class SettingsWindow {
     }
 
     /**
+     * Set up settings-section navigation inside the Settings tab
+     */
+    setupSettingsSectionNav() {
+        const scrollRegion = document.getElementById('settings-scroll-region');
+        const navButtons = document.querySelectorAll('.section-nav-btn[data-section]');
+        const sections = document.querySelectorAll('.settings-section-card');
+
+        if (navButtons.length === 0) {
+            return;
+        }
+
+        const switchToSection = (sectionId) => {
+            // Update nav button states
+            navButtons.forEach((button) => {
+                button.classList.toggle('active', button.dataset.section === sectionId);
+            });
+
+            // Show target section card, hide others
+            sections.forEach((section) => {
+                section.classList.toggle('active', section.id === sectionId);
+            });
+
+            // Reset scroll of the container to top
+            if (scrollRegion) {
+                scrollRegion.scrollTop = 0;
+            }
+        };
+
+        navButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                switchToSection(button.dataset.section);
+            });
+        });
+
+        // Initialize with default active section
+        const activeBtn = document.querySelector('.section-nav-btn.active[data-section]');
+        if (activeBtn) {
+            switchToSection(activeBtn.dataset.section);
+        } else if (navButtons[0]) {
+            switchToSection(navButtons[0].dataset.section);
+        }
+    }
+
+    /**
      * Switch to a specific tab
      */
     switchToTab(tabName) {
-        if (this.currentTab === tabName) return;
+        if (this.currentTab === tabName) {
+            // Re-opening an already active tab should still restore and refresh it.
+            this.showPanel(tabName);
+            return;
+        }
 
         // Hide current panel
         this.hidePanel(this.currentTab);
@@ -138,14 +187,41 @@ class SettingsWindow {
      * Set up window control buttons
      */
     setupWindowControls() {
+        const closeWindow = () => {
+            if (window.api && window.api.closeSettingsWindow) {
+                window.api.closeSettingsWindow();
+            }
+        };
+
+        const requestCloseWindow = async ({ discardChanges = false } = {}) => {
+            const settingsPanel = this.panels.settings;
+
+            if (!discardChanges && settingsPanel?.hasUnsavedChanges?.()) {
+                const shouldSave = window.confirm('You have unsaved settings changes. Save before closing?\n\nOK = save and close\nCancel = keep editing');
+                if (!shouldSave) {
+                    return;
+                }
+
+                const saved = await settingsPanel.saveSettings();
+                if (!saved) {
+                    return;
+                }
+            }
+
+            closeWindow();
+        };
+
         const closeBtn = document.getElementById('btn-close');
         if (closeBtn) {
-            closeBtn.addEventListener('click', () => {
-                if (window.api && window.api.closeSettingsWindow) {
-                    window.api.closeSettingsWindow();
-                }
-            });
+            closeBtn.addEventListener('click', () => requestCloseWindow());
         }
+
+        const cancelSettingsBtn = document.getElementById('btn-cancel-settings');
+        if (cancelSettingsBtn) {
+            cancelSettingsBtn.addEventListener('click', () => requestCloseWindow({ discardChanges: true }));
+        }
+
+        this.requestCloseWindow = requestCloseWindow;
     }
 
     /**
@@ -155,9 +231,7 @@ class SettingsWindow {
         document.addEventListener('keydown', (e) => {
             // Close on Escape
             if (e.key === 'Escape') {
-                if (window.api && window.api.closeSettingsWindow) {
-                    window.api.closeSettingsWindow();
-                }
+                this.requestCloseWindow?.();
             }
 
             // Tab switching with Ctrl/Cmd + number
@@ -181,14 +255,17 @@ class SettingsWindow {
             // instead of closing the window automatically.
             const originalSave = this.panels.settings.saveSettings.bind(this.panels.settings);
             this.panels.settings.saveSettings = async () => {
-                await originalSave();
-                // We'll show a toast notification here
-                const toast = document.getElementById('toast');
-                if (toast) {
-                    toast.querySelector('.toast-text').innerText = 'Settings saved successfully';
-                    toast.classList.add('show');
-                    setTimeout(() => toast.classList.remove('show'), 2000);
+                const saved = await originalSave();
+                // Show success only when the save actually completed.
+                if (saved !== false) {
+                    const toast = document.getElementById('toast');
+                    if (toast) {
+                        toast.querySelector('.toast-text').innerText = 'Settings saved successfully';
+                        toast.classList.add('show');
+                        setTimeout(() => toast.classList.remove('show'), 2000);
+                    }
                 }
+                return saved;
             };
         } catch (error) {
             console.error('Failed to initialize SettingsPanel:', error);

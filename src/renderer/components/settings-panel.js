@@ -7,6 +7,13 @@ export class SettingsPanel {
         this.btnTestKey = document.getElementById('btn-test-key');
         this.btnOpenLogs = document.getElementById('btn-open-logs');
         this.inputApiKey = document.getElementById('api-key');
+        this.localFallbackSection = document.getElementById('local-fallback-section');
+        this.localFallbackSummary = document.getElementById('local-fallback-summary');
+        this.localFallbackContent = document.getElementById('local-fallback-content');
+        this.localFallbackDescription = document.getElementById('local-fallback-description');
+        this.localFallbackHelp = document.getElementById('local-fallback-help');
+        this.localFallbackToggle = document.getElementById('btn-toggle-local-fallback');
+        this.localFallbackNavButton = document.getElementById('local-fallback-nav-btn');
         this.selLanguage = document.getElementById('language');
         this.chkEnhance = document.getElementById('enhance-text');
         this.selPromptStyle = document.getElementById('prompt-style');
@@ -39,6 +46,7 @@ export class SettingsPanel {
         this.accountModeSelect = document.getElementById('account-mode-select');
         this.inputAccountByok = document.getElementById('account-byok-key');
         this.accountByokHelp = document.getElementById('account-byok-help');
+        this.accountByokSavedLabel = document.getElementById('account-byok-saved-label');
         this.btnAccountSignUp = document.getElementById('btn-account-sign-up');
         this.btnAccountSignIn = document.getElementById('btn-account-sign-in');
         this.btnAccountSignOut = document.getElementById('btn-account-sign-out');
@@ -49,10 +57,15 @@ export class SettingsPanel {
 
         this.accountState = null;
         this.accountActionBusy = false;
+        this.showLocalFallbackControls = false;
         this.isRecordingHotkey = false;
         this.pendingHotkey = null;
+        this.savedSettingsSnapshot = null;
+        this.hasDirtySettings = false;
+        this.isSavingSettings = false;
 
         this.initListeners();
+        this.initDirtyTracking();
         if (this.chkEnhance) {
             this.chkEnhance.checked = true;
             this.chkEnhance.disabled = true;
@@ -64,8 +77,8 @@ export class SettingsPanel {
     }
 
     async show() {
-        await this.loadSettings();
         this.panel.classList.remove('hide');
+        await this.loadSettings();
     }
 
     hide() {
@@ -91,10 +104,14 @@ export class SettingsPanel {
         this.btnAccountSignUp?.addEventListener('click', () => this.handleAccountSignUp());
         this.btnAccountSignIn?.addEventListener('click', () => this.handleAccountSignIn());
         this.btnAccountSignOut?.addEventListener('click', () => this.handleAccountSignOut());
-        this.btnAccountRefresh?.addEventListener('click', () => this.loadAccountState(true));
+        this.btnAccountRefresh?.addEventListener('click', () => this.handleAccountRefresh());
         this.btnAccountModeSave?.addEventListener('click', () => this.handleAccountModeSave());
         this.btnAccountByokSave?.addEventListener('click', () => this.handleAccountByokSave());
         this.btnAccountByokDelete?.addEventListener('click', () => this.handleAccountByokDelete());
+        this.localFallbackToggle?.addEventListener('click', () => {
+            this.showLocalFallbackControls = !this.showLocalFallbackControls;
+            this.updateLocalFallbackVisibility();
+        });
 
         this.chkEnhance?.addEventListener('change', () => this.updateEnhancementControls());
 
@@ -109,6 +126,77 @@ export class SettingsPanel {
         }
 
         this.btnOpenLogs?.addEventListener('click', () => this.openLogsFolder());
+    }
+
+    initDirtyTracking() {
+        const trackedControls = [
+            this.inputApiKey,
+            this.selLanguage,
+            this.selPromptStyle,
+            this.inputCustomPrompt,
+            this.chkAutoPaste,
+            this.chkLaunchOnStartup,
+            this.chkAutoUpdate,
+            this.selModel,
+            this.selTheme,
+            this.inputHotkey
+        ].filter(Boolean);
+
+        trackedControls.forEach((control) => {
+            control.addEventListener('input', () => this.updateDirtyState());
+            control.addEventListener('change', () => this.updateDirtyState());
+        });
+
+        this.updateSaveButtonState();
+    }
+
+    getCurrentSettingsSnapshot() {
+        return {
+            groqApiKey: this.inputApiKey?.value.trim() || '',
+            language: this.selLanguage?.value || 'auto',
+            enhanceText: true,
+            promptStyle: this.selPromptStyle?.value || 'Clean',
+            customPrompt: this.inputCustomPrompt ? this.inputCustomPrompt.value.trim() : '',
+            autoPaste: this.chkAutoPaste?.checked === true,
+            launchOnStartup: this.chkLaunchOnStartup ? this.chkLaunchOnStartup.checked : true,
+            autoUpdate: this.chkAutoUpdate ? this.chkAutoUpdate.checked : true,
+            model: this.selModel ? this.selModel.value : 'whisper-large-v3-turbo',
+            theme: this.selTheme ? this.selTheme.value : 'dark',
+            hotkey: this.pendingHotkey || (this.inputHotkey ? this.parseHotkeyFromDisplay(this.inputHotkey.value) : 'CommandOrControl+Shift+Space')
+        };
+    }
+
+    settingsSnapshotsEqual(left, right) {
+        return JSON.stringify(left || null) === JSON.stringify(right || null);
+    }
+
+    updateSaveButtonState() {
+        if (this.btnSave) {
+            this.btnSave.disabled = !this.hasDirtySettings || this.isSavingSettings;
+            this.btnSave.textContent = this.isSavingSettings ? 'Saving...' : (this.hasDirtySettings ? 'Save changes' : 'No changes');
+        }
+    }
+
+    updateDirtyState(forceDirty = null) {
+        if (forceDirty !== null) {
+            this.hasDirtySettings = forceDirty === true;
+        } else if (!this.savedSettingsSnapshot) {
+            this.hasDirtySettings = false;
+        } else {
+            this.hasDirtySettings = !this.settingsSnapshotsEqual(this.getCurrentSettingsSnapshot(), this.savedSettingsSnapshot);
+        }
+
+        this.updateSaveButtonState();
+        return this.hasDirtySettings;
+    }
+
+    hasUnsavedChanges() {
+        return this.hasDirtySettings === true;
+    }
+
+    markSavedSnapshot() {
+        this.savedSettingsSnapshot = this.getCurrentSettingsSnapshot();
+        this.updateDirtyState(false);
     }
 
     startHotkeyRecording() {
@@ -167,6 +255,7 @@ export class SettingsPanel {
         }
 
         this.renderShortcutReference(accelerator);
+        this.updateDirtyState();
         this.inputHotkey.blur();
     }
 
@@ -324,15 +413,60 @@ export class SettingsPanel {
         };
     }
 
+    getSelectedAccountMode(state) {
+        return state?.user?.defaultMode || state?.resolvedMode?.mode || 'managed';
+    }
+
+    describeAccountByok(state) {
+        const byok = state?.capabilities?.byok;
+        if (byok?.available) {
+            return byok.last4 ? `Saved ending in ${byok.last4}` : 'Saved in account vault';
+        }
+        return 'No account key saved';
+    }
+
+    updateLocalFallbackVisibility() {
+        const authenticated = this.accountState?.authenticated === true;
+        const shouldCollapse = authenticated && !this.showLocalFallbackControls;
+
+        this.localFallbackSummary?.classList.toggle('hidden', !authenticated);
+        this.localFallbackContent?.classList.toggle('hidden', shouldCollapse);
+
+        if (this.localFallbackToggle) {
+            this.localFallbackToggle.textContent = shouldCollapse
+                ? 'Show fallback key options'
+                : 'Hide fallback key options';
+        }
+
+        if (this.localFallbackDescription) {
+            this.localFallbackDescription.textContent = authenticated
+                ? 'Signed-in recordings use the account mode above. Keep a local Groq key only as an optional desktop fallback.'
+                : 'Save a local Groq key if you want to record without signing in.';
+        }
+
+        if (this.localFallbackHelp) {
+            this.localFallbackHelp.textContent = authenticated
+                ? 'Only used when signed out or when you intentionally use desktop-only fallback.'
+                : 'Stored only on this desktop for local BYOK processing.';
+        }
+
+        if (this.localFallbackNavButton) {
+            this.localFallbackNavButton.textContent = authenticated ? 'Fallback key' : 'Local BYOK';
+        }
+    }
+
     accountModeSummary(state) {
         if (!state?.resolvedMode) {
             return 'Signed out. Local desktop fallback is available when you save a Groq key below.';
         }
 
+        const selectedMode = this.getSelectedAccountMode(state);
         const resolvedMode = `${state.resolvedMode.mode}${state.resolvedMode.available ? '' : ' (unavailable)'}`;
         const byok = state.capabilities?.byok?.available
             ? `BYOK ready${state.capabilities.byok.last4 ? ` ••••${state.capabilities.byok.last4}` : ''}`
-            : 'BYOK not saved';
+            : (selectedMode === 'byok'
+                ? 'BYOK mode selected, but no Groq key is saved yet'
+                : 'No account BYOK key saved');
         const managed = state.capabilities?.managed?.available
             ? 'Managed available'
             : `Managed ${state.capabilities?.managed?.status || 'unavailable'}`;
@@ -340,8 +474,13 @@ export class SettingsPanel {
     }
 
     renderAccountState(state) {
+        const wasAuthenticated = this.accountState?.authenticated === true;
         this.accountState = state || null;
         const authenticated = state?.authenticated === true;
+        if (!authenticated || authenticated !== wasAuthenticated) {
+            this.showLocalFallbackControls = false;
+        }
+        this.updateLocalFallbackVisibility();
 
         if (this.accountStatusChip) {
             this.accountStatusChip.textContent = authenticated ? 'Signed in' : 'Signed out';
@@ -356,9 +495,14 @@ export class SettingsPanel {
                 : 'Signed out';
         }
 
+        const selectedMode = this.getSelectedAccountMode(state);
+        const hasAccountByok = state?.capabilities?.byok?.available === true;
+
         if (this.accountStatusSubtitle) {
             this.accountStatusSubtitle.textContent = authenticated
-                ? `Default mode: ${state.user?.defaultMode || 'managed'} • Session active until ${state.session?.expiresAt ? new Date(state.session.expiresAt).toLocaleString() : 'unknown'}`
+                ? (selectedMode === 'byok' && !hasAccountByok
+                    ? 'Bring Your Own Key is selected. Save a Groq key in the account BYOK vault below to make this mode available.'
+                    : `Default mode: ${selectedMode} • Session active until ${state.session?.expiresAt ? new Date(state.session.expiresAt).toLocaleString() : 'unknown'}`)
                 : 'Use your Koe account to sync BYOK and mode across devices.';
         }
 
@@ -395,30 +539,71 @@ export class SettingsPanel {
             this.btnAccountByokDelete.disabled = busy || !authenticated;
         }
 
+        if (this.accountByokSavedLabel) {
+            this.accountByokSavedLabel.textContent = this.describeAccountByok(state);
+            this.accountByokSavedLabel.classList.toggle('ready', authenticated && hasAccountByok);
+            this.accountByokSavedLabel.classList.toggle('warning', authenticated && selectedMode === 'byok' && !hasAccountByok);
+        }
+
         if (this.accountByokHelp) {
             const byok = state?.capabilities?.byok;
             this.accountByokHelp.textContent = authenticated
                 ? (byok?.available
-                    ? `Saved to your account${byok.last4 ? ` as ••••${byok.last4}` : ''}. Metadata only is returned to the app.`
-                    : 'No synced Groq key saved yet for this account.')
-                : 'Stored server-side for signed-in desktop/mobile use. Metadata only is returned to the app.';
+                    ? `Bring Your Own Key is ready${byok.last4 ? ` with account key ending in ${byok.last4}` : ''}. Metadata only is returned to the app.`
+                    : (selectedMode === 'byok'
+                        ? 'BYOK mode is selected, but no account Groq key is saved yet. Paste your key here and click Save.'
+                        : 'No account BYOK key saved yet. Switch to BYOK any time, then save a Groq key here.'))
+                : 'Sign in to save a Bring Your Own Key credential to your account vault.';
         }
 
         if (this.accountSnapshot) {
             if (!authenticated) {
                 this.accountSnapshot.innerHTML = `
-                    <strong>Signed out.</strong><br>
-                    Local Groq fallback: ${state?.localFallback?.hasLocalGroqKey ? 'configured' : 'not configured'}
+                    <div class="snapshot-grid">
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">User Status</span>
+                            <span class="snapshot-value">Signed out</span>
+                        </div>
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">Local Fallback</span>
+                            <span class="snapshot-value">${state?.localFallback?.hasLocalGroqKey ? 'Configured' : 'Not configured'}</span>
+                        </div>
+                    </div>
                 `;
             } else {
                 const managedUsage = state?.capabilities?.managed?.usage;
+                const byokText = state.capabilities?.byok?.available 
+                    ? `Available (•••• ${state.capabilities.byok.last4 || 'bMRY'})` 
+                    : (selectedMode === 'byok' ? 'Not saved — Add key above' : 'Not saved');
+                const managedStatus = `${state.capabilities?.managed?.status || 'unallocated'}${state.capabilities?.managed?.available ? ' (Available)' : ' (Unavailable)'}`;
+                
                 this.accountSnapshot.innerHTML = `
-                    <strong>User:</strong> ${state.user?.email || 'Unknown'}<br>
-                    <strong>Resolved mode:</strong> ${state.resolvedMode?.mode || 'unknown'}${state.resolvedMode?.available === false ? ' (currently unavailable)' : ''}<br>
-                    <strong>Synced BYOK:</strong> ${state.capabilities?.byok?.available ? `available${state.capabilities.byok.last4 ? ` ••••${state.capabilities.byok.last4}` : ''}` : 'not saved'}<br>
-                    <strong>Managed:</strong> ${state.capabilities?.managed?.status || 'unallocated'}${state.capabilities?.managed?.available ? ' • available' : ''}<br>
-                    <strong>Managed usage:</strong> ${managedUsage ? `${managedUsage.audioSecondsUsed}/${managedUsage.audioSecondsLimit} seconds, ${managedUsage.requestCountUsed}/${managedUsage.requestCountLimit} requests` : 'n/a'}<br>
-                    <strong>Desktop fallback key:</strong> ${state.localFallback?.hasLocalGroqKey ? 'configured' : 'not configured'}
+                    <div class="snapshot-grid">
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">User</span>
+                            <span class="snapshot-value">${state.user?.email || 'Unknown'}</span>
+                        </div>
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">Resolved Mode</span>
+                            <span class="snapshot-value" style="font-weight: 600; color: var(--koe-accent);">${state.resolvedMode?.mode || 'unknown'}</span>
+                        </div>
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">Account BYOK</span>
+                            <span class="snapshot-value">${byokText}</span>
+                        </div>
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">Managed Tier</span>
+                            <span class="snapshot-value">${managedStatus}</span>
+                        </div>
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">Managed Usage</span>
+                            <span class="snapshot-value">${managedUsage ? `${managedUsage.audioSecondsUsed}/${managedUsage.audioSecondsLimit}s used • ${managedUsage.requestCountUsed}/${managedUsage.requestCountLimit} reqs` : 'N/A'}</span>
+                        </div>
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">Local Fallback Key</span>
+                            <span class="snapshot-value">${state.localFallback?.hasLocalGroqKey ? 'Configured' : 'Not configured'}</span>
+                        </div>
+                    </div>
                 `;
             }
         }
@@ -438,8 +623,16 @@ export class SettingsPanel {
             return state;
         } catch (error) {
             console.error('Failed to load account state', error);
-            this.showAccountResult(error.message || 'Failed to load account state', false);
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Failed to load account state'), false);
         }
+    }
+
+    async handleAccountRefresh() {
+        await this.withAccountAction(this.btnAccountRefresh, 'Refreshing...', async () => {
+            await this.loadAccountState(true);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Failed to refresh account.'), false);
+        });
     }
 
     async loadSettings() {
@@ -473,8 +666,10 @@ export class SettingsPanel {
                 if (this.inputHotkey) {
                     this.inputHotkey.value = this.formatHotkeyForDisplay(settings.hotkey || 'CommandOrControl+Shift+Space');
                 }
+                this.pendingHotkey = null;
                 this.renderShortcutReference(settings.hotkey || 'CommandOrControl+Shift+Space');
                 this.updateEnhancementControls();
+                this.markSavedSnapshot();
             }
         } catch (e) {
             console.error('Failed to load settings', e);
@@ -482,24 +677,15 @@ export class SettingsPanel {
     }
 
     async saveSettings() {
-        if (!window.api) return;
+        if (!window.api) return false;
 
-        const newSettings = {
-            groqApiKey: this.inputApiKey.value.trim(),
-            language: this.selLanguage.value,
-            enhanceText: true,
-            promptStyle: this.selPromptStyle.value,
-            customPrompt: this.inputCustomPrompt ? this.inputCustomPrompt.value.trim() : '',
-            autoPaste: this.chkAutoPaste.checked,
-            launchOnStartup: this.chkLaunchOnStartup ? this.chkLaunchOnStartup.checked : true,
-            autoUpdate: this.chkAutoUpdate ? this.chkAutoUpdate.checked : true,
-            model: this.selModel ? this.selModel.value : 'whisper-large-v3-turbo',
-            theme: this.selTheme ? this.selTheme.value : 'dark',
-            hotkey: this.pendingHotkey || (this.inputHotkey ? this.parseHotkeyFromDisplay(this.inputHotkey.value) : 'CommandOrControl+Shift+Space')
-        };
+        const newSettings = this.getCurrentSettingsSnapshot();
 
         try {
+            this.isSavingSettings = true;
+            this.updateSaveButtonState();
             await window.api.saveSettings(newSettings);
+            this.pendingHotkey = null;
 
             if (this.accountState?.authenticated && window.api.saveAccountSettings) {
                 try {
@@ -511,7 +697,8 @@ export class SettingsPanel {
                 }
             }
 
-            this.hide();
+            this.markSavedSnapshot();
+            return true;
         } catch (e) {
             console.error('Failed to save settings', e);
             if (e.message && e.message.includes('hotkey')) {
@@ -522,6 +709,10 @@ export class SettingsPanel {
             } else {
                 alert('Failed to save settings: ' + e.message);
             }
+            return false;
+        } finally {
+            this.isSavingSettings = false;
+            this.updateSaveButtonState();
         }
     }
 
@@ -640,7 +831,7 @@ export class SettingsPanel {
         await this.withAccountAction(this.btnAccountModeSave, 'Saving...', async () => {
             const state = await window.api.setAccountMode({ defaultMode: selectedMode });
             this.renderAccountState(state);
-            this.showAccountResult(`Default mode set to ${selectedMode} ✓`, true);
+            this.showAccountResult(`Default mode set to ${selectedMode === 'byok' ? 'BYOK (Bring Your Own Key)' : 'managed'} ✓`, true);
         }).catch((error) => {
             this.showAccountResult(this.cleanActionErrorMessage(error, 'Failed to update account mode.'), false);
         });

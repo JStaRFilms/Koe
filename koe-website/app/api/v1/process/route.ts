@@ -14,6 +14,33 @@ export const runtime = "nodejs";
 
 const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
 
+const jsonProcessSchema = z.object({
+  audioBase64: z.string().min(1),
+  audioMimeType: z.string().trim().optional(),
+  requestId: z.string().uuid(),
+  clientSessionId: z.string().trim().optional().nullable(),
+  mode: accountModeSchema.optional(),
+  language: z.string().trim().optional(),
+  model: transcribeModelSchema.optional(),
+  promptStyle: promptStyleSchema.optional(),
+  customPrompt: z.string().optional(),
+  enhanceText: z.boolean().optional(),
+  audioSeconds: z.number().optional(),
+});
+
+type ProcessInput = {
+  audio: Blob;
+  requestId: string;
+  clientSessionId: string | null;
+  requestedMode?: z.infer<typeof accountModeSchema>;
+  language: string;
+  model: z.infer<typeof transcribeModelSchema>;
+  promptStyle: z.infer<typeof promptStyleSchema>;
+  customPrompt: string;
+  enhanceText: boolean;
+  clientEstimatedAudioSeconds: number;
+};
+
 function wantsNdjson(request: Request) {
   return (request.headers.get("accept") || "").includes("application/x-ndjson");
 }
@@ -28,6 +55,48 @@ function ndjsonResponse(messages: unknown[]) {
   });
 }
 
+async function parseProcessInput(request: Request): Promise<ProcessInput> {
+  const contentType = request.headers.get("content-type") || "";
+
+  if (contentType.toLowerCase().includes("application/json")) {
+    const body = jsonProcessSchema.parse(await request.json());
+    const audioBytes = Buffer.from(body.audioBase64, "base64");
+
+    return {
+      audio: new Blob([audioBytes], { type: body.audioMimeType || "audio/m4a" }),
+      requestId: body.requestId,
+      clientSessionId: body.clientSessionId?.trim() || null,
+      requestedMode: body.mode,
+      language: (body.language || "auto").trim().slice(0, 24) || "auto",
+      model: body.model || "whisper-large-v3-turbo",
+      promptStyle: body.promptStyle || "Clean",
+      customPrompt: String(body.customPrompt || "").slice(0, 4000),
+      enhanceText: body.enhanceText !== false,
+      clientEstimatedAudioSeconds: Math.max(0, Number(body.audioSeconds || 0) || 0),
+    };
+  }
+
+  const form = await request.formData();
+  const audio = form.get("audio") || form.get("file");
+  if (!(audio instanceof Blob)) {
+    throw new ApiError("BAD_REQUEST", "No audio file was uploaded.", 400);
+  }
+
+  const requestedModeRaw = form.get("mode");
+  return {
+    audio,
+    requestId: z.string().uuid().parse(String(form.get("requestId") || "")),
+    clientSessionId: String(form.get("clientSessionId") || "").trim() || null,
+    requestedMode: requestedModeRaw ? accountModeSchema.parse(String(requestedModeRaw)) : undefined,
+    language: String(form.get("language") || "auto").trim().slice(0, 24) || "auto",
+    model: transcribeModelSchema.parse(String(form.get("model") || "whisper-large-v3-turbo")),
+    promptStyle: promptStyleSchema.parse(String(form.get("promptStyle") || "Clean")),
+    customPrompt: String(form.get("customPrompt") || "").slice(0, 4000),
+    enhanceText: parseBooleanFormValue(form.get("enhanceText"), true),
+    clientEstimatedAudioSeconds: Math.max(0, Number(form.get("audioSeconds") || 0) || 0),
+  };
+}
+
 export async function POST(request: Request) {
   const stream = wantsNdjson(request);
 
@@ -36,20 +105,20 @@ export async function POST(request: Request) {
     await assertRateLimit(request, { scope: "process:ip", max: 60, windowMs: 60_000 });
     await assertRateLimit(request, { scope: "process:user", key: auth.user.id, max: 30, windowMs: 60_000 });
 
-    const form = await request.formData();
-    const audio = form.get("audio") || form.get("file");
-    const requestId = z.string().uuid().parse(String(form.get("requestId") || ""));
-    const clientSessionId = String(form.get("clientSessionId") || "").trim() || null;
-    const requestedModeRaw = form.get("mode");
-    const requestedMode = requestedModeRaw ? accountModeSchema.parse(String(requestedModeRaw)) : undefined;
-    const language = String(form.get("language") || "auto").trim().slice(0, 24) || "auto";
-    const model = transcribeModelSchema.parse(String(form.get("model") || "whisper-large-v3-turbo"));
-    const promptStyle = promptStyleSchema.parse(String(form.get("promptStyle") || "Clean"));
-    const customPrompt = String(form.get("customPrompt") || "").slice(0, 4000);
-    const enhanceText = parseBooleanFormValue(form.get("enhanceText"), true);
-    const clientEstimatedAudioSeconds = Math.max(0, Number(form.get("audioSeconds") || 0) || 0);
+    const {
+      audio,
+      requestId,
+      clientSessionId,
+      requestedMode,
+      language,
+      model,
+      promptStyle,
+      customPrompt,
+      enhanceText,
+      clientEstimatedAudioSeconds,
+    } = await parseProcessInput(request);
 
-    if (!(audio instanceof Blob) || audio.size === 0) {
+    if (audio.size === 0) {
       return apiError("BAD_REQUEST", "No audio file was uploaded.", 400);
     }
 

@@ -5,7 +5,8 @@ const { validateApiKey } = require('./services/groq');
 const accountClient = require('./services/account-client');
 const rateLimiter = require('./services/rate-limiter');
 const historyService = require('./services/history');
-const { retryAndPasteTranscript } = require('./services/retry-transcript');
+const { retryTranscript, retryAndPasteTranscript } = require('./services/retry-transcript');
+const { writeToClipboard } = require('./services/clipboard');
 const pendingRetryService = require('./services/pending-retry');
 const sessionManager = require('./services/transcription-session-manager');
 const { closeSettingsWindow } = require('./settings-window');
@@ -95,9 +96,11 @@ function setupIpcHandlers(mainWindow) {
     ipcMain.handle(CHANNELS.CLEAR_HISTORY, async () => historyService.clearHistory());
 
     ipcMain.handle(CHANNELS.RETRY_HISTORY_ENTRY, async (event, entryId) => {
-        return retryAndPasteTranscript(entryId, {
-            beforePaste: hideSettingsBeforePaste
-        });
+        const result = await retryTranscript(entryId);
+        if (result?.refinedText) {
+            writeToClipboard(result.refinedText);
+        }
+        return result;
     });
 
     ipcMain.handle(CHANNELS.RETRY_LAST_TRANSCRIPT, async () => {

@@ -151,6 +151,11 @@ export class HistoryPanel {
             btnRetry.title = 'Retry raw transcript';
             btnRetry.textContent = 'Retry';
 
+            const btnCopyRefined = document.createElement('button');
+            btnCopyRefined.className = 'secondary-btn btn-history-copy-refined';
+            btnCopyRefined.title = 'Copy refined transcript';
+            btnCopyRefined.textContent = 'Copy Refined';
+
             const btnCopyRaw = document.createElement('button');
             btnCopyRaw.className = 'secondary-btn btn-history-copy-raw';
             btnCopyRaw.title = 'Copy raw transcript';
@@ -158,6 +163,7 @@ export class HistoryPanel {
 
             actionsDiv.appendChild(btnExpand);
             actionsDiv.appendChild(btnRetry);
+            actionsDiv.appendChild(btnCopyRefined);
             actionsDiv.appendChild(btnCopyRaw);
 
             entryEl.appendChild(headerDiv);
@@ -182,7 +188,7 @@ export class HistoryPanel {
 
                 try {
                     await window.api.retryHistoryEntry(entry.id);
-                    this.showToast('Retried raw transcript');
+                    this.showToast('Retried and copied refined text');
                     await this.loadHistory();
                 } catch (error) {
                     window.api.log(`Failed to retry history entry: ${error.message}`);
@@ -191,6 +197,10 @@ export class HistoryPanel {
                     btnRetry.disabled = false;
                     btnRetry.textContent = 'Retry';
                 }
+            });
+
+            btnCopyRefined.addEventListener('click', () => {
+                this.copyText(refinedText, 'Copied refined text');
             });
 
             btnCopyRaw.addEventListener('click', () => {

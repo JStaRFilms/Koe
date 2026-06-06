@@ -99,6 +99,14 @@ export default function SettingsScreen() {
   const [customPromptDraft, setCustomPromptDraft] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pendingMode, setPendingMode] = useState<AccountMode | null>(null);
+  const [isRefreshingAccount, setIsRefreshingAccount] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const [isSavingAccountKey, setIsSavingAccountKey] = useState(false);
+  const [isDeletingAccountKey, setIsDeletingAccountKey] = useState(false);
+  const [isSavingLocalKey, setIsSavingLocalKey] = useState(false);
+  const [isClearingLocalKey, setIsClearingLocalKey] = useState(false);
+  const [showDeviceFallback, setShowDeviceFallback] = useState(false);
 
   const notifySuccess = async () => {
     try {
@@ -157,21 +165,35 @@ export default function SettingsScreen() {
       return;
     }
 
-    await saveGroqApiKey(trimmed);
-    setSavedKeyLabel(maskKey(trimmed));
-    setApiKeyInput('');
-    setFeedbackMessage(accountSession ? 'Saved local fallback key.' : 'Saved local Groq key.');
+    setIsSavingLocalKey(true);
+    setFeedbackMessage(accountSession ? 'Saving local fallback key...' : 'Saving local Groq key...');
     setErrorMessage(null);
-    await notifySuccess();
+
+    try {
+      await saveGroqApiKey(trimmed);
+      setSavedKeyLabel(maskKey(trimmed));
+      setApiKeyInput('');
+      setFeedbackMessage(accountSession ? 'Saved local fallback key.' : 'Saved local Groq key.');
+      await notifySuccess();
+    } finally {
+      setIsSavingLocalKey(false);
+    }
   };
 
   const clearLocalKey = async () => {
-    await deleteGroqApiKey();
-    setSavedKeyLabel(maskKey(null));
-    setApiKeyInput('');
-    setFeedbackMessage('Cleared the local fallback key.');
+    setIsClearingLocalKey(true);
+    setFeedbackMessage('Clearing local fallback key...');
     setErrorMessage(null);
-    await notifyLightImpact();
+
+    try {
+      await deleteGroqApiKey();
+      setSavedKeyLabel(maskKey(null));
+      setApiKeyInput('');
+      setFeedbackMessage('Cleared the local fallback key.');
+      await notifyLightImpact();
+    } finally {
+      setIsClearingLocalKey(false);
+    }
   };
 
   const updateLocalAndMaybeRemoteSettings = async (
@@ -211,16 +233,36 @@ export default function SettingsScreen() {
   };
 
   const handleSignOut = async () => {
-    await signOutStoredAccount();
-    setFeedbackMessage('Signed out. Local fallback remains on this device.');
+    if (isSigningOut) {
+      return;
+    }
+
+    setIsSigningOut(true);
+    setFeedbackMessage('Signing out...');
     setErrorMessage(null);
-    setSnapshot(null);
-    setAccountSession(null);
-    await notifyLightImpact();
-    await loadData();
+
+    try {
+      await signOutStoredAccount();
+      setFeedbackMessage('Signed out. Local fallback remains on this device.');
+      setSnapshot(null);
+      setAccountSession(null);
+      setShowDeviceFallback(false);
+      await notifyLightImpact();
+      await loadData();
+    } finally {
+      setIsSigningOut(false);
+    }
   };
 
   const handleRefreshAccount = async () => {
+    if (isRefreshingAccount) {
+      return;
+    }
+
+    setIsRefreshingAccount(true);
+    setFeedbackMessage('Refreshing account snapshot...');
+    setErrorMessage(null);
+
     try {
       const refreshed = await refreshStoredAccountSnapshot();
       const nextSession = await getAccountSession();
@@ -245,6 +287,8 @@ export default function SettingsScreen() {
         setSnapshot(null);
       }
       setErrorMessage(normalizeAccountApiError(error, 'Could not refresh your account.').message);
+    } finally {
+      setIsRefreshingAccount(false);
     }
   };
 
@@ -255,11 +299,14 @@ export default function SettingsScreen() {
       return;
     }
 
+    setIsSavingAccountKey(true);
+    setFeedbackMessage('Saving account BYOK to the vault...');
+    setErrorMessage(null);
+
     try {
       await saveAccountGroqKey(trimmed);
       setAccountKeyInput('');
       setFeedbackMessage('Saved your Groq key to the account vault.');
-      setErrorMessage(null);
       await notifySuccess();
       await loadData();
     } catch (error) {
@@ -268,14 +315,19 @@ export default function SettingsScreen() {
         setAccountSession(null);
         setSnapshot(null);
       }
+    } finally {
+      setIsSavingAccountKey(false);
     }
   };
 
   const handleDeleteAccountKey = async () => {
+    setIsDeletingAccountKey(true);
+    setFeedbackMessage('Deleting account BYOK from the vault...');
+    setErrorMessage(null);
+
     try {
       await deleteAccountGroqKey();
       setFeedbackMessage('Removed your account Groq key.');
-      setErrorMessage(null);
       await notifyLightImpact();
       await loadData();
     } catch (error) {
@@ -284,10 +336,27 @@ export default function SettingsScreen() {
         setAccountSession(null);
         setSnapshot(null);
       }
+    } finally {
+      setIsDeletingAccountKey(false);
     }
   };
 
   const handleModeChange = async (mode: AccountMode) => {
+    if (pendingMode) {
+      return;
+    }
+
+    setPendingMode(mode);
+    setSnapshot((current) => current
+      ? {
+          ...current,
+          user: { ...current.user, defaultMode: mode },
+          resolvedMode: { ...current.resolvedMode, mode },
+        }
+      : current);
+    setFeedbackMessage(`Switching account mode to ${mode}...`);
+    setErrorMessage(null);
+
     try {
       await pushAccountMode(mode);
       setFeedbackMessage(`Switched account mode to ${mode}.`);
@@ -299,13 +368,27 @@ export default function SettingsScreen() {
       if (!await getAccountSession()) {
         setAccountSession(null);
         setSnapshot(null);
+      } else {
+        await loadData();
       }
+    } finally {
+      setPendingMode(null);
     }
   };
 
   if (!settings) {
-    return null;
+    return (
+      <View style={styles.outer}>
+        <GridBackground />
+        <ScanlineOverlay />
+        <View style={styles.loadingContainer}>
+          <Text style={[styles.banner, { color: theme.accent, borderColor: theme.accent }]}>Loading settings and account state...</Text>
+        </View>
+      </View>
+    );
   }
+
+  const showLocalFallbackControls = !accountSession || showDeviceFallback;
 
   return (
     <View style={styles.outer}>
@@ -367,21 +450,23 @@ export default function SettingsScreen() {
                 <View style={styles.optionGrid}>
                   <BrutalButton
                     onPress={() => void handleModeChange('managed')}
-                    title="Managed"
-                    variant={snapshot?.user.defaultMode === 'managed' ? 'primary' : 'outline'}
+                    title={pendingMode === 'managed' ? 'Switching...' : 'Managed'}
+                    variant={(pendingMode || snapshot?.user.defaultMode) === 'managed' ? 'primary' : 'outline'}
+                    disabled={Boolean(pendingMode)}
                     small
                   />
                   <BrutalButton
                     onPress={() => void handleModeChange('byok')}
-                    title="BYOK"
-                    variant={snapshot?.user.defaultMode === 'byok' ? 'primary' : 'outline'}
+                    title={pendingMode === 'byok' ? 'Switching...' : 'BYOK'}
+                    variant={(pendingMode || snapshot?.user.defaultMode) === 'byok' ? 'primary' : 'outline'}
+                    disabled={Boolean(pendingMode)}
                     small
                   />
                 </View>
 
                 <View style={styles.actionRow}>
-                  <BrutalButton onPress={() => void handleRefreshAccount()} title="Refresh" variant="outline" style={{ flex: 1 }} />
-                  <BrutalButton onPress={() => void handleSignOut()} title="Sign out" variant="danger" />
+                  <BrutalButton onPress={() => void handleRefreshAccount()} title={isRefreshingAccount ? 'Refreshing...' : 'Refresh'} variant="outline" disabled={isRefreshingAccount || isSigningOut} style={{ flex: 1 }} />
+                  <BrutalButton onPress={() => void handleSignOut()} title={isSigningOut ? 'Signing out...' : 'Sign out'} variant="danger" disabled={isSigningOut || isRefreshingAccount} />
                 </View>
 
                 <Text style={[styles.helperCopy, { color: theme.textDim }]}>
@@ -410,8 +495,8 @@ export default function SettingsScreen() {
                 />
 
                 <View style={styles.actionRow}>
-                  <BrutalButton onPress={() => void handleSaveAccountKey()} title="Save to account" style={{ flex: 1 }} />
-                  <BrutalButton onPress={() => void handleDeleteAccountKey()} title="Delete" variant="danger" />
+                  <BrutalButton onPress={() => void handleSaveAccountKey()} title={isSavingAccountKey ? 'Saving...' : 'Save to account'} disabled={isSavingAccountKey || isDeletingAccountKey} style={{ flex: 1 }} />
+                  <BrutalButton onPress={() => void handleDeleteAccountKey()} title={isDeletingAccountKey ? 'Deleting...' : 'Delete'} variant="danger" disabled={isSavingAccountKey || isDeletingAccountKey} />
                 </View>
 
                 <Text style={[styles.statusMsg, { color: theme.textDim }]}>
@@ -424,33 +509,46 @@ export default function SettingsScreen() {
 
         <BrutalCard headerTitle={accountSession ? 'Device fallback // Optional' : 'Local BYOK // Device key'}>
           <View style={styles.itemBody}>
-            <Text style={[styles.label, { color: theme.textDim }]}>Saved key</Text>
-            <Text selectable style={[styles.savedKey, { color: theme.accent, fontFamily: Typography.fonts.mono }]}>
-              {savedKeyLabel}
-            </Text>
-
-            <TextInput
-              value={apiKeyInput}
-              onChangeText={setApiKeyInput}
-              placeholder="Enter your device-only Groq key"
-              placeholderTextColor={theme.textDim}
-              secureTextEntry
-              style={[
-                styles.input,
-                { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text },
-              ]}
-            />
-
-            <View style={styles.actionRow}>
-              <BrutalButton onPress={() => void saveLocalKey()} title="Save key" style={{ flex: 1 }} />
-              <BrutalButton onPress={() => void clearLocalKey()} title="Clear" variant="danger" />
-            </View>
-
-            <Text style={[styles.statusMsg, { color: theme.textDim }]}>
+            <Text style={[styles.statusMsg, { color: theme.textDim }]}> 
               {accountSession
-                ? 'Only used when you record while signed out or want a legacy local fallback.'
-                : 'Stored only on this device for legacy or offline fallback.'}
+                ? 'Signed-in recordings use your account mode above. Device BYOK is hidden because it is only a local fallback.'
+                : 'Save a device-only Groq key here if you want to record without signing in.'}
             </Text>
+
+            {accountSession ? (
+              <BrutalButton
+                onPress={() => setShowDeviceFallback((value) => !value)}
+                title={showDeviceFallback ? 'Hide fallback key options' : 'Show fallback key options'}
+                variant="outline"
+                style={{ width: '100%' }}
+              />
+            ) : null}
+
+            {showLocalFallbackControls ? (
+              <>
+                <Text style={[styles.label, { color: theme.textDim }]}>Saved key</Text>
+                <Text selectable style={[styles.savedKey, { color: theme.accent, fontFamily: Typography.fonts.mono }]}> 
+                  {savedKeyLabel}
+                </Text>
+
+                <TextInput
+                  value={apiKeyInput}
+                  onChangeText={setApiKeyInput}
+                  placeholder="Enter your device-only Groq key"
+                  placeholderTextColor={theme.textDim}
+                  secureTextEntry
+                  style={[
+                    styles.input,
+                    { backgroundColor: theme.inputBg, borderColor: theme.border, color: theme.text },
+                  ]}
+                />
+
+                <View style={styles.actionRow}>
+                  <BrutalButton onPress={() => void saveLocalKey()} title={isSavingLocalKey ? 'Saving...' : 'Save key'} disabled={isSavingLocalKey || isClearingLocalKey} style={{ flex: 1 }} />
+                  <BrutalButton onPress={() => void clearLocalKey()} title={isClearingLocalKey ? 'Clearing...' : 'Clear'} variant="danger" disabled={isSavingLocalKey || isClearingLocalKey} />
+                </View>
+              </>
+            ) : null}
           </View>
         </BrutalCard>
 
@@ -543,6 +641,11 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   outer: { flex: 1 },
   container: { flex: 1 },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    padding: Spacing.xl,
+  },
   kanjiContainer: {
     position: 'absolute',
     top: 0,

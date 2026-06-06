@@ -1,4 +1,5 @@
 import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { parseErrorMessage, sanitizeRefinedText } from '@koe/core';
 import type { StoredAccountSession } from '../storage/secure-storage';
@@ -206,6 +207,20 @@ function resolveApiBaseUrl() {
   return normalizeApiBaseUrl(DEFAULT_KOE_API_BASE_URL);
 }
 
+async function fetchKoeApi(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(url, init);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Network request failed';
+    throw new MobileAccountApiError(
+      'NETWORK_ERROR',
+      `Could not reach Koe API at ${url}. If you are testing locally, restart Expo with EXPO_PUBLIC_KOE_API_BASE_URL=http://192.168.100.5:3000 and make sure this URL opens on your phone. (${message})`,
+      0,
+      true,
+    );
+  }
+}
+
 function getPlatform(): AccountPlatform {
   if (Platform.OS === 'ios' || Platform.OS === 'android' || Platform.OS === 'web') {
     return Platform.OS;
@@ -272,7 +287,8 @@ function toApiError(status: number, payload: unknown, fallback: string) {
 }
 
 async function requestJson<T>(path: string, init: RequestInit, context?: AuthHeadersContext): Promise<T> {
-  const response = await fetch(`${resolveApiBaseUrl()}${path}`, {
+  const url = `${resolveApiBaseUrl()}${path}`;
+  const response = await fetchKoeApi(url, {
     ...init,
     headers: buildHeaders(context, init.headers as Record<string, string> | undefined),
   });
@@ -286,7 +302,8 @@ async function requestJson<T>(path: string, init: RequestInit, context?: AuthHea
 }
 
 async function requestVoid(path: string, init: RequestInit, context?: AuthHeadersContext): Promise<void> {
-  const response = await fetch(`${resolveApiBaseUrl()}${path}`, {
+  const url = `${resolveApiBaseUrl()}${path}`;
+  const response = await fetchKoeApi(url, {
     ...init,
     headers: buildHeaders(context, init.headers as Record<string, string> | undefined),
   });
@@ -299,6 +316,60 @@ async function requestVoid(path: string, init: RequestInit, context?: AuthHeader
   if (!response.ok) {
     throw toApiError(response.status, payload, 'The request failed.');
   }
+}
+
+function requestMultipartJson<T>(path: string, formData: FormData, context: AuthHeadersContext): Promise<T> {
+  const url = `${resolveApiBaseUrl()}${path}`;
+  const headers = buildHeaders(context);
+
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', url);
+    xhr.timeout = 90_000;
+
+    for (const [key, value] of Object.entries(headers)) {
+      xhr.setRequestHeader(key, value);
+    }
+
+    xhr.onload = () => {
+      let payload: unknown = null;
+      const raw = String(xhr.responseText || '');
+      if (raw) {
+        try {
+          payload = JSON.parse(raw);
+        } catch {
+          payload = raw;
+        }
+      }
+
+      if (xhr.status < 200 || xhr.status >= 300) {
+        reject(toApiError(xhr.status, payload, 'Account processing failed.'));
+        return;
+      }
+
+      resolve(payload as T);
+    };
+
+    xhr.onerror = () => {
+      reject(new MobileAccountApiError(
+        'NETWORK_ERROR',
+        `Could not upload audio to Koe API at ${url}. Auth and settings may still work even if file uploads are blocked by Expo, the local network, or the recorded file URI.`,
+        0,
+        true,
+      ));
+    };
+
+    xhr.ontimeout = () => {
+      reject(new MobileAccountApiError(
+        'NETWORK_TIMEOUT',
+        `Audio upload to Koe API timed out at ${url}. Try a shorter recording or restart the local backend.`,
+        0,
+        true,
+      ));
+    };
+
+    xhr.send(formData);
+  });
 }
 
 async function appendAudioFile(formData: FormData, audioUri: string): Promise<void> {
@@ -444,38 +515,36 @@ export async function deleteAccountGroqCredential(session: StoredAccountSession)
   await requestVoid('/api/v1/account/credentials/groq', { method: 'DELETE' }, { session });
 }
 
+function inferAudioMimeType(audioUri: string) {
+  const lower = audioUri.toLowerCase();
+  if (lower.includes('.webm')) return 'audio/webm';
+  if (lower.includes('.wav')) return 'audio/wav';
+  if (lower.includes('.mp3')) return 'audio/mpeg';
+  return 'audio/m4a';
+}
+
 export async function processAccountAudio(input: ProcessAudioInput): Promise<AccountProcessResponse> {
-  const formData = new FormData();
-  await appendAudioFile(formData, input.audioUri);
-  formData.append('requestId', input.requestId);
-  formData.append('enhanceText', String(Boolean(input.enhanceText)));
-  formData.append('audioSeconds', String(Math.max(0, input.audioSeconds || 0)));
-
-  if (input.mode) {
-    formData.append('mode', input.mode);
-  }
-
-  if (input.language) {
-    formData.append('language', input.language);
-  }
-
-  if (input.model) {
-    formData.append('model', input.model);
-  }
-
-  if (input.promptStyle) {
-    formData.append('promptStyle', input.promptStyle);
-  }
-
-  if (input.customPrompt) {
-    formData.append('customPrompt', input.customPrompt);
-  }
+  const audioBase64 = await FileSystem.readAsStringAsync(input.audioUri, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
 
   return requestJson<AccountProcessResponse>(
     '/api/v1/process',
     {
       method: 'POST',
-      body: formData,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audioBase64,
+        audioMimeType: inferAudioMimeType(input.audioUri),
+        requestId: input.requestId,
+        mode: input.mode,
+        language: input.language,
+        model: input.model,
+        promptStyle: input.promptStyle,
+        customPrompt: input.customPrompt,
+        enhanceText: Boolean(input.enhanceText),
+        audioSeconds: Math.max(0, input.audioSeconds || 0),
+      }),
     },
     { session: input.session },
   );
