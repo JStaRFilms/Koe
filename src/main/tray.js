@@ -2,8 +2,9 @@ const { Tray, Menu, app, nativeImage } = require('electron');
 const path = require('path');
 const { CHANNELS } = require('../shared/constants');
 const { createSettingsWindow } = require('./settings-window');
-const { toggleRecording } = require('./services/recording-state');
+const { getRecordingState, toggleRecording } = require('./services/recording-state');
 const { showPillWindow } = require('./services/pill-window');
+const { ensureProcessingReady } = require('./services/processing-readiness');
 const fs = require('fs');
 
 const logger = require('./services/logger');
@@ -62,6 +63,11 @@ function updateContextMenu(mainWindow) {
         {
             label: isRecording ? 'Stop Recording' : 'Start Recording',
             click: () => {
+                if (!getRecordingState().isRecording && !ensureProcessingReady(mainWindow)) {
+                    logger.warn('Recording blocked because no account session or local Groq key is configured.');
+                    return;
+                }
+
                 const recordingState = toggleRecording();
                 isRecording = recordingState.isRecording;
                 updateContextMenu(mainWindow);

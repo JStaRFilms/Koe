@@ -5,7 +5,6 @@ const {
     parseErrorMessage,
     GROQ_WHISPER_URL,
     GROQ_CHAT_URL,
-    PROD_PROXY_URL,
     DEFAULT_WHISPER_MODEL: DEFAULT_MODEL,
     DEFAULT_ENHANCE_MODEL: ENHANCE_MODEL
 } = require('@koe/core');
@@ -18,24 +17,6 @@ const logger = require('./logger');
 
 // Helpers moved to @koe/core
 
-function resolveProcessingEndpoint(settings = getSettings()) {
-    const envUrl = String(process.env.KOE_PROCESSING_URL || '').trim();
-    if (envUrl) {
-        return envUrl;
-    }
-
-    const configuredUrl = String(settings.cloudProcessingUrl || '').trim();
-    if (configuredUrl) {
-        return configuredUrl;
-    }
-
-    return PROD_PROXY_URL;
-}
-
-function shouldUseCloudProcessing(settings = getSettings()) {
-    return Boolean(settings.cloudProcessingEnabled && resolveProcessingEndpoint(settings));
-}
-
 function emitStage(onStage, stage, label, progress) {
     if (typeof onStage === 'function') {
         onStage({ stage, label, progress });
@@ -43,62 +24,6 @@ function emitStage(onStage, stage, label, progress) {
 }
 
 // parseErrorMessage moved to @koe/core
-
-async function parseProxyStream(response, onStage) {
-    if (!response.body) {
-        throw new Error('Cloud processing response did not include a body.');
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let completion = null;
-
-    while (true) {
-        const { value, done } = await reader.read();
-        buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
-
-        let newlineIndex = buffer.indexOf('\n');
-        while (newlineIndex !== -1) {
-            const line = buffer.slice(0, newlineIndex).trim();
-            buffer = buffer.slice(newlineIndex + 1);
-
-            if (line) {
-                let message;
-                try {
-                    message = JSON.parse(line);
-                } catch (error) {
-                    throw new Error('Cloud processing returned malformed status output.');
-                }
-
-                if (message.type === 'status') {
-                    emitStage(onStage, message.stage, message.label, message.progress);
-                } else if (message.type === 'empty') {
-                    return { rawText: '', refinedText: '', empty: true };
-                } else if (message.type === 'complete') {
-                    completion = {
-                        rawText: String(message.rawText || '').trim(),
-                        refinedText: String(message.refinedText || '').trim() || String(message.rawText || '').trim()
-                    };
-                } else if (message.type === 'error') {
-                    throw new Error(message.error?.message || message.error || 'Cloud processing failed.');
-                }
-            }
-
-            newlineIndex = buffer.indexOf('\n');
-        }
-
-        if (done) {
-            break;
-        }
-    }
-
-    if (completion) {
-        return completion;
-    }
-
-    throw new Error('Cloud processing ended before returning a result.');
-}
 
 async function transcribeDirect(wavBuffer, language = 'auto', model = getSetting('model') || DEFAULT_MODEL) {
     const apiKey = getSetting('groqApiKey');
@@ -246,52 +171,6 @@ async function processDirectPipeline(taskItem) {
     return { rawText, refinedText: refinedText || rawText };
 }
 
-async function processViaProxy(taskItem, settings) {
-    const endpoint = resolveProcessingEndpoint(settings);
-    if (!endpoint) {
-        throw new Error('Cloud processing URL is not configured.');
-    }
-
-    const apiKey = String(settings.groqApiKey || '').trim();
-    if (!apiKey) {
-        throw new Error('Groq API Key is required for cloud processing. Please add it in settings.');
-    }
-
-    const formData = new FormData();
-    const blob = new Blob([taskItem.wavBuffer], { type: 'audio/wav' });
-    formData.append('audio', blob, 'audio.wav');
-    formData.append('language', taskItem.language || 'auto');
-    formData.append('model', taskItem.model || settings.model || DEFAULT_MODEL);
-    formData.append('promptStyle', taskItem.promptStyle || 'Clean');
-    formData.append('enhanceText', String(taskItem.enhanceText !== false));
-
-    if (taskItem.customPrompt) {
-        formData.append('customPrompt', taskItem.customPrompt);
-    }
-
-    const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-            Accept: 'application/x-ndjson',
-            Authorization: `Bearer ${apiKey}`
-        },
-        body: formData
-    });
-
-    if (!response.ok) {
-        const contentType = response.headers.get('content-type') || '';
-        if (contentType.includes('application/json')) {
-            const payload = await response.json().catch(() => ({}));
-            throw new Error(parseErrorMessage(payload, `Cloud processing failed (${response.status}).`));
-        }
-
-        const text = await response.text().catch(() => '');
-        throw new Error(text.trim() || `Cloud processing failed (${response.status}).`);
-    }
-
-    return parseProxyStream(response, taskItem.onStage);
-}
-
 async function processTask(taskItem) {
     const settings = getSettings();
     const accountProcessing = taskItem.accountProcessing || accountClient.getProcessingContext();
@@ -304,18 +183,6 @@ async function processTask(taskItem) {
                 accountClient.clearSession();
             }
             throw error;
-        }
-    }
-
-    if (shouldUseCloudProcessing(settings)) {
-        try {
-            return await processViaProxy(taskItem, settings);
-        } catch (error) {
-            if (!settings.groqApiKey) {
-                throw error;
-            }
-
-            logger.warn(`[Cloud Pipeline] Falling back to direct Groq processing: ${error.message}`);
         }
     }
 
@@ -370,7 +237,5 @@ module.exports = {
     transcribe,
     transcribeDirect,
     enhance,
-    validateApiKey,
-    resolveProcessingEndpoint,
-    shouldUseCloudProcessing
+    validateApiKey
 };

@@ -2,8 +2,9 @@ const { globalShortcut } = require('electron');
 const { CHANNELS, DEFAULT_SETTINGS } = require('../shared/constants');
 const { getSetting } = require('./services/settings');
 const { setRecordingState } = require('./tray');
-const { toggleRecording } = require('./services/recording-state');
+const { getRecordingState, toggleRecording } = require('./services/recording-state');
 const { retryAndPasteTranscript } = require('./services/retry-transcript');
+const { ensureProcessingReady } = require('./services/processing-readiness');
 const historyService = require('./services/history');
 const pendingRetryService = require('./services/pending-retry');
 const { showPillWindow } = require('./services/pill-window');
@@ -31,6 +32,11 @@ function sendRetryStatus(mainWindow, status, fallbackSessionId = null) {
 }
 
 function handleRecordingToggle(mainWindow) {
+    if (!getRecordingState().isRecording && !ensureProcessingReady(mainWindow)) {
+        logger.warn('Recording blocked because no account session or local Groq key is configured.');
+        return;
+    }
+
     const recordingState = toggleRecording();
     logger.info(`Global hotkey triggered. Recording state: ${recordingState.isRecording} (session ${recordingState.sessionId})`);
 

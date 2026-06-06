@@ -7,8 +7,6 @@ export class SettingsPanel {
         this.btnTestKey = document.getElementById('btn-test-key');
         this.btnOpenLogs = document.getElementById('btn-open-logs');
         this.inputApiKey = document.getElementById('api-key');
-        this.chkCloudProcessing = document.getElementById('cloud-processing-enabled');
-        this.inputCloudProcessingUrl = document.getElementById('cloud-processing-url');
         this.selLanguage = document.getElementById('language');
         this.chkEnhance = document.getElementById('enhance-text');
         this.selPromptStyle = document.getElementById('prompt-style');
@@ -17,7 +15,6 @@ export class SettingsPanel {
         this.chkLaunchOnStartup = document.getElementById('launch-on-startup');
         this.chkAutoUpdate = document.getElementById('auto-update');
         this.testResult = document.getElementById('test-key-result');
-        this.cloudProcessingUrlGroup = document.getElementById('cloud-processing-url-group');
         this.promptStyleGroup = document.getElementById('prompt-style-group');
         this.customPromptGroup = document.getElementById('custom-prompt-group');
 
@@ -51,6 +48,7 @@ export class SettingsPanel {
         this.btnAccountByokDelete = document.getElementById('btn-account-byok-delete');
 
         this.accountState = null;
+        this.accountActionBusy = false;
         this.isRecordingHotkey = false;
         this.pendingHotkey = null;
 
@@ -98,7 +96,6 @@ export class SettingsPanel {
         this.btnAccountByokSave?.addEventListener('click', () => this.handleAccountByokSave());
         this.btnAccountByokDelete?.addEventListener('click', () => this.handleAccountByokDelete());
 
-        this.chkCloudProcessing?.addEventListener('change', () => this.updateCloudProcessingControls());
         this.chkEnhance?.addEventListener('change', () => this.updateEnhancementControls());
 
         this.selTheme?.addEventListener('change', () => {
@@ -274,18 +271,6 @@ export class SettingsPanel {
         }
     }
 
-    updateCloudProcessingControls() {
-        const isEnabled = this.chkCloudProcessing ? this.chkCloudProcessing.checked : false;
-
-        if (this.cloudProcessingUrlGroup) {
-            this.cloudProcessingUrlGroup.style.opacity = isEnabled ? '1' : '0.5';
-        }
-
-        if (this.inputCloudProcessingUrl) {
-            this.inputCloudProcessingUrl.disabled = !isEnabled;
-        }
-    }
-
     hideResult(target) {
         if (!target) {
             return;
@@ -308,6 +293,14 @@ export class SettingsPanel {
 
     showTestResult(message, isSuccess) {
         this.showResult(this.testResult, message, isSuccess);
+    }
+
+    cleanActionErrorMessage(error, fallback = 'Action failed.') {
+        const raw = String(error?.message || error || fallback).trim();
+        return raw
+            .replace(/^Error invoking remote method '[^']+':\s*/i, '')
+            .replace(/^Error:\s*/i, '')
+            .trim() || fallback;
     }
 
     showAccountResult(message, isSuccess) {
@@ -373,28 +366,33 @@ export class SettingsPanel {
             this.accountStatusMeta.textContent = this.accountModeSummary(state);
         }
 
+        const busy = this.accountActionBusy === true;
+
         if (this.accountModeSelect) {
-            this.accountModeSelect.disabled = !authenticated;
+            this.accountModeSelect.disabled = busy || !authenticated;
             this.accountModeSelect.value = state?.user?.defaultMode || 'managed';
         }
 
         if (this.btnAccountSignUp) {
-            this.btnAccountSignUp.disabled = authenticated;
+            this.btnAccountSignUp.disabled = busy || authenticated;
         }
         if (this.btnAccountSignIn) {
-            this.btnAccountSignIn.disabled = authenticated;
+            this.btnAccountSignIn.disabled = busy || authenticated;
         }
         if (this.btnAccountModeSave) {
-            this.btnAccountModeSave.disabled = !authenticated;
+            this.btnAccountModeSave.disabled = busy || !authenticated;
         }
         if (this.btnAccountSignOut) {
-            this.btnAccountSignOut.disabled = !authenticated;
+            this.btnAccountSignOut.disabled = busy || !authenticated;
+        }
+        if (this.btnAccountRefresh) {
+            this.btnAccountRefresh.disabled = busy;
         }
         if (this.btnAccountByokSave) {
-            this.btnAccountByokSave.disabled = !authenticated;
+            this.btnAccountByokSave.disabled = busy || !authenticated;
         }
         if (this.btnAccountByokDelete) {
-            this.btnAccountByokDelete.disabled = !authenticated;
+            this.btnAccountByokDelete.disabled = busy || !authenticated;
         }
 
         if (this.accountByokHelp) {
@@ -410,8 +408,7 @@ export class SettingsPanel {
             if (!authenticated) {
                 this.accountSnapshot.innerHTML = `
                     <strong>Signed out.</strong><br>
-                    Local Groq fallback: ${state?.localFallback?.hasLocalGroqKey ? 'configured' : 'not configured'}<br>
-                    Cloud proxy override: ${state?.localFallback?.cloudProcessingEnabled ? 'enabled' : 'disabled'}
+                    Local Groq fallback: ${state?.localFallback?.hasLocalGroqKey ? 'configured' : 'not configured'}
                 `;
             } else {
                 const managedUsage = state?.capabilities?.managed?.usage;
@@ -453,12 +450,6 @@ export class SettingsPanel {
 
             if (settings) {
                 this.inputApiKey.value = settings.groqApiKey || '';
-                if (this.chkCloudProcessing) {
-                    this.chkCloudProcessing.checked = settings.cloudProcessingEnabled === true;
-                }
-                if (this.inputCloudProcessingUrl) {
-                    this.inputCloudProcessingUrl.value = settings.cloudProcessingUrl || '';
-                }
                 this.selLanguage.value = settings.language || 'auto';
                 this.chkEnhance.checked = true;
                 this.chkEnhance.disabled = true;
@@ -483,7 +474,6 @@ export class SettingsPanel {
                     this.inputHotkey.value = this.formatHotkeyForDisplay(settings.hotkey || 'CommandOrControl+Shift+Space');
                 }
                 this.renderShortcutReference(settings.hotkey || 'CommandOrControl+Shift+Space');
-                this.updateCloudProcessingControls();
                 this.updateEnhancementControls();
             }
         } catch (e) {
@@ -496,8 +486,6 @@ export class SettingsPanel {
 
         const newSettings = {
             groqApiKey: this.inputApiKey.value.trim(),
-            cloudProcessingEnabled: this.chkCloudProcessing ? this.chkCloudProcessing.checked : false,
-            cloudProcessingUrl: this.inputCloudProcessingUrl ? this.inputCloudProcessingUrl.value.trim() : '',
             language: this.selLanguage.value,
             enhanceText: true,
             promptStyle: this.selPromptStyle.value,
@@ -553,6 +541,24 @@ export class SettingsPanel {
             .replace(/\s*\+\s*/g, '+');
     }
 
+    setAccountActionBusy(isBusy) {
+        this.accountActionBusy = isBusy === true;
+        this.renderAccountState(this.accountState);
+    }
+
+    async withAccountAction(button, busyText, action) {
+        if (this.accountActionBusy) {
+            return null;
+        }
+
+        this.setAccountActionBusy(true);
+        try {
+            return await this.withBusyButton(button, busyText, action);
+        } finally {
+            this.setAccountActionBusy(false);
+        }
+    }
+
     async withBusyButton(button, busyText, action, options = {}) {
         if (!button) {
             return action();
@@ -583,14 +589,14 @@ export class SettingsPanel {
             return;
         }
 
-        await this.withBusyButton(this.btnAccountSignUp, 'Signing Up...', async () => {
+        await this.withAccountAction(this.btnAccountSignUp, 'Signing Up...', async () => {
             const state = await window.api.signUp({ email, password, displayName });
             this.renderAccountState(state);
             await this.loadSettings();
             this.inputAccountPassword.value = '';
             this.showAccountResult('Account created and signed in ✓', true);
-        }, { restoreDisabled: false }).catch((error) => {
-            this.showAccountResult(error.message || 'Sign up failed.', false);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Sign up failed.'), false);
         });
     }
 
@@ -601,26 +607,26 @@ export class SettingsPanel {
             return;
         }
 
-        await this.withBusyButton(this.btnAccountSignIn, 'Signing In...', async () => {
+        await this.withAccountAction(this.btnAccountSignIn, 'Signing In...', async () => {
             const state = await window.api.signIn({ email, password });
             this.renderAccountState(state);
             await this.loadSettings();
             this.inputAccountPassword.value = '';
             this.showAccountResult('Signed in successfully ✓', true);
-        }, { restoreDisabled: false }).catch((error) => {
-            this.showAccountResult(error.message || 'Sign in failed.', false);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Sign in failed.'), false);
         });
     }
 
     async handleAccountSignOut() {
-        await this.withBusyButton(this.btnAccountSignOut, 'Signing Out...', async () => {
+        await this.withAccountAction(this.btnAccountSignOut, 'Signing Out...', async () => {
             const state = await window.api.signOut();
             this.renderAccountState(state);
             this.inputAccountPassword.value = '';
             this.inputAccountByok.value = '';
             this.showAccountResult('Signed out ✓', true);
-        }, { restoreDisabled: false }).catch((error) => {
-            this.showAccountResult(error.message || 'Sign out failed.', false);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Sign out failed.'), false);
         });
     }
 
@@ -629,12 +635,14 @@ export class SettingsPanel {
             return;
         }
 
-        await this.withBusyButton(this.btnAccountModeSave, 'Saving...', async () => {
-            const state = await window.api.setAccountMode({ defaultMode: this.accountModeSelect.value });
+        const selectedMode = this.accountModeSelect.value;
+
+        await this.withAccountAction(this.btnAccountModeSave, 'Saving...', async () => {
+            const state = await window.api.setAccountMode({ defaultMode: selectedMode });
             this.renderAccountState(state);
-            this.showAccountResult(`Default mode set to ${this.accountModeSelect.value} ✓`, true);
-        }, { restoreDisabled: false }).catch((error) => {
-            this.showAccountResult(error.message || 'Failed to update account mode.', false);
+            this.showAccountResult(`Default mode set to ${selectedMode} ✓`, true);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Failed to update account mode.'), false);
         });
     }
 
@@ -645,24 +653,24 @@ export class SettingsPanel {
             return;
         }
 
-        await this.withBusyButton(this.btnAccountByokSave, 'Saving...', async () => {
+        await this.withAccountAction(this.btnAccountByokSave, 'Saving...', async () => {
             const state = await window.api.saveAccountByok({ apiKey, validate: true });
             this.renderAccountState(state);
             this.inputAccountByok.value = '';
             this.showAccountResult('Synced Groq BYOK saved to your account ✓', true);
-        }, { restoreDisabled: false }).catch((error) => {
-            this.showAccountResult(error.message || 'Failed to save account Groq key.', false);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Failed to save account Groq key.'), false);
         });
     }
 
     async handleAccountByokDelete() {
-        await this.withBusyButton(this.btnAccountByokDelete, 'Deleting...', async () => {
+        await this.withAccountAction(this.btnAccountByokDelete, 'Deleting...', async () => {
             const state = await window.api.deleteAccountByok();
             this.renderAccountState(state);
             this.inputAccountByok.value = '';
             this.showAccountResult('Synced Groq BYOK deleted from your account ✓', true);
-        }, { restoreDisabled: false }).catch((error) => {
-            this.showAccountResult(error.message || 'Failed to delete account Groq key.', false);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Failed to delete account Groq key.'), false);
         });
     }
 

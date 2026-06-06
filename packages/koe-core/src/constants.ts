@@ -21,4 +21,3 @@ export const GROQ_WHISPER_URL = 'https://api.groq.com/openai/v1/audio/transcript
 export const GROQ_CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
 export const DEFAULT_WHISPER_MODEL = 'whisper-large-v3-turbo';
 export const DEFAULT_ENHANCE_MODEL = 'openai/gpt-oss-120b';
-export const PROD_PROXY_URL = 'https://koe.jstarstudios.com/api/process';

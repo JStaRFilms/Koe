@@ -212,33 +212,9 @@ export function LiveDemo() {
     };
   }, []);
 
-  const transcribeAudio = async (audioBlob: Blob) => {
-    setPhase("transcribing");
-    setStatus("Transcribing...");
-    try {
-      const formData = new FormData();
-      formData.append("audio", audioBlob, "demo.webm");
-      formData.append("language", "auto");
-
-      const response = await fetch("/api/transcribe", {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = (await response.json().catch(() => ({}))) as { text?: string; error?: string };
-      if (!response.ok) {
-        throw new Error(data.error || `Transcription failed (${response.status}).`);
-      }
-
-      incrementUsage();
-      const finalText = (data.text || "").trim();
-      setTranscript(finalText);
-      setPhase("done");
-      setStatus(finalText ? "Transcription complete." : "Transcription complete (no speech detected).");
-    } catch (error) {
-      setPhase("error");
-      setStatus(error instanceof Error ? error.message : "Transcription failed.");
-    }
+  const transcribeAudio = async (_audioBlob: Blob) => {
+    setPhase("error");
+    setStatus("The browser demo is temporarily disabled while Koe moves to signed-in account processing. Please use the desktop or mobile app.");
   };
 
   const startRecording = async () => {

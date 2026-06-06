@@ -55,8 +55,6 @@ const DEFAULT_SETTINGS = {
     promptStyle: 'Clean',
     customPrompt: DEFAULT_CUSTOM_PROMPT,
     model: 'whisper-large-v3-turbo',
-    cloudProcessingEnabled: false,
-    cloudProcessingUrl: '',
     accountApiUrl: ''
 };
 

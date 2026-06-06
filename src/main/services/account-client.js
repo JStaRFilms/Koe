@@ -1,11 +1,10 @@
 const os = require('os');
 const { app } = require('electron');
-const { PROD_PROXY_URL } = require('@koe/core');
 const { getSettings, setSettings } = require('./settings');
 const accountStorage = require('./account-storage');
 const logger = require('./logger');
 
-const DEFAULT_BACKEND_ORIGIN = new URL(PROD_PROXY_URL).origin;
+const DEFAULT_BACKEND_ORIGIN = 'https://www.koevoice.xyz';
 const LOCAL_DEV_BACKEND_API_BASE = 'http://localhost:3000/api/v1';
 
 const SYNCED_SETTINGS_KEYS = ['language', 'promptStyle', 'customPrompt', 'enhanceText', 'model'];
@@ -29,9 +28,7 @@ function normalizeApiBase(rawValue, fallback = `${DEFAULT_BACKEND_ORIGIN}/api/v1
 
 function resolveBackendApiBase(settings = getSettings()) {
     const configured = process.env.KOE_BACKEND_URL
-        || process.env.KOE_PROCESSING_URL
-        || settings.accountApiUrl
-        || settings.cloudProcessingUrl;
+        || settings.accountApiUrl;
 
     if (configured) {
         return normalizeApiBase(configured);
@@ -41,7 +38,7 @@ function resolveBackendApiBase(settings = getSettings()) {
         return LOCAL_DEV_BACKEND_API_BASE;
     }
 
-    return normalizeApiBase(PROD_PROXY_URL);
+    return normalizeApiBase(DEFAULT_BACKEND_ORIGIN);
 }
 
 function buildDeviceLabel() {
@@ -124,11 +121,29 @@ function buildSignedOutState(extra = {}) {
         installationId: stored.installationId,
         localFallback: {
             available: Boolean(String(localSettings.groqApiKey || '').trim()),
-            cloudProcessingEnabled: localSettings.cloudProcessingEnabled === true,
             hasLocalGroqKey: Boolean(String(localSettings.groqApiKey || '').trim())
         },
         ...extra
     };
+}
+
+function createTimeoutError(url, timeoutMs) {
+    const error = new Error(`Account backend did not respond within ${Math.round(timeoutMs / 1000)}s. Make sure the website backend is running, then try again. Backend: ${url}`);
+    error.code = 'BACKEND_TIMEOUT';
+    error.status = 0;
+    error.retryable = true;
+    return error;
+}
+
+function createNetworkError(error, url) {
+    const message = error?.name === 'AbortError'
+        ? `Account backend request was cancelled. Backend: ${url}`
+        : `Could not reach the account backend. Make sure the website backend is running, then try again. Backend: ${url}`;
+    const nextError = new Error(message);
+    nextError.code = error?.name === 'AbortError' ? 'BACKEND_TIMEOUT' : 'BACKEND_UNREACHABLE';
+    nextError.status = 0;
+    nextError.retryable = true;
+    return nextError;
 }
 
 async function requestJson(path, options = {}) {
@@ -162,11 +177,26 @@ async function requestJson(path, options = {}) {
         body = JSON.stringify(body);
     }
 
-    const response = await fetch(url, {
-        method: options.method || 'GET',
-        headers,
-        body
-    });
+    const timeoutMs = Number(options.timeoutMs || 20_000);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(createTimeoutError(url, timeoutMs)), timeoutMs);
+    let response;
+
+    try {
+        response = await fetch(url, {
+            method: options.method || 'GET',
+            headers,
+            body,
+            signal: controller.signal
+        });
+    } catch (error) {
+        if (error?.code === 'BACKEND_TIMEOUT') {
+            throw error;
+        }
+        throw createNetworkError(error, url);
+    } finally {
+        clearTimeout(timeout);
+    }
 
     if (!response.ok) {
         const error = await parseApiError(response, options.fallbackMessage, url);

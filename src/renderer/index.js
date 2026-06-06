@@ -13,6 +13,9 @@ function formatRetryShortcut() {
 
 function getErrorLabel(errorMsg) {
     const msg = (errorMsg || '').toLowerCase();
+    if (msg.includes('sign in') || msg.includes('signed out') || msg.includes('groq api key') || msg.includes('local groq key')) {
+        return 'Sign In Required';
+    }
     if (msg.includes('fetch') || msg.includes('network') || msg.includes('enotfound') || msg.includes('timeout')) {
         return 'Network Error';
     }

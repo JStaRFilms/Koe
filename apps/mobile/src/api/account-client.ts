@@ -1,6 +1,6 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
-import { PROD_PROXY_URL, parseErrorMessage, sanitizeRefinedText } from '@koe/core';
+import { parseErrorMessage, sanitizeRefinedText } from '@koe/core';
 import type { StoredAccountSession } from '../storage/secure-storage';
 
 export type AccountMode = 'byok' | 'managed';
@@ -192,9 +192,10 @@ function normalizeApiBaseUrl(value: string) {
   return value
     .trim()
     .replace(/\/$/, '')
-    .replace(/\/api\/v1$/, '')
-    .replace(/\/api\/process$/, '');
+    .replace(/\/api\/v1$/, '');
 }
+
+const DEFAULT_KOE_API_BASE_URL = 'https://www.koevoice.xyz';
 
 function resolveApiBaseUrl() {
   const envBase = process.env.EXPO_PUBLIC_KOE_API_BASE_URL?.trim();
@@ -202,7 +203,7 @@ function resolveApiBaseUrl() {
     return normalizeApiBaseUrl(envBase);
   }
 
-  return normalizeApiBaseUrl(PROD_PROXY_URL);
+  return normalizeApiBaseUrl(DEFAULT_KOE_API_BASE_URL);
 }
 
 function getPlatform(): AccountPlatform {

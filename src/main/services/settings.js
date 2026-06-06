@@ -15,15 +15,7 @@ const SETTINGS_MIGRATIONS_KEY = '__settingsMigrationsApplied';
 //   for existing users without overriding what they already chose.
 // - Add a SETTINGS_MIGRATIONS entry with mode "force" when you want to roll every existing
 //   install forward or back to a specific value.
-const SETTINGS_MIGRATIONS = [
-    {
-        id: '2026-03-12-disable-cloud-processing-proxy',
-        mode: 'force',
-        changes: {
-            cloudProcessingEnabled: false
-        }
-    }
-];
+const SETTINGS_MIGRATIONS = [];
 
 function applyMigration(settings, migration) {
     const nextSettings = { ...settings };
