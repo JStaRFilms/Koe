@@ -11,6 +11,7 @@ type PaystackBillingArgs = {
 
 export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatus }: PaystackBillingArgs) {
   const verifiedReferenceRef = useRef("");
+  const startedCheckoutRef = useRef("");
 
   const startCheckout = useCallback(async (planCode: BillingPlanCode) => {
     if (!token) return;
@@ -58,13 +59,35 @@ export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatu
   }, [loadSnapshot, setBusyLabel, setStatus, token]);
 
   useEffect(() => {
-    if (!token || typeof window === "undefined") return;
+    if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const reference = params.get("reference") || params.get("trxref");
     if (params.get("billing") === "paystack" && reference) {
+      if (!token) {
+        setStatus("Sign in to finish verifying your Paystack payment.");
+        return;
+      }
       void verifyCheckoutReference(reference);
+      return;
     }
-  }, [token, verifyCheckoutReference]);
+
+    const checkoutPlan = parseCheckoutPlan(params.get("checkout"));
+    if (!checkoutPlan) return;
+    if (!token) {
+      setStatus("Sign in or create an account to continue managed plan checkout.");
+      return;
+    }
+    if (startedCheckoutRef.current === checkoutPlan) return;
+    startedCheckoutRef.current = checkoutPlan;
+    void startCheckout(checkoutPlan);
+  }, [setStatus, startCheckout, token, verifyCheckoutReference]);
 
   return { startCheckout };
+}
+
+function parseCheckoutPlan(value: string | null): BillingPlanCode | null {
+  if (value === "managed_lite" || value === "managed_plus" || value === "managed_pro") {
+    return value;
+  }
+  return null;
 }

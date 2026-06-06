@@ -1,84 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Check, HelpCircle, Key, Server, Download, ShieldAlert, Cpu } from "lucide-react";
+import { Check, Key, Server, ShieldAlert, Cpu } from "lucide-react";
 import { ContextAwareDownloadLink } from "@/components/ContextAwareDownloadLink";
-
-const tiers = [
-    {
-        name: "BYOK",
-        price: "$0",
-        eyebrow: "FREE FROM KOE",
-        description: "Bring your own Groq key. Koe does not charge you for app usage; provider costs are handled directly by you.",
-        features: [
-            "Desktop and mobile app access",
-            "Use your own Groq API key",
-            "Signed-out local processing keeps transcript history on your device",
-            "Signed-in account BYOK can store transcript history for future sync",
-            "No Koe subscription required",
-        ],
-        cta: "Download Koe",
-        highlighted: false,
-    },
-    {
-        name: "Managed Starter",
-        price: "NGN 0",
-        eyebrow: "NO API KEY NEEDED",
-        description: "For people who just want to sign in and test managed processing before choosing a paid monthly quota.",
-        features: [
-            "No provider key setup",
-            "5 min/day guaranteed when managed free is enabled",
-            "Bonus free time while the shared pool is quiet",
-            "Server-side processing key stays private",
-            "Usage tracked against your account quota",
-            "Designed for casual testing",
-        ],
-        cta: "Create account in app",
-        highlighted: false,
-    },
-    {
-        name: "Managed Lite",
-        price: "NGN 5,000/mo",
-        eyebrow: "CASUAL PAID",
-        description: "For light daily dictation without setting up a provider account.",
-        features: [
-            "No API key required",
-            "10 hours of managed audio per month",
-            "1,000 managed requests per month",
-            "Account history and usage dashboard",
-        ],
-        cta: "Open app",
-        highlighted: false,
-    },
-    {
-        name: "Managed Plus",
-        price: "NGN 9,000/mo",
-        eyebrow: "BEST VALUE // BEST FIT",
-        description: "For regular voice-first writing and everyday cross-app dictation.",
-        features: [
-            "No API key required",
-            "25 hours of managed audio per month",
-            "2,500 managed requests per month",
-            "Usage dashboard and account history",
-        ],
-        cta: "Open app",
-        highlighted: true,
-    },
-    {
-        name: "Managed Pro",
-        price: "NGN 15,000/mo",
-        eyebrow: "HEAVIER USE",
-        description: "For users who rely on Koe throughout the workday and want a larger cap.",
-        features: [
-            "No API key required",
-            "40 hours of managed audio per month",
-            "4,000 managed requests per month",
-            "Usage dashboard and account history",
-        ],
-        cta: "Open app",
-        highlighted: false,
-    },
-];
+import { tiers } from "./pricing-tiers";
 
 export function PricingSection() {
     const byokPlan = tiers[0];
@@ -206,7 +131,7 @@ export function PricingSection() {
 
                     <div className="mt-auto pt-6">
                         <a
-                            href="/app"
+                            href={selectedManagedPlan.checkoutPlan ? `/app?checkout=${selectedManagedPlan.checkoutPlan}` : "/app"}
                             className="block w-full px-6 py-4 bg-amber text-void font-bold text-center text-base uppercase tracking-wider hover:bg-bone hover:text-void transition-all border-2 border-amber btn-brutal justify-center"
                         >
                             {selectedManagedPlan.cta}

@@ -388,6 +388,8 @@ Server additions:
 Client updates:
 
 - `/pricing` now shows Managed Lite, Plus, and Pro with NGN Paystack pricing.
+- `/pricing` paid plan CTAs link to `/app?checkout=managed_lite`, `/app?checkout=managed_plus`, or `/app?checkout=managed_pro`.
+- `/app` prompts signed-out users to sign in before continuing checkout, then starts the intended hosted Paystack checkout after login.
 - `/app` account panel shows billing status and starts hosted Paystack checkout for signed-in users.
 - `/app?billing=paystack&reference=...` verifies the Paystack return reference and refreshes the account snapshot.
 - Desktop account state preserves the `billing` snapshot and labels Paystack-backed managed usage as `Managed paid`.
