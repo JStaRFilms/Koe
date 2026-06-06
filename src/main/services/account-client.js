@@ -234,6 +234,7 @@ async function fetchAccountSnapshot() {
         device: sessionState?.device || null,
         resolvedMode: snapshot?.resolvedMode || null,
         capabilities: snapshot?.capabilities || null,
+        billing: snapshot?.billing || null,
         settings: snapshot?.settings || null,
         recentHistory: snapshot?.recentHistory || [],
         policy: snapshot?.policy || null,

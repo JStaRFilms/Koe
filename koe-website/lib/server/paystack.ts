@@ -21,6 +21,16 @@ export type PaystackTransactionData = {
   metadata?: unknown;
 };
 
+export type PaystackPlanData = {
+  id: number;
+  name: string;
+  amount: number;
+  interval: string;
+  currency: string;
+  plan_code: string;
+  description?: string | null;
+};
+
 function secretKey() {
   const key = (process.env.PAYSTACK_SECRET_KEY || "").trim();
   if (!key) {
@@ -75,6 +85,48 @@ export async function initializePaystackTransaction(args: {
 export async function verifyPaystackTransaction(reference: string) {
   const encoded = encodeURIComponent(reference);
   return paystackRequest<PaystackTransactionData>(`/transaction/verify/${encoded}`, { method: "GET" });
+}
+
+export async function listPaystackPlans() {
+  return paystackRequest<PaystackPlanData[]>("/plan?perPage=100", { method: "GET" });
+}
+
+export async function createPaystackPlan(args: {
+  name: string;
+  amountKobo: number;
+  description: string;
+}) {
+  return paystackRequest<PaystackPlanData>("/plan", {
+    method: "POST",
+    body: JSON.stringify({
+      name: args.name,
+      amount: args.amountKobo,
+      interval: "monthly",
+      currency: "NGN",
+      description: args.description,
+      send_invoices: true,
+      send_sms: false,
+    }),
+  });
+}
+
+export async function updatePaystackPlan(planCode: string, args: {
+  name: string;
+  amountKobo: number;
+  description: string;
+}) {
+  return paystackRequest<PaystackPlanData>(`/plan/${encodeURIComponent(planCode)}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      name: args.name,
+      amount: args.amountKobo,
+      interval: "monthly",
+      currency: "NGN",
+      description: args.description,
+      send_invoices: true,
+      send_sms: false,
+    }),
+  });
 }
 
 export function verifyPaystackSignature(rawBody: string, signature: string | null) {

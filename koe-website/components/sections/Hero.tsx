@@ -77,23 +77,23 @@ export function Hero() {
                     {/* Audio Equalizer Brutal style */}
                     <div className="flex-grow flex items-end gap-2 pb-8">
                         <div
-                            className="w-1/5 bg-bone voice-bar voice-bar-1"
+                            className="flex-1 bg-bone voice-bar voice-bar-1 !w-auto"
                             style={{ height: `${levels[0]}%` }}
                         ></div>
                         <div
-                            className="w-1/5 bg-amber voice-bar voice-bar-2"
+                            className="flex-1 bg-amber voice-bar voice-bar-2 !w-auto"
                             style={{ height: `${levels[1]}%` }}
                         ></div>
                         <div
-                            className="w-1/5 bg-bone voice-bar voice-bar-3"
+                            className="flex-1 bg-bone voice-bar voice-bar-3 !w-auto"
                             style={{ height: `${levels[2]}%` }}
                         ></div>
                         <div
-                            className="w-1/5 bg-crimson voice-bar voice-bar-4"
+                            className="flex-1 bg-crimson voice-bar voice-bar-4 !w-auto"
                             style={{ height: `${levels[3]}%` }}
                         ></div>
                         <div
-                            className="w-1/5 bg-bone voice-bar voice-bar-5"
+                            className="flex-1 bg-bone voice-bar voice-bar-5 !w-auto"
                             style={{ height: `${levels[4]}%` }}
                         ></div>
                     </div>

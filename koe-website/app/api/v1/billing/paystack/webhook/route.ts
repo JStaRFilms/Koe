@@ -33,10 +33,11 @@ export async function POST(request: Request) {
     if (event.event === "charge.success") {
       const metadata = extractPaystackMetadata(data);
       const subscription = paystackSubscriptionCode(data);
+      const reference = data.reference || `${event.event}-${Date.now()}`;
       if (metadata.koeUserId && metadata.koePlanCode) {
         await activatePaidPlanFromTransaction(data);
       } else {
-        await renewPaidSubscription(subscription, data.reference, data.paid_at);
+        await renewPaidSubscription(subscription, reference, data.paid_at);
       }
     }
 

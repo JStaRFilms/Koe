@@ -319,28 +319,91 @@ Rules:
 PAYSTACK_SECRET_KEY=
 PAYSTACK_PUBLIC_KEY=
 PAYSTACK_WEBHOOK_SECRET=
+KOE_APP_BASE_URL=
+KOE_ADMIN_DASHBOARD_TOKEN=
+```
+
+Optional plan-code overrides:
+
+```txt
 PAYSTACK_PLAN_MANAGED_LITE=
 PAYSTACK_PLAN_MANAGED_PLUS=
 PAYSTACK_PLAN_MANAGED_PRO=
-KOE_APP_BASE_URL=
 ```
 
 If Paystack uses the same secret key for webhook HMAC, `PAYSTACK_WEBHOOK_SECRET` may point to the same value, but keep the name separate for rotation clarity.
 
+Plan codes do not need to be created manually in the Paystack dashboard. After `PAYSTACK_SECRET_KEY`, `DATABASE_URL`, and `KOE_ADMIN_DASHBOARD_TOKEN` are configured, call:
+
+```powershell
+Invoke-RestMethod `
+  -Method Post `
+  -Uri "https://your-domain.example/api/v1/admin/billing/paystack/reconcile-plans" `
+  -Headers @{ "x-koe-admin-token" = $env:KOE_ADMIN_DASHBOARD_TOKEN }
+```
+
+The reconcile endpoint:
+
+- reads Koe's active `billing_plans`
+- finds matching Paystack monthly plans by name, amount, interval, and currency
+- creates missing Paystack plans through the Paystack Plan API
+- updates matching Paystack plans with the current name/amount/description
+- stores the returned `plan_code` in `billing_plans.provider_plan_code`
+
+Checkout then uses `billing_plans.provider_plan_code` unless an optional `PAYSTACK_PLAN_*` override is set.
+
 ## Implementation Plan
 
-1. [ ] Add billing migration tables for plans, subscriptions, and event idempotency.
-2. [ ] Add `lib/server/paystack.ts` with initialize, verify, and typed response helpers.
-3. [ ] Add `lib/server/billing.ts` to map Koe plans to Paystack plans and synchronize managed allocations.
-4. [ ] Add authenticated checkout initialize and verify endpoints.
-5. [ ] Add raw-body Paystack webhook endpoint with HMAC SHA512 signature verification.
-6. [ ] Extend account snapshot responses with billing status and paid plan metadata.
-7. [ ] Update website pricing page from "Coming later" to real Paystack plans.
-8. [ ] Update web app account panel to show current plan, usage, and checkout action.
-9. [ ] Update desktop account UI to open checkout and refresh the account snapshot.
-10. [ ] Keep mobile as display-only for paid entitlements.
-11. [ ] Add focused tests or type checks for billing helpers and webhook idempotency.
-12. [ ] Update this document with final implemented behavior.
+1. [x] Add billing migration tables for plans, subscriptions, and event idempotency.
+2. [x] Add `lib/server/paystack.ts` with initialize, verify, and typed response helpers.
+3. [x] Add `lib/server/billing.ts` to map Koe plans to Paystack plans and synchronize managed allocations.
+4. [x] Add authenticated checkout initialize and verify endpoints.
+5. [x] Add raw-body Paystack webhook endpoint with HMAC SHA512 signature verification.
+6. [x] Extend account snapshot responses with billing status and paid plan metadata.
+7. [x] Update website pricing page from "Coming later" to real Paystack plans.
+8. [x] Update web app account panel to show current plan, usage, and checkout action.
+9. [x] Update desktop account state/usage display for paid managed quota.
+10. [x] Keep mobile as display-only for paid entitlements.
+11. [x] Add focused verification through website TypeScript checks.
+12. [x] Update this document with final implemented behavior.
+
+## Implementation Notes
+
+Implemented on June 6, 2026.
+
+Server additions:
+
+- `koe-website/db/migrations/0004_paystack_billing.sql`
+- `koe-website/lib/server/paystack.ts`
+- `koe-website/lib/server/billing.ts`
+- `koe-website/lib/server/billing-plan-reconcile.ts`
+- `koe-website/lib/server/billing-paystack-events.ts`
+- `koe-website/lib/server/billing-status.ts`
+- `koe-website/app/api/v1/admin/billing/paystack/reconcile-plans/route.ts`
+- `koe-website/app/api/v1/billing/plans/route.ts`
+- `koe-website/app/api/v1/billing/paystack/initialize/route.ts`
+- `koe-website/app/api/v1/billing/paystack/verify/route.ts`
+- `koe-website/app/api/v1/billing/paystack/webhook/route.ts`
+
+Client updates:
+
+- `/pricing` now shows Managed Lite, Plus, and Pro with NGN Paystack pricing.
+- `/app` account panel shows billing status and starts hosted Paystack checkout for signed-in users.
+- `/app?billing=paystack&reference=...` verifies the Paystack return reference and refreshes the account snapshot.
+- Desktop account state preserves the `billing` snapshot and labels Paystack-backed managed usage as `Managed paid`.
+
+Billing behavior:
+
+- Checkout initialization records a pending subscription and sends Koe metadata to Paystack.
+- Manual verification and `charge.success` webhooks activate a `paystack` managed allocation.
+- Webhook signature validation uses HMAC SHA512 before payload processing.
+- Duplicate webhook payloads are ignored through `billing_payment_events.payload_hash`.
+- `invoice.payment_failed` marks the subscription `past_due`.
+- `subscription.disable` and `subscription.not_renew` disable the paid subscription and suspend active Paystack allocations.
+
+Verification run:
+
+- `pnpm --filter website type-check`
 
 ## Acceptance Criteria
 
