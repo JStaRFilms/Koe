@@ -53,10 +53,20 @@ This is a release/versioning task only.
 2. [x] Increase Android `versionCode` from `14` to `15` as the local fallback build number.
 3. [x] Run release verification checks from `docs/release-process.md`.
 4. [x] Commit the version and documentation changes.
-5. [ ] Push the branch and create/push tag `v1.1.6`.
-6. [ ] Trigger the EAS Android APK build from `apps/mobile`.
-7. [ ] Download the finished APK and attach it to GitHub Release `v1.1.6` as `koe-android-v1.1.6.apk`.
-8. [ ] Confirm the GitHub Release contains both desktop workflow artifacts and the Android APK, or report any external blocker.
+5. [x] Push the branch and create/push tag `v1.1.6`.
+6. [x] Trigger the EAS Android APK build from `apps/mobile`.
+7. [x] Download the finished APK and attach it to GitHub Release `v1.1.6` as `koe-android-v1.1.6.apk`.
+8. [x] Confirm the GitHub Release contains both desktop workflow artifacts and the Android APK, or report any external blocker.
+
+## Release Results
+
+- Release URL: `https://github.com/JStaRFilms/Koe/releases/tag/v1.1.6`
+- Release tag commit: `04feffaf353454c619a52c2cf1793307d4fa8fdd`
+- GitHub Actions release run: `27052679750`, conclusion `success`
+- EAS Android build: `eaa1f225-2f18-4492-8947-4ccd7c49be62`, status `FINISHED`
+- EAS reported app version: `1.1.6`
+- EAS reported Android build version: `2`
+- Uploaded APK asset: `koe-android-v1.1.6.apk`
 
 ## Regression Checks
 
