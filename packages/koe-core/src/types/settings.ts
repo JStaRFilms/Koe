@@ -6,8 +6,6 @@ export interface KoeSettings {
     model: string;
     enhanceText: boolean;
     autoPaste: boolean;
-    cloudProcessingEnabled?: boolean;
-    cloudProcessingUrl?: string;
 }
 
 export const DEFAULT_SETTINGS: KoeSettings = {
@@ -17,7 +15,5 @@ export const DEFAULT_SETTINGS: KoeSettings = {
     customPrompt: '', // Will be resolved to DEFAULT_CUSTOM_PROMPT if empty
     model: 'whisper-large-v3-turbo',
     enhanceText: true,
-    autoPaste: true,
-    cloudProcessingEnabled: false,
-    cloudProcessingUrl: ''
+    autoPaste: true
 };

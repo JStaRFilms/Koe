@@ -7,6 +7,7 @@ const path = require('path');
 const { Worker } = require('worker_threads');
 const { CHANNELS } = require('../../shared/constants');
 const { getSettings } = require('./settings');
+const accountClient = require('./account-client');
 const { autoPaste, writeToClipboard } = require('./clipboard');
 const historyService = require('./history');
 const rateLimiter = require('./rate-limiter');
@@ -100,7 +101,8 @@ class TranscriptionSessionManager {
             customPrompt: settings.customPrompt || '',
             model: settings.model || 'whisper-large-v3-turbo',
             enhanceText: settings.enhanceText !== false,
-            autoPaste: settings.autoPaste !== false
+            autoPaste: settings.autoPaste !== false,
+            accountProcessing: accountClient.getProcessingContext()
         };
 
         return this.coordinator.createSession(sessionId, sessionSettings);
@@ -135,12 +137,23 @@ class TranscriptionSessionManager {
         this.mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, payload);
     }
 
-    sendUsageStats() {
+    async sendUsageStats() {
         if (!this.mainWindow || this.mainWindow.isDestroyed()) {
             return;
         }
 
-        this.mainWindow.webContents.send(CHANNELS.USAGE_STATS, rateLimiter.getUsageStats());
+        const stats = rateLimiter.getUsageStats();
+        try {
+            const accountState = await accountClient.getAccountState();
+            this.mainWindow.webContents.send(CHANNELS.USAGE_STATS, {
+                ...stats,
+                accountManagedUsage: accountState?.capabilities?.managed?.usage || null,
+                accountDefaultMode: accountState?.user?.defaultMode || null,
+                accountAuthenticated: accountState?.authenticated === true
+            });
+        } catch (_error) {
+            this.mainWindow.webContents.send(CHANNELS.USAGE_STATS, stats);
+        }
     }
 
     async handleSegment(audioData) {
@@ -173,7 +186,7 @@ class TranscriptionSessionManager {
 
         if (message.type === 'usage-recorded') {
             rateLimiter.recordRequest(safeAudioSeconds(message.audioSeconds));
-            this.sendUsageStats();
+            await this.sendUsageStats();
             return;
         }
 
@@ -188,6 +201,10 @@ class TranscriptionSessionManager {
         }
 
         if (message.type === 'segment-error') {
+            if (message.code === 'INVALID_SESSION') {
+                accountClient.clearSession();
+            }
+
             await this.coordinator.handleSegmentError(
                 message.sessionId, 
                 message.sequence, 
@@ -202,6 +219,10 @@ class TranscriptionSessionManager {
         }
 
         if (message.type === 'session-refine-error') {
+            if (message.code === 'INVALID_SESSION') {
+                accountClient.clearSession();
+            }
+
             await this.handleSessionRefineError(message);
         }
     }
@@ -257,7 +278,7 @@ class TranscriptionSessionManager {
         });
 
         pendingRetryService.clearPendingRetry();
-        this.sendUsageStats();
+        await this.sendUsageStats();
         this.sendPreview({
             sessionId: session.sessionId,
             text: ''
@@ -308,7 +329,7 @@ class TranscriptionSessionManager {
         });
 
         pendingRetryService.clearPendingRetry();
-        this.sendUsageStats();
+        await this.sendUsageStats();
         this.sendPreview({
             sessionId: session.sessionId,
             text: ''

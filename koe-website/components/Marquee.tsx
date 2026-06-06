@@ -1,5 +1,5 @@
 export function Marquee() {
-    const text = "NO SUBSCRIPTIONS // LOCAL VAD // OPEN SOURCE // HIGH SPEED // PERFECT PRIVACY // ";
+    const text = "FREE BYOK // MANAGED MODE // LOCAL VAD // OPEN SOURCE // HIGH SPEED // ACCOUNT SYNC // ";
     const repeatedText = text.repeat(4);
 
     return (

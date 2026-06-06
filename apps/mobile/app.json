@@ -2,7 +2,7 @@
   "expo": {
     "name": "Koe",
     "slug": "koe-mobile",
-    "version": "1.1.4",
+    "version": "1.1.6",
     "icon": "./assets/icon.png",
     "orientation": "portrait",
     "scheme": "koe",
@@ -25,12 +25,14 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A0A0A"
       },
+      "versionCode": 15,
       "permissions": [
         "RECORD_AUDIO",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.FOREGROUND_SERVICE_MICROPHONE",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.REQUEST_INSTALL_PACKAGES"
       ]
     },
     "plugins": [
@@ -50,6 +52,8 @@
     },
     "extra": {
       "router": {},
+      "androidUpdateGithubOwner": "JStaRFilms",
+      "androidUpdateGithubRepo": "Koe",
       "eas": {
         "projectId": "41f91b8c-0e31-492f-90c6-a7df17a8aef9"
       }

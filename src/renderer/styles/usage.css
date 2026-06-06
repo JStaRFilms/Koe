@@ -43,6 +43,14 @@
     color: var(--koe-text-muted);
 }
 
+.usage-account-note {
+    border-top: 1px solid var(--koe-border);
+    color: var(--koe-text-muted);
+    font-size: 10px;
+    line-height: 1.5;
+    padding-top: var(--sp-sm);
+}
+
 .usage-row {
     display: flex;
     flex-direction: column;

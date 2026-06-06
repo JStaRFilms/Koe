@@ -21,7 +21,7 @@ export function Footer() {
                                 <span className="text-muted" style={{ fontFamily: 'var(--font-serif)' }}>声</span>
                             </Link>
                             <p className="text-muted text-sm max-w-sm normal-case leading-relaxed">
-                                Lightning-fast, free voice dictation for desktop and mobile. Powered by AI, completely open source.
+                                Lightning-fast voice dictation for desktop and mobile. Free with your own key, or use managed cloud processing when you want Koe to handle the setup.
                             </p>
                         </div>
 

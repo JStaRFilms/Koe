@@ -21,6 +21,14 @@ contextBridge.exposeInMainWorld('api', {
     getSettings: () => ipcRenderer.invoke(CHANNELS.GET_SETTINGS),
     saveSettings: (settings) => ipcRenderer.invoke(CHANNELS.SAVE_SETTINGS, settings),
     testGroqKey: (apiKey) => ipcRenderer.invoke(CHANNELS.TEST_GROQ_KEY, apiKey),
+    getAccountState: () => ipcRenderer.invoke(CHANNELS.GET_ACCOUNT_STATE),
+    signUp: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SIGN_UP, payload),
+    signIn: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SIGN_IN, payload),
+    signOut: () => ipcRenderer.invoke(CHANNELS.ACCOUNT_SIGN_OUT),
+    saveAccountByok: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SAVE_BYOK, payload),
+    deleteAccountByok: () => ipcRenderer.invoke(CHANNELS.ACCOUNT_DELETE_BYOK),
+    setAccountMode: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SET_MODE, payload),
+    saveAccountSettings: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SAVE_SYNCED_SETTINGS, payload),
 
     // Usage Stats
     getUsageStats: () => ipcRenderer.invoke(CHANNELS.GET_USAGE_STATS),

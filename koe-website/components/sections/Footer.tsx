@@ -20,7 +20,7 @@ export function Footer() {
                             <span className="font-jp text-3xl opacity-50">声</span>
                         </Link>
                         <p className="text-muted normal-case max-w-md">
-                            Lightning-fast, free voice dictation for desktop and mobile. Powered by AI, completely open source.
+                            Lightning-fast voice dictation for desktop and mobile. Free with your own key, or use managed cloud processing when you want Koe to handle the setup.
                         </p>
                     </div>
 
@@ -38,6 +38,11 @@ export function Footer() {
                                 <li>
                                     <Link href="/pricing/" className="text-muted hover:text-amber transition-colors text-sm uppercase">
                                         Pricing
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link href="/app/" className="text-muted hover:text-amber transition-colors text-sm uppercase">
+                                        Web App
                                     </Link>
                                 </li>
                                 <li>

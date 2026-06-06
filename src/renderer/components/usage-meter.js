@@ -8,6 +8,9 @@ export class UsageMeter {
         this.textRpd = document.getElementById('text-rpd');
         this.textAudio = document.getElementById('text-audio');
         this.textRpm = document.getElementById('text-rpm');
+        this.accountQuotaNote = document.createElement('div');
+        this.accountQuotaNote.className = 'usage-account-note';
+        this.container?.appendChild(this.accountQuotaNote);
 
         this.updateTimeStr();
         setInterval(() => this.updateTimeStr(), 60000); // Update local time every minute
@@ -43,6 +46,7 @@ export class UsageMeter {
         this.updateBar(this.barRpd, this.textRpd, stats.dailyRequests, stats.dailyRequestsLimit, 'Reqs');
         this.updateBar(this.barAudio, this.textAudio, Math.round(stats.dailyAudioSeconds), stats.dailyAudioSecondsLimit, 'Secs');
         this.updateBar(this.barRpm, this.textRpm, stats.requestsThisMinute, stats.rpmLimit, 'RPM');
+        this.updateAccountQuota(stats);
     }
 
     updateBar(barEl, textEl, current, limit, suffix) {
@@ -61,6 +65,31 @@ export class UsageMeter {
         } else {
             barEl.classList.add('bar-red');
         }
+    }
+
+    formatDuration(seconds) {
+        const value = Math.max(0, Math.round(Number(seconds || 0)));
+        if (value < 60) return `${value}s`;
+        if (value < 3600) return `${Math.round(value / 60)}m`;
+        return `${Math.round((value / 3600) * 10) / 10}h`;
+    }
+
+    updateAccountQuota(stats) {
+        if (!this.accountQuotaNote) return;
+
+        const usage = stats?.accountManagedUsage;
+        if (!stats?.accountAuthenticated || !usage) {
+            this.accountQuotaNote.textContent = 'Signed-out/local BYOK usage uses your own Groq quota.';
+            return;
+        }
+
+        if (usage.source === 'dynamic_free') {
+            const remaining = Math.max(0, usage.audioSecondsLimit - usage.audioSecondsUsed);
+            this.accountQuotaNote.textContent = `Managed free: ${this.formatDuration(remaining)} left today. ${this.formatDuration(usage.guaranteedFloorSeconds || 300)} guaranteed, ${this.formatDuration(usage.audioSecondsLimit)} quiet-pool limit.`;
+            return;
+        }
+
+        this.accountQuotaNote.textContent = `Managed account: ${this.formatDuration(usage.audioSecondsUsed)} / ${this.formatDuration(usage.audioSecondsLimit)} used this ${usage.quotaWindow || 'period'}.`;
     }
 
     updateTimeStr() {

@@ -26,6 +26,14 @@ const CHANNELS = {
     CLEAR_HISTORY: 'history:clear',
     RETRY_HISTORY_ENTRY: 'history:retry-entry',
     RETRY_LAST_TRANSCRIPT: 'history:retry-last',
+    GET_ACCOUNT_STATE: 'account:get-state',
+    ACCOUNT_SIGN_UP: 'account:sign-up',
+    ACCOUNT_SIGN_IN: 'account:sign-in',
+    ACCOUNT_SIGN_OUT: 'account:sign-out',
+    ACCOUNT_SAVE_BYOK: 'account:save-byok',
+    ACCOUNT_DELETE_BYOK: 'account:delete-byok',
+    ACCOUNT_SET_MODE: 'account:set-mode',
+    ACCOUNT_SAVE_SYNCED_SETTINGS: 'account:save-synced-settings',
 
     // Settings Window
     OPEN_SETTINGS_WINDOW: 'window:open-settings-window',
@@ -47,8 +55,7 @@ const DEFAULT_SETTINGS = {
     promptStyle: 'Clean',
     customPrompt: DEFAULT_CUSTOM_PROMPT,
     model: 'whisper-large-v3-turbo',
-    cloudProcessingEnabled: false,
-    cloudProcessingUrl: ''
+    accountApiUrl: ''
 };
 
 module.exports = {

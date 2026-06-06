@@ -16,10 +16,9 @@ export function Specs() {
                 </div>
                 <div className="w-full md:w-1/2 p-8 md:p-12 border-raw-b flex flex-col justify-center">
                     <span className="text-amber font-bold mb-4">[GLOBAL HOTKEY]</span>
-                    <h2 className="font-deco text-4xl mb-6">THE SHORTCUT TO DOMINANCE.</h2>
+                    <h2 className="font-deco text-4xl mb-6">DICTATION WITHOUT THE SETUP DRAMA.</h2>
                     <p className="text-muted normal-case text-lg leading-relaxed">
-                        Configure any binding. Execute it anywhere—VS Code, Chrome, Notion. Focus drops, microphone
-                        captures, transcription inserts instantly at your cursor.
+                        Configure a shortcut, talk anywhere, and paste the result where you work. Use BYOK if you want full control, or managed mode if you want Koe to handle the provider key.
                     </p>
                 </div>
             </div>
@@ -28,22 +27,22 @@ export function Specs() {
             <div className="w-full flex flex-col md:flex-row border-raw-b">
                 <div className="w-full md:w-1/3 bg-amber text-void p-8 flex flex-col justify-center">
                     <h2 className="font-deco text-4xl mb-4">COMPARE.</h2>
-                    <p className="normal-case font-bold">THE CHOICES ARE CLEAR. UPGRADE YOUR WORKFLOW.</p>
+                    <p className="normal-case font-bold">Choose how you pay for processing, not whether voice dictation works.</p>
                 </div>
                 <div className="w-full md:w-2/3 flex flex-col">
                     <div className="flex w-full border-raw-b bg-zinc font-bold text-xs md:text-sm">
                         <div className="w-2/5 p-4 border-raw-r text-bone">METRIC</div>
-                        <div className="w-2/5 p-4 border-raw-r text-amber">KOE [V1.0]</div>
+                        <div className="w-2/5 p-4 border-raw-r text-amber">KOE</div>
                         <div className="w-1/5 p-4 text-muted">A OS NATIVE</div>
                     </div>
                     <div className="flex w-full border-raw-b text-sm md:text-base">
                         <div className="w-2/5 p-4 border-raw-r">COST STRUCTURE</div>
-                        <div className="w-2/5 p-4 border-raw-r font-bold text-amber bg-amber/10">$0 FOREVER</div>
+                        <div className="w-2/5 p-4 border-raw-r font-bold text-amber bg-amber/10">FREE BYOK / MANAGED PLANS</div>
                         <div className="w-1/5 p-4 text-muted font-mono">$0</div>
                     </div>
                     <div className="flex w-full border-raw-b text-sm md:text-base">
                         <div className="w-2/5 p-4 border-raw-r">ENGINE TYPE</div>
-                        <div className="w-2/5 p-4 border-raw-r font-bold text-bone">WHISPER (HIGH)</div>
+                        <div className="w-2/5 p-4 border-raw-r font-bold text-bone">WHISPER + GPT-OSS</div>
                         <div className="w-1/5 p-4 text-muted font-mono">NATIVE (LOW)</div>
                     </div>
                     <div className="flex w-full text-sm md:text-base">

@@ -1,4 +1,4 @@
-import { DEFAULT_CUSTOM_PROMPT, DEFAULT_WHISPER_MODEL } from '@koe/core';
+import { DEFAULT_WHISPER_MODEL } from '@koe/core';
 import * as SecureStore from 'expo-secure-store';
 
 const APP_SETTINGS_STORAGE_KEY = 'koe_mobile_settings_v1';
@@ -15,10 +15,15 @@ export interface AppSettings {
   hasSeenOnboarding: boolean;
 }
 
+export type SyncedAccountSettings = Pick<
+  AppSettings,
+  'language' | 'promptStyle' | 'customPrompt' | 'model' | 'enhanceText'
+>;
+
 export const DEFAULT_SETTINGS: AppSettings = {
   language: 'en',
   promptStyle: 'Clean',
-  customPrompt: DEFAULT_CUSTOM_PROMPT,
+  customPrompt: '',
   model: DEFAULT_WHISPER_MODEL,
   enhanceText: true,
   autoPaste: true,
@@ -60,9 +65,20 @@ export async function loadAppSettings(): Promise<AppSettings> {
     merged.promptStyle = DEFAULT_SETTINGS.promptStyle;
   }
 
-  if (!merged.customPrompt?.trim()) {
-    merged.customPrompt = DEFAULT_SETTINGS.customPrompt;
-  }
+  return merged;
+}
 
+export async function saveSyncedAccountSettings(next: SyncedAccountSettings): Promise<AppSettings> {
+  const current = await loadAppSettings();
+  const merged: AppSettings = {
+    ...current,
+    language: next.language,
+    promptStyle: next.promptStyle,
+    customPrompt: next.customPrompt,
+    model: next.model,
+    enhanceText: next.enhanceText,
+  };
+
+  await saveAppSettings(merged);
   return merged;
 }

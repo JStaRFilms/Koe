@@ -5,14 +5,13 @@ import { DownloadButton } from "@/components/DownloadButton";
 import { Github, Monitor, Cpu, Wifi, Mic, ExternalLink, KeyRound, Settings, Keyboard, CheckCircle2 } from "lucide-react";
 import type { Metadata } from "next";
 import { getIosReleaseTarget } from "@/lib/release-targets";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
-    title: "Download",
-    description: "Download Koe for desktop and check current iPhone or Android availability.",
-    alternates: {
-        canonical: "/download/",
-    },
-};
+export const metadata: Metadata = pageMetadata({
+    title: "Download Koe",
+    description: "Download Koe for desktop and check current iPhone and Android availability.",
+    path: "/download/",
+});
 
 export default function DownloadPage() {
     const iosReleaseTarget = getIosReleaseTarget();
@@ -30,8 +29,8 @@ export default function DownloadPage() {
         },
         {
             icon: Cpu,
-            title: "GROQ API Key",
-            description: "Free key from Groq console.",
+            title: "Account or API Key",
+            description: "Sign in for managed mode, or bring your own Groq key.",
         },
         {
             icon: Wifi,
@@ -56,13 +55,13 @@ export default function DownloadPage() {
         {
             step: "03",
             title: "RIGHT-CLICK -> SETTINGS",
-            description: "Open Settings from the tray menu to configure your API key.",
+            description: "Open Settings from the tray menu to sign in, choose managed mode, or save BYOK.",
             icon: Settings,
         },
         {
             step: "04",
-            title: "PASTE YOUR GROQ API KEY",
-            description: "Save your key once, then Koe is ready for transcription.",
+            title: "CHOOSE YOUR PROCESSING MODE",
+            description: "Use managed mode if you do not want to handle keys. Use BYOK if you want provider control.",
             icon: KeyRound,
         },
         {
@@ -112,7 +111,7 @@ export default function DownloadPage() {
                             EXECUTE DOWNLOAD
                         </h1>
                         <p className="text-xl text-muted max-w-2xl mx-auto normal-case">
-                            Get Koe for your desktop. Free forever. No subscriptions.
+                            Get Koe for desktop and mobile. Free with your own key, or use managed cloud processing.
                         </p>
                     </div>
 
@@ -138,7 +137,7 @@ export default function DownloadPage() {
                             <div className="grid md:grid-cols-3 gap-4 relative z-10">
                                 <div className="border-raw p-4 bg-void glitch-hover group transition-colors">
                                     <p className="text-amber font-bold text-xs mb-2 group-hover:text-void">START HERE</p>
-                                    <p className="text-bone normal-case text-sm group-hover:text-void/80">Install the suggested app package, open Koe settings, paste your key.</p>
+                                    <p className="text-bone normal-case text-sm group-hover:text-void/80">Install the app, open settings, then sign in or save your own key.</p>
                                 </div>
                                 <div className="border-raw p-4 bg-void glitch-hover group transition-colors">
                                     <p className="text-amber font-bold text-xs mb-2 group-hover:text-void">FIRST USE</p>
@@ -241,9 +240,9 @@ export default function DownloadPage() {
                             <div className="absolute inset-0 grid-bg opacity-5 pointer-events-none" />
                             <div className="grid lg:grid-cols-[1.2fr_0.8fr] gap-8 relative z-10">
                                 <div>
-                                    <h3 className="font-deco text-3xl text-bone mb-3 uppercase tracking-wider crt-flicker">Get Your GROQ API Key</h3>
+                                    <h3 className="font-deco text-3xl text-bone mb-3 uppercase tracking-wider crt-flicker">Using BYOK?</h3>
                                     <p className="text-muted normal-case max-w-2xl mb-7">
-                                        This is required once. After saving your key in Koe Settings, you do not need to repeat this.
+                                        You only need this if you choose Bring Your Own Key. Managed mode works without a provider key.
                                     </p>
 
                                     <ol className="grid sm:grid-cols-2 gap-4">
@@ -259,10 +258,10 @@ export default function DownloadPage() {
 
                                 <aside className="border-raw bg-void p-6 h-fit relative">
                                     <div className="absolute top-0 right-0 p-2 opacity-50"><KeyRound className="w-16 h-16 text-amber" /></div>
-                                    <p className="text-amber font-bold text-xs mb-3 relative z-10">ACTION REQUIRED</p>
-                                    <p className="text-bone text-sm mb-3 relative z-10">Open Groq, generate a key, then paste it in:</p>
+                                    <p className="text-amber font-bold text-xs mb-3 relative z-10">BYOK ONLY</p>
+                                    <p className="text-bone text-sm mb-3 relative z-10">Open Groq, generate a key, then save it in account BYOK or local fallback:</p>
                                     <p className="text-muted normal-case text-sm mb-6 relative z-10">
-                                        Tray Icon {"->"} Right-click {"->"} Settings {"->"} API Key
+                                        Tray Icon {"->"} Right-click {"->"} Settings {"->"} Account BYOK
                                     </p>
                                     <a
                                         href="https://console.groq.com/keys"

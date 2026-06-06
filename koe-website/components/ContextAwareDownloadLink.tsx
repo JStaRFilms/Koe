@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 
 import { detectClientPlatform, getDownloadCtaLabel, type ClientPlatform } from "@/lib/download-platform";
 
@@ -20,11 +20,7 @@ export function ContextAwareDownloadLink({
     prefix,
     style,
 }: ContextAwareDownloadLinkProps) {
-    const [platform, setPlatform] = useState<ClientPlatform>("other");
-
-    useEffect(() => {
-        setPlatform(detectClientPlatform());
-    }, []);
+    const [platform] = useState<ClientPlatform>(() => detectClientPlatform());
 
     return (
         <Link

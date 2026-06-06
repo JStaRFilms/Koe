@@ -28,9 +28,9 @@ function createSettingsWindow(initialTab = 'settings') {
     const primaryDisplay = screen.getPrimaryDisplay();
     const { width: screenW, height: screenH } = primaryDisplay.workAreaSize;
 
-    // Window dimensions
-    const windowWidth = 600;
-    const windowHeight = 500;
+    // Window dimensions — expanded for the redesigned desktop settings workspace
+    const windowWidth = 920;
+    const windowHeight = 720;
 
     // Center on screen
     const windowX = Math.round((screenW - windowWidth) / 2);
@@ -44,7 +44,9 @@ function createSettingsWindow(initialTab = 'settings') {
         frame: false,
         transparent: false,
         alwaysOnTop: false,
-        resizable: false,
+        resizable: true,
+        minWidth: 820,
+        minHeight: 620,
         skipTaskbar: false,
         focusable: true,
         show: false,

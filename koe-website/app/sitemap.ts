@@ -1,33 +1,32 @@
 import type { MetadataRoute } from "next";
+import { absoluteUrl } from "@/lib/site";
 
 export const dynamic = "force-static";
 
-const baseUrl = "https://koe.jstarstudios.com";
+const lastModified = new Date("2026-06-06T00:00:00.000Z");
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date();
-
   return [
     {
-      url: `${baseUrl}/`,
+      url: absoluteUrl("/"),
       lastModified,
       changeFrequency: "monthly",
       priority: 1,
     },
     {
-      url: `${baseUrl}/download/`,
+      url: absoluteUrl("/download/"),
       lastModified,
       changeFrequency: "weekly",
       priority: 0.9,
     },
     {
-      url: `${baseUrl}/pricing/`,
+      url: absoluteUrl("/pricing/"),
       lastModified,
       changeFrequency: "monthly",
       priority: 0.8,
     },
     {
-      url: `${baseUrl}/privacy/`,
+      url: absoluteUrl("/privacy/"),
       lastModified,
       changeFrequency: "yearly",
       priority: 0.5,

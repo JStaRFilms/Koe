@@ -179,10 +179,15 @@
 }
 
 .btn-history-expand,
+.btn-history-copy-refined,
 .btn-history-copy-raw {
     padding: 6px 10px;
     font-size: 11px;
     line-height: 1;
+}
+
+.btn-history-copy-refined {
+    color: var(--koe-accent);
 }
 
 .history-actions {

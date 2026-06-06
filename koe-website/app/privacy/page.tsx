@@ -2,14 +2,72 @@ import type { Metadata } from "next";
 import { StatusBar } from "@/components/StatusBar";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/sections/Footer";
+import { pageMetadata } from "@/lib/metadata";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
     title: "Privacy Policy",
-    description: "Koe privacy policy: no account tracking, no telemetry, and local-first usage.",
-    alternates: {
-        canonical: "/privacy/",
+    description: "How Koe handles audio, transcripts, account data, BYOK credentials, and managed processing.",
+    path: "/privacy/",
+});
+
+const sections = [
+    {
+        number: "01",
+        title: "Short version",
+        body: [
+            "Koe has two paths: local BYOK when you are signed out, and account processing when you are signed in. Signed-out local BYOK keeps transcript history on your device. Signed-in processing stores transcript text and usage metadata with your account so Koe can support account history, quota tracking, and future cross-device sync.",
+            "Koe does not store your audio files. Audio is sent only to process a transcription request.",
+        ],
     },
-};
+    {
+        number: "02",
+        title: "When you are signed out",
+        body: [
+            "If you use Koe without signing in, you can save a provider API key locally on your device. In that mode, transcript history is stored locally by the app, not in Koe's account database.",
+            "Your audio is sent to the configured provider only when you record and submit audio for transcription. Koe does not receive signed-out local BYOK transcript history through an account backend.",
+        ],
+    },
+    {
+        number: "03",
+        title: "When you are signed in",
+        body: [
+            "If you sign in and use managed mode or account BYOK, your request goes through Koe's account backend. Koe stores transcript text, refined transcript text, usage metadata, account settings, device metadata, and billing/quota information tied to your account.",
+            "We store this so your account can work across desktop and mobile, so usage can be counted fairly, and so future account history and cross-device sync can work without guessing.",
+        ],
+    },
+    {
+        number: "04",
+        title: "Audio handling",
+        body: [
+            "Koe processes audio to produce a transcript. Koe does not intentionally store audio files after the request completes.",
+            "Voice activity detection can run locally in the app before upload. When cloud transcription is needed, the recorded audio is sent to the processing provider for that request.",
+        ],
+    },
+    {
+        number: "05",
+        title: "API keys and BYOK",
+        body: [
+            "If you save a local device key while signed out, it stays on that device. If you save an account BYOK key while signed in, Koe stores it encrypted on the server so the same account can use BYOK across supported devices.",
+            "Managed mode uses Koe's server-owned provider key. That managed key is never sent to desktop or mobile clients.",
+        ],
+    },
+    {
+        number: "06",
+        title: "What we use account data for",
+        body: [
+            "We use account data to authenticate you, keep your settings in sync, resolve BYOK or managed mode, track usage and quotas, prevent abuse, support retries, and prepare account history/cross-device history features.",
+            "We do not sell transcript content. We do not need transcript text for advertising. The point of storing signed-in transcript text is product functionality: history, sync, support, and usage accounting.",
+        ],
+    },
+    {
+        number: "07",
+        title: "Providers",
+        body: [
+            "Koe uses external AI providers for transcription and refinement. Provider handling may depend on whether you use your own key or managed mode. Review your provider's privacy terms if you use BYOK.",
+            "For managed processing, Koe chooses the provider configuration and keeps the provider key server-side.",
+        ],
+    },
+];
 
 export default function PrivacyPage() {
     return (
@@ -19,81 +77,36 @@ export default function PrivacyPage() {
             <Header />
 
             <main className="flex-grow flex flex-col">
-                {/* Decostyle Header */}
                 <header className="w-full mt-12 mb-8 bg-void/80 backdrop-blur z-40">
                     <div className="max-w-4xl mx-auto flex flex-col border-x border-t border-zinc p-8 md:p-16">
-                        <h1 className="font-display text-6xl md:text-8xl text-bone leading-none mb-4">PRIVACY<br /><span
-                            className="text-amber">DIRECTIVE</span></h1>
-                        <p className="font-mono text-muted border-t border-dashed border-muted pt-4">
-                            &gt; EXECUTING READ: LOCAL_DATA_PROTOCOL<br />
-                            &gt; STATUS: CLEAR. NO TELEMETRY FOUND.
+                        <h1 className="font-display text-6xl md:text-8xl text-bone leading-none mb-4">
+                            PRIVACY<br /><span className="text-amber">POLICY</span>
+                        </h1>
+                        <p className="font-mono text-muted border-t border-dashed border-muted pt-4 normal-case">
+                            Plain version: signed-out local BYOK stays local. Signed-in account processing stores transcript text and usage data for history, quotas, and future sync. Audio is not stored by Koe.
                         </p>
                     </div>
                 </header>
 
                 <div className="max-w-4xl mx-auto w-full border-x border-zinc bg-void shadow-2xl">
-                    <article className="p-8 md:p-16 flex flex-col gap-16">
+                    <article className="p-8 md:p-16 flex flex-col gap-14">
+                        {sections.map((section) => (
+                            <section key={section.number} className="border-l-4 border-zinc pl-8 relative hover:border-amber transition-colors group">
+                                <span className="absolute -left-12 top-0 font-display text-4xl text-zinc group-hover:text-amber transition-colors">{section.number}</span>
+                                <h2 className="font-display text-3xl mb-4 text-bone group-hover:text-amber transition-colors uppercase">{section.title}</h2>
+                                <div className="text-muted normal-case text-lg leading-relaxed space-y-4">
+                                    {section.body.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+                                </div>
+                            </section>
+                        ))}
 
-                        {/* Sec 1 */}
-                        <section className="border-l-4 border-amber pl-8 relative">
-                            <span className="absolute -left-12 top-0 font-display text-4xl text-zinc">01</span>
-                            <h2 className="font-display text-3xl mb-4 text-bone uppercase">NO DATA COLLECTION.</h2>
-                            <div className="text-muted normal-case text-lg leading-relaxed space-y-4">
-                                <p>Koe operates completely locally. Voice Activity Detection (VAD) happens exclusively within your
-                                    machine boundaries. We do not track you, we do not log your activity, and we actively maintain
-                                    zero central databases containing your transcriptions.</p>
-                            </div>
-                        </section>
-
-                        {/* Sec 2 */}
-                        <section className="border-l-4 border-zinc pl-8 relative hover:border-amber transition-colors group">
-                            <span
-                                className="absolute -left-12 top-0 font-display text-4xl text-zinc group-hover:text-amber transition-colors">02</span>
-                            <h2 className="font-display text-3xl mb-4 text-bone group-hover:text-amber transition-colors uppercase">CREDENTIAL
-                                STORAGE.</h2>
-                            <div className="text-muted normal-case text-lg leading-relaxed space-y-4">
-                                <p>Your Groq API key is stored locally on your machine in an encrypted state, utilizing standard OS
-                                    credential managers. It is fetched into memory strictly to authenticate immediate transcription
-                                    requests to Groq servers.</p>
-                            </div>
-                        </section>
-
-                        {/* Sec 3 */}
-                        <section className="border-l-4 border-zinc pl-8 relative hover:border-amber transition-colors group">
-                            <span
-                                className="absolute -left-12 top-0 font-display text-4xl text-zinc group-hover:text-amber transition-colors">03</span>
-                            <h2 className="font-display text-3xl mb-4 text-bone group-hover:text-amber transition-colors uppercase">AUDIO
-                                TRANSMISSION.</h2>
-                            <div className="text-muted normal-case text-lg leading-relaxed space-y-4">
-                                <p>Audio is only ever transmitted to Groq when the dedicated global hotkey is engaged. For details
-                                    regarding payload processing, <a href="https://groq.com/privacy-policy"
-                                        className="text-bone uppercase border-b border-amber hover:bg-amber hover:text-void transition-all mix-blend-difference z-10 font-bold"
-                                        target="_blank" rel="noopener noreferrer">[ACCESS GROQ PROTOCOL]</a>.</p>
-                            </div>
-                        </section>
-
-                        {/* Sec 4 */}
-                        <section className="border-l-4 border-zinc pl-8 relative hover:border-amber transition-colors group">
-                            <span
-                                className="absolute -left-12 top-0 font-display text-4xl text-zinc group-hover:text-amber transition-colors">04</span>
-                            <h2 className="font-display text-3xl mb-4 text-bone group-hover:text-amber transition-colors uppercase">TRANSPARENCY //
-                                OPEN SOURCE.</h2>
-                            <div className="text-muted normal-case text-lg leading-relaxed space-y-4">
-                                <p>Do not simply trust these systems; verify them. Koe&apos;s logic pipeline is constructed entirely in
-                                    the open. You can verify every claim by traversing the source code directly.</p>
-                            </div>
-                        </section>
-
-                        {/* Final CTA */}
-                        <div className="mt-8 p-12 border border-zinc bg-zinc/10 text-center flex flex-col items-center">
-                            <h3 className="font-display text-3xl text-bone mb-8 uppercase">INITIATE INQUIRY?</h3>
-                            <p className="text-muted mb-8 normal-case max-w-md">Deploy all privacy, vulnerability, or logic questions
-                                directly to the issue tracker linked below.</p>
-
-                            <a href="https://github.com/JStaRFilms/Koe/issues" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 bg-amber text-void px-8 py-4 font-bold text-lg border-2 border-amber hover:bg-bone hover:border-bone transition-colors relative group">
-                                <span className="absolute -inset-2 border border-amber pointer-events-none group-hover:inset-0 transition-all opacity-50"></span>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-github"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4" /><path d="M9 18c-4.51 2-5-2-7-2" /></svg>
-                                CREATE GITHUB ISSUE
+                        <div className="mt-8 p-8 border border-zinc bg-zinc/10 flex flex-col gap-4">
+                            <h3 className="font-display text-3xl text-bone uppercase">Questions or deletion requests?</h3>
+                            <p className="text-muted normal-case leading-relaxed">
+                                We are still building account controls. If you need help with account data before self-serve controls are available, contact us through the GitHub issue tracker.
+                            </p>
+                            <a href="https://github.com/JStaRFilms/Koe/issues" target="_blank" rel="noopener noreferrer" className="inline-flex self-start bg-amber text-void px-6 py-3 font-bold border-2 border-amber hover:bg-bone hover:border-bone transition-colors">
+                                Open GitHub issue
                             </a>
                         </div>
                     </article>
@@ -104,5 +117,3 @@ export default function PrivacyPage() {
         </>
     );
 }
-
-
