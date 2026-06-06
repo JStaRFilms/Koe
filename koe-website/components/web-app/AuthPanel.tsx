@@ -13,6 +13,7 @@ type AuthPanelProps = {
   onDisplayNameChange: (value: string) => void;
   onPasswordChange: (value: string) => void;
   onSubmit: () => void;
+  onPasswordReset: () => void;
 };
 
 export function AuthPanel({
@@ -27,7 +28,11 @@ export function AuthPanel({
   onDisplayNameChange,
   onPasswordChange,
   onSubmit,
+  onPasswordReset,
 }: AuthPanelProps) {
+  const isReset = authMode === "reset";
+  const title = isReset ? "RECOVER ACCOUNT" : authMode === "signin" ? "SIGN IN" : "CREATE ACCOUNT";
+
   return (
     <section className="max-w-7xl mx-auto w-full border-x border-zinc py-12 px-4 md:px-8 relative z-10">
       <div className="grid lg:grid-cols-[1fr_0.9fr] gap-8">
@@ -57,6 +62,15 @@ export function AuthPanel({
           </div>
 
           <div className="space-y-4 normal-case">
+            <div>
+              <p className="text-amber text-xs font-bold uppercase mb-2">{title}</p>
+              <p className="text-sm text-muted leading-relaxed">
+                {isReset
+                  ? "Enter your account email and Koe will send a reset link if the account exists."
+                  : "Use your Koe account for managed processing, synced settings, and account history."}
+              </p>
+            </div>
+
             {authMode === "signup" ? (
               <label className="block text-sm text-muted">
                 Display name
@@ -67,14 +81,26 @@ export function AuthPanel({
               Email
               <input className="mt-2 w-full border-raw bg-zinc/10 p-3 text-bone" type="email" value={email} onChange={(event) => onEmailChange(event.target.value)} autoComplete="email" />
             </label>
-            <label className="block text-sm text-muted">
-              Password
-              <input className="mt-2 w-full border-raw bg-zinc/10 p-3 text-bone" type="password" value={password} onChange={(event) => onPasswordChange(event.target.value)} autoComplete={authMode === "signin" ? "current-password" : "new-password"} />
-            </label>
-            <button type="button" className="btn-brutal webapp-action justify-center w-full" onClick={onSubmit} disabled={Boolean(busyLabel)}>
+            {!isReset ? (
+              <label className="block text-sm text-muted">
+                Password
+                <input className="mt-2 w-full border-raw bg-zinc/10 p-3 text-bone" type="password" value={password} onChange={(event) => onPasswordChange(event.target.value)} autoComplete={authMode === "signin" ? "current-password" : "new-password"} />
+              </label>
+            ) : null}
+            <button type="button" className="btn-brutal webapp-action justify-center w-full" onClick={isReset ? onPasswordReset : onSubmit} disabled={Boolean(busyLabel)}>
               {busyLabel ? <Loader2 className="w-5 h-5 animate-spin" /> : <UserRound className="w-5 h-5" />}
-              {busyLabel || (authMode === "signin" ? "SIGN IN" : "CREATE ACCOUNT")}
+              {busyLabel || (isReset ? "SEND RESET LINK" : authMode === "signin" ? "SIGN IN" : "CREATE ACCOUNT")}
             </button>
+            {authMode === "signin" ? (
+              <button type="button" className="webapp-inline-action" onClick={() => onAuthModeChange("reset")}>
+                FORGOT PASSWORD?
+              </button>
+            ) : null}
+            {isReset ? (
+              <button type="button" className="webapp-inline-action" onClick={() => onAuthModeChange("signin")}>
+                BACK TO SIGN IN
+              </button>
+            ) : null}
             <p className="text-sm text-muted">{status}</p>
           </div>
         </div>

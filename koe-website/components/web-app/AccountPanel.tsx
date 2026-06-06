@@ -1,4 +1,4 @@
-import { LogOut, RefreshCw } from "lucide-react";
+import { CheckCircle2, LogOut, MailCheck, RefreshCw } from "lucide-react";
 import { AccountMode, Snapshot } from "./types";
 import { formatSeconds } from "./webAppUtils";
 
@@ -7,6 +7,7 @@ type AccountPanelProps = {
   modeCopy: string;
   busyLabel: string;
   onRefresh: () => void;
+  onRequestVerification: () => void;
   onSignOut: () => void;
   onSwitchMode: (mode: AccountMode) => void;
 };
@@ -23,9 +24,10 @@ function managedQuotaCopy(usage: Snapshot["capabilities"]["managed"]["usage"]) {
   };
 }
 
-export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onSignOut, onSwitchMode }: AccountPanelProps) {
+export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onRequestVerification, onSignOut, onSwitchMode }: AccountPanelProps) {
   const managedUsage = snapshot.capabilities.managed.usage;
   const dynamicQuota = managedQuotaCopy(managedUsage);
+  const isVerified = Boolean(snapshot.user.emailVerifiedAt);
 
   return (
     <aside className="space-y-4 md:space-y-6">
@@ -43,6 +45,25 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onSignO
           <RefreshCw className={`w-4 h-4 ${busyLabel ? "animate-spin" : ""}`} />
           REFRESH
         </button>
+      </div>
+
+      <div className="border-raw bg-zinc/10 p-5 md:p-6 normal-case">
+        <p className="text-amber uppercase text-xs font-bold mb-3">Email status</p>
+        <div className="flex items-start gap-3">
+          {isVerified ? <CheckCircle2 className="w-5 h-5 text-amber shrink-0 mt-0.5" /> : <MailCheck className="w-5 h-5 text-amber shrink-0 mt-0.5" />}
+          <div>
+            <p className="text-sm text-bone">{isVerified ? "Email verified." : "Email is not verified yet."}</p>
+            <p className="text-xs text-muted mt-1 leading-relaxed">
+              {isVerified ? "Your account recovery address is confirmed." : "Send a verification link to protect account recovery and future billing changes."}
+            </p>
+          </div>
+        </div>
+        {!isVerified ? (
+          <button type="button" className="webapp-utility-button mt-4" onClick={onRequestVerification} disabled={Boolean(busyLabel)}>
+            <MailCheck className="w-4 h-4" />
+            SEND VERIFICATION EMAIL
+          </button>
+        ) : null}
       </div>
 
       <div className="border-raw bg-zinc/10 p-5 md:p-6">

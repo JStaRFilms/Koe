@@ -13,6 +13,7 @@ type UserRow = {
   email: string;
   display_name: string | null;
   default_account_mode: "byok" | "managed";
+  email_verified_at?: string | null;
   disabled_at: string | null;
   created_at?: string;
   updated_at?: string;
@@ -38,6 +39,7 @@ export type AuthContext = {
     email: string;
     displayName: string | null;
     defaultMode: "byok" | "managed";
+    emailVerifiedAt: string | null;
   };
   session: {
     id: string;
@@ -109,6 +111,7 @@ function publicUser(row: UserRow) {
     email: row.email,
     displayName: row.display_name,
     defaultMode: row.default_account_mode,
+    emailVerifiedAt: toIso(row.email_verified_at),
   };
 }
 
@@ -153,6 +156,7 @@ export async function getAuthContext(request: Request): Promise<AuthContext> {
         users.email,
         users.display_name,
         users.default_account_mode,
+        users.email_verified_at,
         users.disabled_at,
         auth_sessions.id AS session_id,
         auth_sessions.expires_at AS session_expires_at,
