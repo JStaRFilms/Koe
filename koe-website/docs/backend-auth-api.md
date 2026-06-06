@@ -32,7 +32,14 @@ Errors use `{ "error": { "code": "...", "message": "...", "retryable": false } }
 
 ## Processing scaffold
 
-- `POST /api/v1/process` accepts multipart audio, `requestId`, optional `mode`, settings, and an optional `Accept: application/x-ndjson`. The server resolves BYOK/managed mode, decrypts BYOK only server-side, calls Groq, and records history/usage.
+- `POST /api/v1/process` accepts multipart audio or JSON/base64 audio, `requestId`, optional `mode`, settings, and an optional `Accept: application/x-ndjson`. The server resolves BYOK/managed mode, decrypts BYOK only server-side, calls Groq, and records history/usage.
 - `POST /api/v1/process/refine` accepts JSON `{ requestId, rawText, mode?, promptStyle?, customPrompt? }` and records refinement usage/history.
 
 Managed mode requires a server-side allocation plus `GROQ_MANAGED_API_KEY`; clients cannot self-grant allocations or receive managed provider keys.
+
+## Data handling policy
+
+- Signed-out/local BYOK processing stores transcript history locally in the client app, not in the Koe account database.
+- Signed-in processing, whether managed or account BYOK, stores transcript text, refined transcript text, usage metadata, device metadata, and account settings in Neon for account history, quota tracking, retries/idempotency, and future cross-device sync.
+- Koe should not intentionally persist uploaded audio files. Audio is processed for the request and discarded after processing.
+- BYOK mode without an account BYOK credential must return `MISSING_BYOK_CREDENTIAL`; it must not silently fall back to managed mode.

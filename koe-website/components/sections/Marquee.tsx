@@ -1,5 +1,5 @@
 export function Marquee() {
-    const text = "NO SUBSCRIPTIONS // LOCAL VAD // OPEN SOURCE // HIGH SPEED // PERFECT PRIVACY // ";
+    const text = "FREE WITH BYOK // MANAGED CLOUD OPTION // LOCAL VAD // DESKTOP + MOBILE // ACCOUNT SYNC // ";
 
     return (
         <div className="marquee">

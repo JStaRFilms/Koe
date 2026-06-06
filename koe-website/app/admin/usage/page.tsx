@@ -25,6 +25,7 @@ type UserUsageRow = {
   email_verified_at: string | null;
   created_at: string;
   devices_count: number;
+  device_platforms: string | null;
   active_sessions_count: number;
   last_seen_at: string | null;
   has_byok: boolean;
@@ -77,6 +78,25 @@ type RecentTranscriptRow = {
   audio_seconds: string | number;
   raw_text: string;
   refined_text: string | null;
+};
+
+type PlatformRow = {
+  platform: "desktop" | "ios" | "android" | "web";
+  devices: number;
+  users: number;
+  active_sessions: number;
+  last_seen_at: string | null;
+};
+
+type RecentDeviceRow = {
+  email: string;
+  platform: "desktop" | "ios" | "android" | "web";
+  label: string | null;
+  app_version: string | null;
+  os_version: string | null;
+  last_seen_at: string | null;
+  created_at: string;
+  active_sessions: number;
 };
 
 function dashboardEnabled() {
@@ -210,7 +230,7 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
   const db = sql();
   const periodKey = `${new Date().getUTCFullYear()}-${String(new Date().getUTCMonth() + 1).padStart(2, "0")}`;
 
-  const [metricsRows, userRows, dailyRows, modeRows, recentEventRows, recentTranscriptRows] = await Promise.all([
+  const [metricsRows, userRows, dailyRows, modeRows, platformRows, recentDeviceRows, recentEventRows, recentTranscriptRows] = await Promise.all([
     db`
       SELECT
         (SELECT count(*)::int FROM users) AS total_users,
@@ -232,6 +252,12 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
         u.email_verified_at,
         u.created_at,
         (SELECT count(*)::int FROM user_devices d WHERE d.user_id = u.id) AS devices_count,
+        (SELECT string_agg(platform_count, ', ' ORDER BY platform_count) FROM (
+          SELECT d.platform || ':' || count(*)::text AS platform_count
+          FROM user_devices d
+          WHERE d.user_id = u.id
+          GROUP BY d.platform
+        ) platform_counts) AS device_platforms,
         (SELECT count(*)::int FROM auth_sessions s WHERE s.user_id = u.id AND s.revoked_at IS NULL AND s.expires_at > now()) AS active_sessions_count,
         (SELECT max(s.last_seen_at) FROM auth_sessions s WHERE s.user_id = u.id) AS last_seen_at,
         EXISTS (SELECT 1 FROM user_credentials c WHERE c.user_id = u.id AND c.deleted_at IS NULL AND c.status = 'active') AS has_byok,
@@ -300,6 +326,31 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
       ORDER BY requests DESC
     `,
     db`
+      SELECT d.platform,
+             count(*)::int AS devices,
+             count(DISTINCT d.user_id)::int AS users,
+             count(s.id)::int AS active_sessions,
+             max(d.last_seen_at) AS last_seen_at
+      FROM user_devices d
+      LEFT JOIN auth_sessions s ON s.device_id = d.id AND s.revoked_at IS NULL AND s.expires_at > now()
+      GROUP BY d.platform
+      ORDER BY devices DESC
+    `,
+    db`
+      SELECT u.email::text AS email,
+             d.platform,
+             d.label,
+             d.app_version,
+             d.os_version,
+             d.last_seen_at,
+             d.created_at,
+             (SELECT count(*)::int FROM auth_sessions s WHERE s.device_id = d.id AND s.revoked_at IS NULL AND s.expires_at > now()) AS active_sessions
+      FROM user_devices d
+      JOIN users u ON u.id = d.user_id
+      ORDER BY d.last_seen_at DESC NULLS LAST, d.created_at DESC
+      LIMIT 40
+    `,
+    db`
       SELECT ue.created_at,
              u.email::text AS email,
              ue.mode,
@@ -331,6 +382,8 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
   const users = userRows as unknown as UserUsageRow[];
   const daily = dailyRows as unknown as DailyRow[];
   const modes = modeRows as unknown as ModeRow[];
+  const platforms = platformRows as unknown as PlatformRow[];
+  const recentDevices = recentDeviceRows as unknown as RecentDeviceRow[];
   const recentEvents = recentEventRows as unknown as RecentEventRow[];
   const recentTranscripts = recentTranscriptRows as unknown as RecentTranscriptRow[];
 
@@ -381,6 +434,49 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
           </div>
         </section>
 
+        <section className="grid gap-6 lg:grid-cols-[0.7fr_1.3fr]">
+          <div className="border border-zinc-700 bg-black/80 p-5">
+            <h2 className="mb-4 text-xl font-black text-amber">Device mix</h2>
+            <div className="space-y-3">
+              {platforms.length ? platforms.map((platform) => (
+                <div key={platform.platform} className="border border-zinc-800 p-3 normal-case">
+                  <div className="flex justify-between gap-3 uppercase"><span>{platform.platform}</span><span className="text-amber">{platform.devices} devices</span></div>
+                  <div className="mt-1 text-xs text-zinc-400">{platform.users} users // {platform.active_sessions} active sessions</div>
+                  <div className="mt-1 text-xs text-zinc-500">last seen {formatDate(platform.last_seen_at)}</div>
+                </div>
+              )) : <div className="text-sm text-zinc-500">No registered devices yet.</div>}
+            </div>
+          </div>
+
+          <div className="border border-zinc-700 bg-black/80 p-5">
+            <h2 className="mb-4 text-xl font-black text-amber">Recent devices</h2>
+            <div className="overflow-x-auto">
+              <table className="min-w-[760px] w-full border-collapse text-left text-xs">
+                <thead className="text-zinc-400">
+                  <tr className="border-b border-zinc-700">
+                    <th className="p-2">User</th>
+                    <th className="p-2">Platform</th>
+                    <th className="p-2">Device</th>
+                    <th className="p-2">Version</th>
+                    <th className="p-2">Activity</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentDevices.map((device, index) => (
+                    <tr key={`${device.email}-${device.platform}-${index}`} className="border-b border-zinc-900 normal-case hover:bg-zinc-950">
+                      <td className="p-2">{device.email}</td>
+                      <td className="p-2 uppercase text-amber">{device.platform}</td>
+                      <td className="p-2">{device.label || "Unnamed device"}<div className="text-zinc-500">{device.os_version || "unknown OS"}</div></td>
+                      <td className="p-2">{device.app_version || "n/a"}</td>
+                      <td className="p-2">seen {formatDate(device.last_seen_at)}<div className="text-zinc-500">{device.active_sessions} active sessions</div></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
         <section className="border border-zinc-700 bg-black/80 p-5">
           <h2 className="mb-4 text-xl font-black text-amber">Users, quota, and account state</h2>
           <div className="overflow-x-auto">
@@ -403,6 +499,7 @@ export default async function UsageAdminPage({ searchParams }: { searchParams: S
                       <div className="font-bold text-bone">{user.email}</div>
                       <div className="text-zinc-500">created {formatDate(user.created_at)} // {user.email_verified_at ? "verified" : "unverified"}</div>
                       <div className="text-zinc-500">{user.devices_count} devices // {user.active_sessions_count} sessions</div>
+                      <div className="text-zinc-500">platforms: {user.device_platforms || "none"}</div>
                     </td>
                     <td className="p-2"><span className="border border-zinc-700 px-2 py-1 text-amber">{user.default_account_mode}</span></td>
                     <td className="p-2 normal-case">{user.has_byok ? `ready${user.byok_last4 ? ` ••••${user.byok_last4}` : ""}` : "not saved"}</td>

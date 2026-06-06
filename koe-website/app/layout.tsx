@@ -5,10 +5,10 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 export const metadata: Metadata = {
   metadataBase: new URL("https://koe.jstarstudios.com"),
   title: {
-    default: "Koe - Free Voice Dictation for Desktop and Mobile",
+    default: "Koe - Voice Dictation for Desktop and Mobile",
     template: "%s | Koe",
   },
-  description: "Lightning-fast, free voice dictation for desktop and mobile. Powered by AI, completely open source. No subscriptions, just your voice.",
+  description: "Lightning-fast voice dictation for desktop and mobile. Free with your own API key, or use managed cloud processing when you want Koe to handle the key.",
   keywords: ["voice dictation", "speech to text", "desktop", "mobile", "Windows", "macOS", "iOS", "Android", "free", "open source", "Whisper", "Groq"],
   authors: [{ name: "Koe" }],
   creator: "Koe",
@@ -21,8 +21,8 @@ export const metadata: Metadata = {
     follow: true,
   },
   openGraph: {
-    title: "Koe - Free Voice Dictation for Desktop and Mobile",
-    description: "Lightning-fast, free voice dictation for desktop and mobile. Powered by AI, completely open source.",
+    title: "Koe - Voice Dictation for Desktop and Mobile",
+    description: "Lightning-fast voice dictation for desktop and mobile. Use your own API key for free, or choose managed cloud processing.",
     url: "https://koe.jstarstudios.com",
     siteName: "Koe",
     images: [
@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Koe - Free Voice Dictation for Desktop and Mobile",
-    description: "Lightning-fast, free voice dictation for desktop and mobile. Powered by AI, completely open source.",
+    title: "Koe - Voice Dictation for Desktop and Mobile",
+    description: "Lightning-fast voice dictation for desktop and mobile. Free BYOK or managed cloud processing.",
     images: ["/og-image.svg"],
   },
   icons: {

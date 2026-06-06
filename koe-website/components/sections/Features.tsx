@@ -11,23 +11,23 @@ const features = [
     {
         index: "02",
         icon: ShieldAlert,
-        title: "PRIVACY FIRST. ALWAYS.",
+        title: "CLEAR DATA RULES",
         description:
-            "Local Voice Activity Detection processing. Your microphone stays local. Your voice never leaves your boundary until you explicitly trigger dictation.",
+            "Signed out with your own key? Koe does not store your transcript in our database. Signed in? transcript text and usage metadata are stored with your account for history and future sync.",
     },
     {
         index: "03",
         icon: Unlock,
-        title: "COMPLETELY FREE",
+        title: "FREE BYOK OR MANAGED",
         description:
-            "No walled gardens. No recurring billing. Bring your own API key and operate indefinitely without limits.",
+            "Bring your own Groq key and Koe stays free. Prefer not to manage keys? Use managed cloud processing with a starter allowance and paid plans when billing launches.",
     },
     {
         index: "04",
         icon: History,
-        title: "NEVER LOSE A THOUGHT",
+        title: "ACCOUNT HISTORY READY",
         description:
-            "Automatic history saves every transcription. Copy, retry, or delete anytime. Your complete dictation log, locally stored.",
+            "Local sessions keep local history. Signed-in processing stores recent transcript history with your account so desktop and mobile can stay aligned later.",
     },
 ];
 
