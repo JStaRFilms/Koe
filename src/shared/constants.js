@@ -36,6 +36,7 @@ const CHANNELS = {
     ACCOUNT_DELETE_BYOK: 'account:delete-byok',
     ACCOUNT_SET_MODE: 'account:set-mode',
     ACCOUNT_SAVE_SYNCED_SETTINGS: 'account:save-synced-settings',
+    ACCOUNT_OPEN_WEB_BILLING: 'account:open-web-billing',
 
     // Settings Window
     OPEN_SETTINGS_WINDOW: 'window:open-settings-window',

@@ -53,6 +53,7 @@ export class SettingsPanel {
         this.btnAccountSignOut = document.getElementById('btn-account-sign-out');
         this.btnAccountEmailVerify = document.getElementById('btn-account-email-verify');
         this.btnAccountRefresh = document.getElementById('btn-account-refresh');
+        this.btnAccountWebBilling = document.getElementById('btn-account-web-billing');
         this.btnAccountModeSave = document.getElementById('btn-account-mode-save');
         this.btnAccountByokSave = document.getElementById('btn-account-byok-save');
         this.btnAccountByokDelete = document.getElementById('btn-account-byok-delete');
@@ -109,6 +110,7 @@ export class SettingsPanel {
         this.btnAccountSignOut?.addEventListener('click', () => this.handleAccountSignOut());
         this.btnAccountEmailVerify?.addEventListener('click', () => this.handleAccountEmailVerification());
         this.btnAccountRefresh?.addEventListener('click', () => this.handleAccountRefresh());
+        this.btnAccountWebBilling?.addEventListener('click', () => this.handleOpenWebBilling());
         this.btnAccountModeSave?.addEventListener('click', () => this.handleAccountModeSave());
         this.btnAccountByokSave?.addEventListener('click', () => this.handleAccountByokSave());
         this.btnAccountByokDelete?.addEventListener('click', () => this.handleAccountByokDelete());
@@ -576,6 +578,9 @@ export class SettingsPanel {
         if (this.btnAccountRefresh) {
             this.btnAccountRefresh.disabled = busy;
         }
+        if (this.btnAccountWebBilling) {
+            this.btnAccountWebBilling.disabled = busy;
+        }
         if (this.btnAccountByokSave) {
             this.btnAccountByokSave.disabled = busy || !authenticated;
         }
@@ -713,6 +718,15 @@ export class SettingsPanel {
             this.showAccountResult('Verification email sent. Open the link in your inbox to confirm this address.', true);
         }).catch((error) => {
             this.showAccountResult(this.cleanActionErrorMessage(error, 'Could not send a verification email.'), false);
+        });
+    }
+
+    async handleOpenWebBilling() {
+        await this.withAccountAction(this.btnAccountWebBilling, 'Opening...', async () => {
+            const result = await window.api.openWebBilling();
+            this.showAccountResult(`Opened Koe web account in your browser${result?.url ? `: ${result.url}` : '.'}`, true);
+        }).catch((error) => {
+            this.showAccountResult(this.cleanActionErrorMessage(error, 'Could not open Koe web account.'), false);
         });
     }
 

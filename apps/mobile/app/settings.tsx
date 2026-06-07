@@ -9,10 +9,11 @@ import {
   useColorScheme,
   Dimensions,
   Platform,
+  Linking,
 } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { normalizeAccountApiError, type AccountMode, type AccountSnapshot } from '../src/api/account-client';
+import { normalizeAccountApiError, resolveKoeWebAppUrl, type AccountMode, type AccountSnapshot } from '../src/api/account-client';
 import {
   deleteAccountGroqKey,
   pushAccountMode,
@@ -113,6 +114,7 @@ export default function SettingsScreen() {
   const [pendingMode, setPendingMode] = useState<AccountMode | null>(null);
   const [isRefreshingAccount, setIsRefreshingAccount] = useState(false);
   const [isRequestingEmailVerification, setIsRequestingEmailVerification] = useState(false);
+  const [isOpeningWebAccount, setIsOpeningWebAccount] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [isSavingAccountKey, setIsSavingAccountKey] = useState(false);
   const [isDeletingAccountKey, setIsDeletingAccountKey] = useState(false);
@@ -380,6 +382,26 @@ export default function SettingsScreen() {
       }
     } finally {
       setIsRequestingEmailVerification(false);
+    }
+  };
+
+  const handleOpenWebAccount = async () => {
+    if (isOpeningWebAccount) {
+      return;
+    }
+
+    setIsOpeningWebAccount(true);
+    setFeedbackMessage('Opening Koe account in your browser...');
+    setErrorMessage(null);
+
+    try {
+      await Linking.openURL(resolveKoeWebAppUrl('/app'));
+      await notifyLightImpact();
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : 'Could not open Koe account on web.');
+      setFeedbackMessage(null);
+    } finally {
+      setIsOpeningWebAccount(false);
     }
   };
 
@@ -661,6 +683,14 @@ export default function SettingsScreen() {
                   <Text style={[styles.statusMsg, { color: theme.textDim }]}>{describeManagedQuota(snapshot)}</Text>
                 </View>
 
+                <BrutalButton
+                  onPress={() => void handleOpenWebAccount()}
+                  title={isOpeningWebAccount ? 'Opening...' : 'Open Koe account on web'}
+                  variant="outline"
+                  disabled={isOpeningWebAccount || isRefreshingAccount || isSigningOut}
+                  style={{ width: '100%' }}
+                />
+
                 <View style={styles.metaRow}>
                   <Text style={[styles.label, { color: theme.textDim }]}>Account BYOK</Text>
                   <Text style={[styles.statusMsg, { color: theme.textDim }]}>{describeAccountKey(snapshot)}</Text>
@@ -690,7 +720,7 @@ export default function SettingsScreen() {
                 </View>
 
                 <Text style={[styles.helperCopy, { color: theme.textDim }]}>
-                  Managed mode is server-granted in this build. No mobile purchase UI is shown here.
+                  Managed mode is server-granted in this build. Plan changes happen on the Koe web account page.
                 </Text>
               </View>
             </BrutalCard>

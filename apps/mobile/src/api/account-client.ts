@@ -214,6 +214,11 @@ function resolveApiBaseUrl() {
   return normalizeApiBaseUrl(DEFAULT_KOE_API_BASE_URL);
 }
 
+export function resolveKoeWebAppUrl(path = '/app') {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
+  return `${resolveApiBaseUrl()}${normalizedPath}`;
+}
+
 async function fetchKoeApi(url: string, init: RequestInit): Promise<Response> {
   try {
     return await fetch(url, init);

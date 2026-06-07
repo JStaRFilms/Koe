@@ -31,6 +31,7 @@ contextBridge.exposeInMainWorld('api', {
     deleteAccountByok: () => ipcRenderer.invoke(CHANNELS.ACCOUNT_DELETE_BYOK),
     setAccountMode: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SET_MODE, payload),
     saveAccountSettings: (payload) => ipcRenderer.invoke(CHANNELS.ACCOUNT_SAVE_SYNCED_SETTINGS, payload),
+    openWebBilling: () => ipcRenderer.invoke(CHANNELS.ACCOUNT_OPEN_WEB_BILLING),
 
     // Usage Stats
     getUsageStats: () => ipcRenderer.invoke(CHANNELS.GET_USAGE_STATS),

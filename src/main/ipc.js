@@ -93,6 +93,11 @@ function setupIpcHandlers(mainWindow) {
         return accountClient.getAccountState();
     });
     ipcMain.handle(CHANNELS.ACCOUNT_SAVE_SYNCED_SETTINGS, async (event, payload) => accountClient.saveAccountSettings(payload || {}));
+    ipcMain.handle(CHANNELS.ACCOUNT_OPEN_WEB_BILLING, async () => {
+        const url = accountClient.resolveWebAppUrl('/app');
+        await shell.openExternal(url);
+        return { ok: true, url };
+    });
     ipcMain.handle(CHANNELS.GET_USAGE_STATS, async () => {
         const stats = rateLimiter.getUsageStats();
         try {

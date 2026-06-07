@@ -41,6 +41,17 @@ function resolveBackendApiBase(settings = getSettings()) {
     return normalizeApiBase(DEFAULT_BACKEND_ORIGIN);
 }
 
+function resolveWebAppUrl(path = '/app', settings = getSettings()) {
+    const apiBase = resolveBackendApiBase(settings);
+    try {
+        const origin = new URL(apiBase).origin;
+        const normalizedPath = String(path || '/app').startsWith('/') ? path : `/${path}`;
+        return `${origin}${normalizedPath}`;
+    } catch (_error) {
+        return `${DEFAULT_BACKEND_ORIGIN}/app`;
+    }
+}
+
 function buildDeviceLabel() {
     const host = String(os.hostname() || '').trim();
     if (host) {
@@ -425,6 +436,7 @@ module.exports = {
     requestEmailVerification,
     requestPasswordReset,
     resolveBackendApiBase,
+    resolveWebAppUrl,
     saveAccountCredential,
     saveAccountSettings,
     signIn,
