@@ -43,8 +43,8 @@ export class UsageMeter {
     updateMeters(stats) {
         if (!stats) return;
 
-        this.updateBar(this.barRpd, this.textRpd, stats.dailyRequests, stats.dailyRequestsLimit, 'Reqs');
-        this.updateBar(this.barAudio, this.textAudio, Math.round(stats.dailyAudioSeconds), stats.dailyAudioSecondsLimit, 'Secs');
+        this.updateBar(this.barRpd, this.textRpd, stats.dailyRequests, stats.dailyRequestsLimit, 'calls');
+        this.updateBar(this.barAudio, this.textAudio, Math.round(stats.dailyAudioSeconds), stats.dailyAudioSecondsLimit, 'audio sec');
         this.updateBar(this.barRpm, this.textRpm, stats.requestsThisMinute, stats.rpmLimit, 'RPM');
         this.updateAccountQuota(stats);
     }
@@ -78,19 +78,24 @@ export class UsageMeter {
         if (!this.accountQuotaNote) return;
 
         const usage = stats?.accountManagedUsage;
+        const activity = stats?.accountActivity;
         if (!stats?.accountAuthenticated || !usage) {
-            this.accountQuotaNote.textContent = 'Signed-out/local BYOK usage uses your own Groq quota.';
+            this.accountQuotaNote.textContent = 'Local BYOK/signed-out mode uses your own provider quota. Desktop usage above is local only.';
             return;
         }
 
+        const activityText = activity
+            ? ` Account today: ${activity.recordingsToday || 0} recordings, ${this.formatDuration(activity.audioSecondsToday)} audio, ${activity.processingCallsToday || 0} processing calls.`
+            : '';
+
         if (usage.source === 'dynamic_free') {
             const remaining = Math.max(0, usage.audioSecondsLimit - usage.audioSecondsUsed);
-            this.accountQuotaNote.textContent = `Managed free: ${this.formatDuration(remaining)} left today. ${this.formatDuration(usage.guaranteedFloorSeconds || 300)} guaranteed, ${this.formatDuration(usage.audioSecondsLimit)} quiet-pool limit.`;
+            this.accountQuotaNote.textContent = `Managed free: ${this.formatDuration(usage.guaranteedFloorSeconds || 300)} guaranteed + ${this.formatDuration(remaining)} bonus remaining today.${activityText}`;
             return;
         }
 
         const label = usage.source === 'paid' ? 'Managed paid' : 'Managed account';
-        this.accountQuotaNote.textContent = `${label}: ${this.formatDuration(usage.audioSecondsUsed)} / ${this.formatDuration(usage.audioSecondsLimit)} used this ${usage.quotaWindow || 'period'}.`;
+        this.accountQuotaNote.textContent = `${label}: ${this.formatDuration(usage.audioSecondsUsed)} / ${this.formatDuration(usage.audioSecondsLimit)} used this ${usage.quotaWindow || 'period'}.${activityText}`;
     }
 
     updateTimeStr() {

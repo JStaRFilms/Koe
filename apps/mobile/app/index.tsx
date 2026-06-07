@@ -224,8 +224,8 @@ export default function RecorderScreen() {
         <View style={styles.footer}>
           <Text style={[styles.usageText, { color: theme.textDim }]}>
             {usageStats
-              ? `Today: ${usageStats.requestCount} sessions // ${usageStats.audioSecondsUsed}s total`
-              : 'Usage updates after your first capture.'}
+              ? `This phone today: ${usageStats.requestCount} recordings // ${usageStats.audioSecondsUsed}s audio`
+              : 'This phone usage updates after your first capture.'}
           </Text>
         </View>
       </ScrollView>

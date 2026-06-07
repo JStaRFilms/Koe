@@ -247,6 +247,7 @@ async function fetchAccountSnapshot() {
         capabilities: snapshot?.capabilities || null,
         billing: snapshot?.billing || null,
         settings: snapshot?.settings || null,
+        accountActivity: snapshot?.accountActivity || null,
         recentHistory: snapshot?.recentHistory || [],
         policy: snapshot?.policy || null,
         installationId: accountStorage.getInstallationId(),

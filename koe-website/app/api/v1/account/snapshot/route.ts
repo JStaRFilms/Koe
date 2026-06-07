@@ -11,6 +11,20 @@ export const runtime = "nodejs";
 
 const ORPHAN_REFINEMENT_MATCH_WINDOW_MS = 15 * 60 * 1000;
 
+type AccountActivityRow = {
+  recordings_today: string | number | null;
+  audio_seconds_today: string | number | null;
+  processing_calls_today: string | number | null;
+  transcription_calls_today: string | number | null;
+  refinement_calls_today: string | number | null;
+};
+
+type SourceActivityRow = {
+  device_platform: Platform | null;
+  recordings_today: string | number | null;
+  audio_seconds_today: string | number | null;
+};
+
 type HistoryRow = {
   id: string;
   request_id: string;
@@ -96,6 +110,29 @@ function findRefinementSessionKey(refinementRow: HistoryRow, groups: Map<string,
   }
 
   return best?.key || null;
+}
+
+function normalizeCount(value: string | number | null | undefined) {
+  return Math.max(0, Math.round(Number(value || 0) || 0));
+}
+
+function normalizeSeconds(value: string | number | null | undefined) {
+  return Math.max(0, Number(value || 0) || 0);
+}
+
+function buildAccountActivity(activity: AccountActivityRow | null | undefined, sourceRows: SourceActivityRow[]) {
+  return {
+    recordingsToday: normalizeCount(activity?.recordings_today),
+    audioSecondsToday: normalizeSeconds(activity?.audio_seconds_today),
+    processingCallsToday: normalizeCount(activity?.processing_calls_today),
+    transcriptionCallsToday: normalizeCount(activity?.transcription_calls_today),
+    refinementCallsToday: normalizeCount(activity?.refinement_calls_today),
+    sourceBreakdown: sourceRows.map((row) => ({
+      source: row.device_platform || "unknown",
+      recordingsToday: normalizeCount(row.recordings_today),
+      audioSecondsToday: normalizeSeconds(row.audio_seconds_today),
+    })),
+  };
 }
 
 function groupHistoryRows(rows: HistoryRow[]) {
@@ -220,6 +257,43 @@ export async function GET(request: Request) {
       LIMIT 100
     `;
 
+    const activity = one<AccountActivityRow>(
+      await db`
+        WITH today_history AS (
+          SELECT request_id, client_session_id, audio_seconds
+          FROM transcript_history
+          WHERE user_id = ${auth.user.id}
+            AND created_at >= date_trunc('day', now())
+        ), today_usage AS (
+          SELECT action
+          FROM usage_events
+          WHERE user_id = ${auth.user.id}
+            AND status = 'success'
+            AND created_at >= date_trunc('day', now())
+        )
+        SELECT
+          (SELECT count(DISTINCT COALESCE(client_session_id, request_id::text)) FROM today_history WHERE audio_seconds > 0) AS recordings_today,
+          (SELECT COALESCE(sum(audio_seconds), 0) FROM today_history WHERE audio_seconds > 0) AS audio_seconds_today,
+          (SELECT count(*) FROM today_usage) AS processing_calls_today,
+          (SELECT count(*) FROM today_usage WHERE action IN ('process', 'transcription')) AS transcription_calls_today,
+          (SELECT count(*) FROM today_usage WHERE action = 'refinement') AS refinement_calls_today
+      `,
+    );
+
+    const sourceActivity = await db`
+      SELECT
+        user_devices.platform AS device_platform,
+        count(DISTINCT COALESCE(transcript_history.client_session_id, transcript_history.request_id::text)) AS recordings_today,
+        COALESCE(sum(transcript_history.audio_seconds), 0) AS audio_seconds_today
+      FROM transcript_history
+      LEFT JOIN user_devices ON user_devices.id = transcript_history.device_id
+      WHERE transcript_history.user_id = ${auth.user.id}
+        AND transcript_history.audio_seconds > 0
+        AND transcript_history.created_at >= date_trunc('day', now())
+      GROUP BY user_devices.platform
+      ORDER BY recordings_today DESC
+    `;
+
     const capabilities = await getCapabilities(auth.user.id);
     const resolvedMode = await snapshotResolvedMode(auth.user.id, auth.user.defaultMode);
     const billing = await getBillingSnapshot(auth.user.id);
@@ -245,6 +319,7 @@ export async function GET(request: Request) {
         model: settings?.model || "whisper-large-v3-turbo",
         updatedAt: toIso(settings?.updated_at),
       },
+      accountActivity: buildAccountActivity(activity, sourceActivity as SourceActivityRow[]),
       recentHistory: groupHistoryRows(history as HistoryRow[]),
       policy: { mobilePurchaseUiEnabled: false },
     });

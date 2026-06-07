@@ -1,10 +1,30 @@
 import type { AccountSnapshot } from '../api/account-client';
 
-function formatDuration(seconds: number) {
+export function formatDuration(seconds: number) {
   const value = Math.max(0, Math.round(seconds || 0));
   if (value < 60) return `${value}s`;
   if (value < 3600) return `${Math.round(value / 60)}m`;
   return `${Math.round(value / 360) / 10}h`;
+}
+
+function sourceLabel(source: string) {
+  if (source === 'android' || source === 'ios') return 'mobile';
+  if (source === 'web') return 'browser';
+  return source;
+}
+
+export function describeAccountActivity(snapshot: AccountSnapshot | null) {
+  const activity = snapshot?.accountActivity;
+  if (!activity) {
+    return 'Refresh account to load global activity.';
+  }
+
+  const sources = activity.sourceBreakdown
+    .filter((item) => item.recordingsToday > 0 || item.audioSecondsToday > 0)
+    .map((item) => `${sourceLabel(item.source)} ${item.recordingsToday}`)
+    .join(' • ');
+
+  return `${activity.recordingsToday} recordings // ${formatDuration(activity.audioSecondsToday)} audio // ${activity.processingCallsToday} calls${sources ? ` // ${sources}` : ''}`;
 }
 
 export function describeManagedQuota(snapshot: AccountSnapshot | null) {
@@ -24,5 +44,5 @@ export function describeManagedQuota(snapshot: AccountSnapshot | null) {
 
   const floor = formatDuration(usage.guaranteedFloorSeconds || 300);
   const remaining = formatDuration(usage.audioSecondsLimit - usage.audioSecondsUsed);
-  return `${status} // ${remaining} left today // ${floor} guaranteed // ${limit} quiet-pool limit`;
+  return `${status} // ${remaining} bonus left today // ${floor} guaranteed // ${limit} available`;
 }

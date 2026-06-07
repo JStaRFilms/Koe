@@ -70,6 +70,18 @@ export type Snapshot = {
     enhanceText: boolean;
     model: string;
   };
+  accountActivity: {
+    recordingsToday: number;
+    audioSecondsToday: number;
+    processingCallsToday: number;
+    transcriptionCallsToday: number;
+    refinementCallsToday: number;
+    sourceBreakdown: Array<{
+      source: "desktop" | "ios" | "android" | "web" | "unknown";
+      recordingsToday: number;
+      audioSecondsToday: number;
+    }>;
+  };
   recentHistory: Array<{
     id: string;
     requestId: string;

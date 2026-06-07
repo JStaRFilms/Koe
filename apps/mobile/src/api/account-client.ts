@@ -72,6 +72,18 @@ export interface AccountSnapshot {
     model: string;
     updatedAt?: string | null;
   };
+  accountActivity?: {
+    recordingsToday: number;
+    audioSecondsToday: number;
+    processingCallsToday: number;
+    transcriptionCallsToday: number;
+    refinementCallsToday: number;
+    sourceBreakdown: Array<{
+      source: AccountPlatform | 'desktop' | 'unknown';
+      recordingsToday: number;
+      audioSecondsToday: number;
+    }>;
+  };
   recentHistory: Array<{
     id: string;
     requestId: string;

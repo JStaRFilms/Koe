@@ -29,8 +29,25 @@ function managedQuotaCopy(usage: Snapshot["capabilities"]["managed"]["usage"]) {
     remaining: formatSeconds(remaining),
     floor: formatSeconds(usage.guaranteedFloorSeconds || 300),
     currentLimit: formatSeconds(usage.audioSecondsLimit),
-    activeUsers: usage.activeManagedUsers24h || 1,
   };
+}
+
+function sourceLabel(source: string) {
+  if (source === "android" || source === "ios") return "mobile";
+  if (source === "web") return "browser";
+  return source;
+}
+
+function accountActivityCopy(snapshot: Snapshot) {
+  const activity = snapshot.accountActivity;
+  if (!activity) return "No account activity recorded today.";
+
+  const sourceSummary = activity.sourceBreakdown
+    .filter((source) => source.recordingsToday > 0 || source.audioSecondsToday > 0)
+    .map((source) => `${sourceLabel(source.source)} ${source.recordingsToday}`)
+    .join(" • ");
+
+  return sourceSummary || "No device breakdown yet.";
 }
 
 function formatNaira(kobo: number) {
@@ -112,18 +129,49 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
       </div>
 
       <div className="border-raw bg-void p-5 md:p-6 normal-case">
-        <p className="text-amber uppercase text-xs font-bold mb-3">Managed usage</p>
+        <p className="text-amber uppercase text-xs font-bold mb-3">Account activity today</p>
         <p className="text-sm text-muted">
-          Audio: {formatSeconds(managedUsage.audioSecondsUsed)} / {formatSeconds(managedUsage.audioSecondsLimit)}
+          Recordings: {snapshot.accountActivity?.recordingsToday ?? 0}
         </p>
         <p className="text-sm text-muted">
-          Requests: {managedUsage.requestCountUsed} / {managedUsage.requestCountLimit}
+          Audio processed: {formatSeconds(snapshot.accountActivity?.audioSecondsToday ?? 0)}
         </p>
-        {dynamicQuota ? (
-          <p className="mt-3 text-xs text-muted leading-relaxed">
-            {dynamicQuota.floor} guaranteed daily. {dynamicQuota.remaining} remains from today&apos;s {dynamicQuota.currentLimit} quiet-pool limit.
-          </p>
-        ) : null}
+        <p className="text-sm text-muted">
+          Processing calls: {snapshot.accountActivity?.processingCallsToday ?? 0} ({snapshot.accountActivity?.transcriptionCallsToday ?? 0} transcription / {snapshot.accountActivity?.refinementCallsToday ?? 0} refinement)
+        </p>
+        <p className="mt-3 text-xs text-muted leading-relaxed">
+          Device mix: {accountActivityCopy(snapshot)}.
+        </p>
+      </div>
+
+      <div className="border-raw bg-void p-5 md:p-6 normal-case">
+        <p className="text-amber uppercase text-xs font-bold mb-3">
+          {snapshot.user.defaultMode === "byok" ? "BYOK/provider estimate" : "Managed quota"}
+        </p>
+        {snapshot.user.defaultMode === "byok" ? (
+          <>
+            <p className="text-sm text-muted">
+              Estimated account activity: {formatSeconds(snapshot.accountActivity?.audioSecondsToday ?? 0)} audio / {snapshot.accountActivity?.processingCallsToday ?? 0} processing calls today
+            </p>
+            <p className="mt-3 text-xs text-muted leading-relaxed">
+              Account BYOK uses your saved provider key. Koe can estimate usage from calls it makes, but exact remaining provider quota is controlled by Groq.
+            </p>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-muted">
+              Audio: {formatSeconds(managedUsage.audioSecondsUsed)} / {formatSeconds(managedUsage.audioSecondsLimit)}
+            </p>
+            <p className="text-sm text-muted">
+              Processing calls: {managedUsage.requestCountUsed} / {managedUsage.requestCountLimit}
+            </p>
+            {dynamicQuota ? (
+              <p className="mt-3 text-xs text-muted leading-relaxed">
+                {dynamicQuota.floor} guaranteed daily + {dynamicQuota.remaining} bonus remaining today from {dynamicQuota.currentLimit} available.
+              </p>
+            ) : null}
+          </>
+        )}
       </div>
 
       <div className="border-raw bg-zinc/10 p-5 md:p-6 normal-case">

@@ -105,6 +105,7 @@ function setupIpcHandlers(mainWindow) {
             return {
                 ...stats,
                 accountManagedUsage: accountState?.capabilities?.managed?.usage || null,
+                accountActivity: accountState?.accountActivity || null,
                 accountDefaultMode: accountState?.user?.defaultMode || null,
                 accountAuthenticated: accountState?.authenticated === true
             };

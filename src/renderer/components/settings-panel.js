@@ -457,12 +457,17 @@ export class SettingsPanel {
     managedUsageSummary(usage) {
         if (!usage) return 'N/A';
         if (usage.source !== 'dynamic_free') {
-            return `${this.formatDuration(usage.audioSecondsUsed)}/${this.formatDuration(usage.audioSecondsLimit)} used • ${usage.requestCountUsed}/${usage.requestCountLimit} reqs`;
+            return `${this.formatDuration(usage.audioSecondsUsed)}/${this.formatDuration(usage.audioSecondsLimit)} used • ${usage.requestCountUsed}/${usage.requestCountLimit} processing calls`;
         }
 
         const remaining = Math.max(0, Number(usage.audioSecondsLimit || 0) - Number(usage.audioSecondsUsed || 0));
         const floor = this.formatDuration(usage.guaranteedFloorSeconds || 300);
-        return `${this.formatDuration(remaining)} left today • ${floor} guaranteed • ${this.formatDuration(usage.audioSecondsLimit)} quiet-pool limit`;
+        return `${this.formatDuration(remaining)} bonus left today • ${floor} guaranteed • ${this.formatDuration(usage.audioSecondsLimit)} available`;
+    }
+
+    accountActivitySummary(activity) {
+        if (!activity) return 'Refresh account to load global activity';
+        return `${activity.recordingsToday || 0} recordings • ${this.formatDuration(activity.audioSecondsToday)} audio • ${activity.processingCallsToday || 0} processing calls`;
     }
 
     updateLocalFallbackVisibility() {
@@ -630,6 +635,7 @@ export class SettingsPanel {
                 `;
             } else {
                 const managedUsage = state?.capabilities?.managed?.usage;
+                const accountActivity = state?.accountActivity;
                 const byokText = state.capabilities?.byok?.available 
                     ? `Available (•••• ${state.capabilities.byok.last4 || 'bMRY'})` 
                     : (selectedMode === 'byok' ? 'Not saved — Add key above' : 'Not saved');
@@ -658,7 +664,11 @@ export class SettingsPanel {
                             <span class="snapshot-value">${managedStatus}</span>
                         </div>
                         <div class="snapshot-row">
-                            <span class="snapshot-label">Managed Usage</span>
+                            <span class="snapshot-label">Account Today</span>
+                            <span class="snapshot-value">${this.accountActivitySummary(accountActivity)}</span>
+                        </div>
+                        <div class="snapshot-row">
+                            <span class="snapshot-label">Managed Quota</span>
                             <span class="snapshot-value">${this.managedUsageSummary(managedUsage)}</span>
                         </div>
                         <div class="snapshot-row">

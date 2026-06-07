@@ -23,7 +23,7 @@ import {
   saveAccountGroqKey,
   signOutStoredAccount,
 } from '../src/account/account-service';
-import { describeManagedQuota } from '../src/account/managed-quota-copy';
+import { describeAccountActivity, describeManagedQuota } from '../src/account/managed-quota-copy';
 import { Colors, Spacing, Typography } from '../src/constants/Theme';
 import {
   deleteGroqApiKey,
@@ -679,7 +679,12 @@ export default function SettingsScreen() {
                 </View>
 
                 <View style={styles.metaRow}>
-                  <Text style={[styles.label, { color: theme.textDim }]}>Managed</Text>
+                  <Text style={[styles.label, { color: theme.textDim }]}>Account today</Text>
+                  <Text style={[styles.statusMsg, { color: theme.textDim }]}>{describeAccountActivity(snapshot)}</Text>
+                </View>
+
+                <View style={styles.metaRow}>
+                  <Text style={[styles.label, { color: theme.textDim }]}>Managed quota</Text>
                   <Text style={[styles.statusMsg, { color: theme.textDim }]}>{describeManagedQuota(snapshot)}</Text>
                 </View>
 
