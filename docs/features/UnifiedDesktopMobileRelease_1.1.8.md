@@ -50,12 +50,12 @@ No database schema changes.
 1. [x] Align desktop and mobile versions to `1.1.8`.
 2. [x] Increase Android fallback `versionCode` from `16` to `17`.
 3. [x] Run release verification checks from `docs/release-process.md`.
-4. [ ] Commit and push the version/documentation changes.
-5. [ ] Create and push tag `v1.1.8`.
-6. [ ] Wait for GitHub Actions desktop release artifacts.
-7. [ ] Trigger the EAS Android APK build from `apps/mobile`.
-8. [ ] Download the finished APK and attach it to GitHub Release `v1.1.8`.
-9. [ ] Confirm the release contains desktop artifacts and Android APK.
+4. [x] Commit and push the version/documentation changes.
+5. [x] Create and push tag `v1.1.8`.
+6. [x] Wait for GitHub Actions desktop release artifacts.
+7. [x] Trigger the EAS Android APK build from `apps/mobile`.
+8. [x] Download the finished APK and attach it to GitHub Release `v1.1.8`.
+9. [x] Confirm the release contains desktop artifacts and Android APK.
 
 ## Regression Checks
 
@@ -73,6 +73,17 @@ No database schema changes.
 - `pnpm build:core`: passed.
 - `pnpm build:website`: passed.
 - `pnpm build:ci`: passed and produced a verified Windows desktop package locally for smoke testing.
+
+## Release Results
+
+- Release URL: `https://github.com/JStaRFilms/Koe/releases/tag/v1.1.8`
+- Release tag commit: `c3bc9697a077dce7e7cc39b94177785fcbbe1b5d`
+- GitHub Actions release run: `27078508497`, conclusion `success`
+- EAS Android build: `5cbde83e-21e3-4b05-a0d6-c4df0ee38645`, status `FINISHED`
+- EAS reported app version: `1.1.8`
+- EAS reported Android build version: `4`
+- Uploaded APK asset: `koe-android-v1.1.8.apk`
+- Confirmed desktop assets: `Koe-1.1.8-win-x64.exe`, `Koe-1.1.8-win-x64.exe.blockmap`, `latest.yml`, `Koe-1.1.8-mac-universal.dmg`, `Koe-1.1.8-mac-universal.zip`, `latest-mac.yml`
 
 ## Approval Gate
 
