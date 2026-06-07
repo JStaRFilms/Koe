@@ -19,7 +19,7 @@ const jsonProcessSchema = z.object({
   audioBase64: z.string().min(1),
   audioMimeType: z.string().trim().optional(),
   requestId: z.string().uuid(),
-  clientSessionId: z.string().trim().optional().nullable(),
+  clientSessionId: z.string().trim().max(200).optional().nullable(),
   mode: accountModeSchema.optional(),
   language: z.string().trim().optional(),
   model: transcribeModelSchema.optional(),
@@ -46,6 +46,11 @@ function wantsNdjson(request: Request) {
   return (request.headers.get("accept") || "").includes("application/x-ndjson");
 }
 
+function normalizeClientSessionId(value: unknown) {
+  const trimmed = String(value || "").trim();
+  return trimmed ? trimmed.slice(0, 200) : null;
+}
+
 function ndjsonResponse(messages: unknown[]) {
   return new Response(messages.map((message) => `${JSON.stringify(message)}\n`).join(""), {
     headers: {
@@ -70,7 +75,7 @@ async function parseProcessInput(request: Request): Promise<ProcessInput> {
     return {
       audio: new Blob([audioBytes], { type: body.audioMimeType || "audio/m4a" }),
       requestId: body.requestId,
-      clientSessionId: body.clientSessionId?.trim() || null,
+      clientSessionId: normalizeClientSessionId(body.clientSessionId),
       requestedMode: body.mode,
       language: (body.language || "auto").trim().slice(0, 24) || "auto",
       model: body.model || "whisper-large-v3-turbo",
@@ -91,7 +96,7 @@ async function parseProcessInput(request: Request): Promise<ProcessInput> {
   return {
     audio,
     requestId: z.string().uuid().parse(String(form.get("requestId") || "")),
-    clientSessionId: String(form.get("clientSessionId") || "").trim() || null,
+    clientSessionId: normalizeClientSessionId(form.get("clientSessionId")),
     requestedMode: requestedModeRaw ? accountModeSchema.parse(String(requestedModeRaw)) : undefined,
     language: String(form.get("language") || "auto").trim().slice(0, 24) || "auto",
     model: transcribeModelSchema.parse(String(form.get("model") || "whisper-large-v3-turbo")),
@@ -139,9 +144,10 @@ export async function POST(request: Request) {
       mode: "byok" | "managed";
       raw_text: string;
       refined_text: string | null;
+      client_session_id: string | null;
     }>(
       await sql()`
-        SELECT id, mode, raw_text, refined_text
+        SELECT id, mode, raw_text, refined_text, client_session_id
         FROM transcript_history
         WHERE user_id = ${auth.user.id} AND request_id = ${requestId}
         LIMIT 1
@@ -149,8 +155,17 @@ export async function POST(request: Request) {
     );
 
     if (existing) {
+      if (clientSessionId && !existing.client_session_id) {
+        await sql()`
+          UPDATE transcript_history
+          SET client_session_id = ${clientSessionId}
+          WHERE user_id = ${auth.user.id} AND request_id = ${requestId} AND client_session_id IS NULL
+        `;
+      }
+
       const payload = {
         requestId,
+        clientSessionId: existing.client_session_id || clientSessionId,
         historyId: existing.id,
         mode: existing.mode,
         rawText: existing.raw_text,
@@ -213,6 +228,7 @@ export async function POST(request: Request) {
 
       const payload = {
         requestId,
+        clientSessionId,
         historyId: historyId || null,
         mode: resolvedMode.mode,
         rawText,

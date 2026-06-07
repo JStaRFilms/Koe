@@ -90,13 +90,25 @@ cd apps/mobile
 pnpm dlx eas-cli build --profile release-apk --platform android
 ```
 
-When the build finishes, get the APK URL from EAS, download it, and attach it to the matching GitHub Release.
+When the build finishes, get the APK URL from EAS, download it, verify the APK metadata against the previous Android release, and attach it to the matching GitHub Release.
 
 Preferred APK asset name:
 
 ```text
 koe-android-v1.1.6.apk
 ```
+
+Before uploading the APK, verify that Android can treat it as an in-place update:
+
+```bash
+# Replace paths with the previous and new release APKs.
+aapt dump badging koe-android-v1.1.5.apk | head -1
+aapt dump badging koe-android-v1.1.6.apk | head -1
+apksigner verify --print-certs koe-android-v1.1.5.apk | grep 'SHA-256 digest'
+apksigner verify --print-certs koe-android-v1.1.6.apk | grep 'SHA-256 digest'
+```
+
+The package name and signing certificate digest must match, and the new APK `versionCode` must be greater than the installed APK's `versionCode`. If users must uninstall first, first verify they installed the official previous APK and not a locally signed/dev build or an APK with a higher/equal `versionCode`.
 
 ### Android Release Steps
 

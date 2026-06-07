@@ -75,6 +75,8 @@ export type Snapshot = {
     requestId: string;
     requestIds?: string[];
     clientSessionId?: string | null;
+    devicePlatform?: "desktop" | "ios" | "android" | "web" | null;
+    deviceLabel?: string | null;
     segmentCount?: number;
     mode: AccountMode;
     provider?: string;

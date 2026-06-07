@@ -71,7 +71,7 @@ function getExtraString(key: string): string | undefined {
 
 function getCurrentVersionName() {
   const constantsWithNativeVersion = Constants as typeof Constants & { nativeAppVersion?: string | null };
-  return Constants.expoConfig?.version ?? constantsWithNativeVersion.nativeAppVersion ?? '0.0.0';
+  return constantsWithNativeVersion.nativeAppVersion ?? Constants.expoConfig?.version ?? '0.0.0';
 }
 
 function getCurrentVersionCode() {

@@ -9,6 +9,15 @@ type HistoryPanelProps = {
   onCopyEntry: (id: string, text: string) => void;
 };
 
+function getHistorySourceLabel(item: Snapshot["recentHistory"][number]) {
+  if (item.devicePlatform === "desktop") return "desktop";
+  if (item.devicePlatform === "android" || item.devicePlatform === "ios") return "mobile";
+  if (item.devicePlatform === "web") return "browser";
+  if (item.clientSessionId?.startsWith("mobile-")) return "mobile";
+  if (item.clientSessionId?.startsWith("web-")) return "browser";
+  return "unknown source";
+}
+
 export function HistoryPanel({ history, copiedEntryId, onCopyEntry }: HistoryPanelProps) {
   const [textModes, setTextModes] = useState<Record<string, "refined" | "raw">>({});
 
@@ -25,7 +34,7 @@ export function HistoryPanel({ history, copiedEntryId, onCopyEntry }: HistoryPan
             return (
               <div key={item.id} className="border-raw bg-zinc/10 p-4">
                 <div className="flex items-center justify-between gap-3 mb-2 text-xs uppercase text-muted">
-                  <span>{item.mode}</span>
+                  <span>{item.mode} / {getHistorySourceLabel(item)}</span>
                   <span>{formatDate(item.createdAt)}</span>
                 </div>
                 <div className="flex flex-wrap items-center justify-between gap-2 mb-3">

@@ -93,6 +93,7 @@ export async function recordTranscriptHistory(args: {
       ${args.rawText}, ${args.refinedText || null}, ${Math.max(0, args.audioSeconds || 0)}
     )
     ON CONFLICT (user_id, request_id) DO UPDATE SET
+      client_session_id = COALESCE(transcript_history.client_session_id, EXCLUDED.client_session_id),
       refined_text = COALESCE(EXCLUDED.refined_text, transcript_history.refined_text)
     RETURNING id
   `;

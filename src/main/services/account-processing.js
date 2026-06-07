@@ -139,7 +139,7 @@ async function processViaAuthenticatedBackend(taskItem, processingContext) {
 
     const multipart = buildMultipartBody({
         requestId: taskItem.requestId || randomUUID(),
-        clientSessionId: taskItem.clientSessionId || taskItem.sessionId || 'desktop-session',
+        clientSessionId: taskItem.clientSessionId || taskItem.sessionId || null,
         language: taskItem.language || 'auto',
         model: taskItem.model || 'whisper-large-v3-turbo',
         promptStyle: taskItem.promptStyle || 'Clean',
@@ -188,7 +188,7 @@ async function refineViaAuthenticatedBackend(rawText, options, processingContext
         }),
         body: JSON.stringify({
             requestId: options.requestId || randomUUID(),
-            clientSessionId: String(options.clientSessionId || options.sessionId || 'desktop-session'),
+            ...(options.clientSessionId || options.sessionId ? { clientSessionId: String(options.clientSessionId || options.sessionId) } : {}),
             mode: options.mode || undefined,
             rawText,
             promptStyle: options.promptStyle || 'Clean',

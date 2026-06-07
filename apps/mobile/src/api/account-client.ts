@@ -75,6 +75,11 @@ export interface AccountSnapshot {
   recentHistory: Array<{
     id: string;
     requestId: string;
+    requestIds?: string[];
+    clientSessionId?: string | null;
+    devicePlatform?: AccountPlatform | 'desktop' | null;
+    deviceLabel?: string | null;
+    segmentCount?: number;
     mode: AccountMode;
     provider: string;
     model: string | null;

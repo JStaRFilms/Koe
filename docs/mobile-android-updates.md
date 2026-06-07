@@ -47,6 +47,7 @@ Manifest shape:
 
 ## Important constraints
 
-- Every APK update must be signed with the same Android signing key as the installed app.
+- Every APK update must use the same Android package name and be signed with the same Android signing key as the installed app.
+- Every APK update must have a higher Android `versionCode` than the installed app. With EAS remote versioning, validate the built APK metadata before upload instead of relying only on the local fallback `android.versionCode`.
 - Android does not allow silent sideload updates; the system installer prompt is required.
 - This does not run in Expo Go. Test with a standalone/dev-client APK.

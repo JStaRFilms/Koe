@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccountPanel } from "./AccountPanel";
 import { AuthPanel } from "./AuthPanel";
 import { HistoryPanel } from "./HistoryPanel";
@@ -14,9 +14,14 @@ import { useWebRecorder } from "./hooks/useWebRecorder";
 import { AccountMode, AppPhase, AuthMode, AuthResponse, Snapshot, WebAppTab } from "./types";
 import { authHeaders, getInstallationId, getStoredToken, readApiError, setStoredToken } from "./webAppUtils";
 
+function createWebClientSessionId() {
+  return `web-${crypto.randomUUID()}`;
+}
+
 export function WebKoeApp() {
   const [token, setToken] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const activeClientSessionIdRef = useRef<string | null>(null);
   const [activeTab, setActiveTab] = useState<WebAppTab>("record");
   const [authMode, setAuthMode] = useState<AuthMode>("signin");
   const [email, setEmail] = useState("");
@@ -68,10 +73,13 @@ export function WebKoeApp() {
     setPhase("processing");
     setStatus("Processing through your signed-in Koe account...");
     try {
+      const clientSessionId = activeClientSessionIdRef.current || createWebClientSessionId();
+      activeClientSessionIdRef.current = clientSessionId;
+
       const form = new FormData();
       form.append("audio", audioBlob, "koe-web.webm");
       form.append("requestId", crypto.randomUUID());
-      form.append("clientSessionId", `web-${Date.now()}`);
+      form.append("clientSessionId", clientSessionId);
       form.append("audioSeconds", String(audioSeconds));
       form.append("mode", snapshot.user.defaultMode);
       form.append("language", snapshot.settings.language || "auto");
@@ -92,11 +100,14 @@ export function WebKoeApp() {
     } catch (error) {
       setPhase("error");
       setStatus(error instanceof Error ? error.message : "Processing failed.");
+    } finally {
+      activeClientSessionIdRef.current = null;
     }
   }, [loadSnapshot, snapshot, token]);
 
   const recorder = useWebRecorder({
     onBeforeStart: () => {
+      activeClientSessionIdRef.current = createWebClientSessionId();
       setTranscript("");
       setCopyState("");
       setPhase("recording");
