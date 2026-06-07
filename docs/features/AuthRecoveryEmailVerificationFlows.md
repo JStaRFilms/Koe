@@ -62,6 +62,7 @@ The flows use existing fields/tables:
 - Verification resend requires a valid signed-in session.
 - Local/dev environments without `RESEND_API_KEY` surface a clear "email not configured" message.
 - Resend provider errors must not be reported to clients as successful delivery.
+- Reopening or retrying an already-consumed verification link must keep showing success while the token is unexpired.
 - Mobile auth panel does not overflow.
 - Account tab remains usable on mobile.
 
@@ -72,4 +73,5 @@ The flows use existing fields/tables:
 - [x] Forgot password request UI added.
 - [x] Verification resend UI added.
 - [x] Email delivery helper checks Resend `error` responses before reporting sent.
+- [x] Verification completion is idempotent for already-consumed unexpired email verification tokens.
 - [x] Type-check, lint, build, and browser checks completed.

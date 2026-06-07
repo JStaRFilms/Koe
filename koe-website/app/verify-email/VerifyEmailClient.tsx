@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type Status = "checking" | "success" | "error";
 
 export function VerifyEmailClient() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token") || "";
+  const verifiedTokenRef = useRef<string | null>(null);
   const [status, setStatus] = useState<Status>("checking");
   const [message, setMessage] = useState("Confirming your Koe account...");
 
@@ -21,6 +22,10 @@ export function VerifyEmailClient() {
         setMessage("Missing verification token. Request a new verification email from the app.");
         return;
       }
+      if (verifiedTokenRef.current === token) {
+        return;
+      }
+      verifiedTokenRef.current = token;
 
       try {
         const response = await fetch("/api/v1/auth/verify-email", {

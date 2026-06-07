@@ -56,6 +56,30 @@ export async function consumeAuthEmailToken(token: string, type: AuthEmailTokenT
   return { userId: row.user_id, expiresAt: toIso(row.expires_at) };
 }
 
+export async function readAuthEmailToken(token: string, type: AuthEmailTokenType) {
+  const tokenHash = hashToken(token.trim());
+  const row = one<{ id: string; user_id: string; expires_at: string; used_at: string | null }>(
+    await sql()`
+      SELECT id, user_id, expires_at, used_at
+      FROM auth_email_tokens
+      WHERE token_hash = ${tokenHash}
+        AND type = ${type}
+      LIMIT 1
+    `,
+  );
+
+  if (!row) {
+    return null;
+  }
+
+  return {
+    id: row.id,
+    userId: row.user_id,
+    expiresAt: toIso(row.expires_at),
+    usedAt: toIso(row.used_at),
+  };
+}
+
 export async function revokeUserSessions(userId: string) {
   await sql()`
     UPDATE auth_sessions
