@@ -61,6 +61,7 @@ The flows use existing fields/tables:
 - Password reset request does not reveal whether an email exists.
 - Verification resend requires a valid signed-in session.
 - Local/dev environments without `RESEND_API_KEY` surface a clear "email not configured" message.
+- Resend provider errors must not be reported to clients as successful delivery.
 - Mobile auth panel does not overflow.
 - Account tab remains usable on mobile.
 
@@ -70,4 +71,5 @@ The flows use existing fields/tables:
 - [x] Public user response includes email verification status.
 - [x] Forgot password request UI added.
 - [x] Verification resend UI added.
+- [x] Email delivery helper checks Resend `error` responses before reporting sent.
 - [x] Type-check, lint, build, and browser checks completed.

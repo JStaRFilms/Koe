@@ -1,4 +1,21 @@
 import { Resend } from "resend";
+import { ApiError } from "./errors";
+
+type EmailPayload = Parameters<Resend["emails"]["send"]>[0];
+
+async function sendEmail(resend: Resend, payload: EmailPayload) {
+  const result = await resend.emails.send(payload);
+
+  if (result.error || !result.data?.id) {
+    console.error("[Email] Resend delivery failed", {
+      code: result.error?.name,
+      statusCode: result.error?.statusCode,
+    });
+    throw new ApiError("UPSTREAM_ERROR", "Email provider rejected the message.", 502, true);
+  }
+
+  return result.data.id;
+}
 
 function appUrl() {
   return (process.env.KOE_APP_URL || process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/$/, "");
@@ -76,7 +93,7 @@ export async function sendVerificationEmail(args: { email: string; token: string
   }
 
   const url = `${appUrl()}/verify-email?token=${encodeURIComponent(args.token)}`;
-  await resend.emails.send({
+  const id = await sendEmail(resend, {
     from: fromAddress(),
     to: args.email,
     subject: "Verify your Koe account",
@@ -91,7 +108,7 @@ export async function sendVerificationEmail(args: { email: string; token: string
     text: `Verify your Koe account: ${url}`,
   });
 
-  return { sent: true as const };
+  return { sent: true as const, id };
 }
 
 export async function sendPasswordResetEmail(args: { email: string; token: string }) {
@@ -101,7 +118,7 @@ export async function sendPasswordResetEmail(args: { email: string; token: strin
   }
 
   const url = `${appUrl()}/reset-password?token=${encodeURIComponent(args.token)}`;
-  await resend.emails.send({
+  const id = await sendEmail(resend, {
     from: fromAddress(),
     to: args.email,
     subject: "Reset your Koe password",
@@ -116,5 +133,5 @@ export async function sendPasswordResetEmail(args: { email: string; token: strin
     text: `Reset your Koe password: ${url}`,
   });
 
-  return { sent: true as const };
+  return { sent: true as const, id };
 }
