@@ -140,7 +140,7 @@ async function refineText(rawText, options) {
     }
 
     const stylePrompt = resolveEnhancementPrompt(options.promptStyle || 'Clean', options.customPrompt || '');
-    const systemPrompt = `${REFINEMENT_GUARDRAILS} ${stylePrompt} Before you finish, check the final text and remove any transcript tags if any remain.`.trim();
+    const systemPrompt = `${REFINEMENT_GUARDRAILS} ${stylePrompt}`.trim();
 
     await waitForRequestSlot();
     postMessage('usage-recorded', {

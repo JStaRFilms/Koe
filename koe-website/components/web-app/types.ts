@@ -72,7 +72,13 @@ export type Snapshot = {
   };
   recentHistory: Array<{
     id: string;
+    requestId: string;
+    requestIds?: string[];
+    clientSessionId?: string | null;
+    segmentCount?: number;
     mode: AccountMode;
+    provider?: string;
+    model: string | null;
     rawText: string;
     refinedText: string | null;
     audioSeconds: number;

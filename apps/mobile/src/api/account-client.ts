@@ -178,6 +178,7 @@ interface ProcessAudioInput {
   session: StoredAccountSession;
   audioUri: string;
   requestId: string;
+  clientSessionId?: string;
   mode?: AccountMode;
   language?: string;
   model?: string;
@@ -190,6 +191,7 @@ interface ProcessAudioInput {
 interface RefineTranscriptInput {
   session: StoredAccountSession;
   requestId: string;
+  clientSessionId?: string;
   rawText: string;
   mode?: AccountMode;
   promptStyle?: string;
@@ -564,6 +566,7 @@ export async function processAccountAudio(input: ProcessAudioInput): Promise<Acc
         audioBase64,
         audioMimeType: inferAudioMimeType(input.audioUri),
         requestId: input.requestId,
+        clientSessionId: input.clientSessionId,
         mode: input.mode,
         language: input.language,
         model: input.model,
@@ -585,6 +588,7 @@ export async function refineAccountTranscript(input: RefineTranscriptInput): Pro
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         requestId: input.requestId,
+        clientSessionId: input.clientSessionId,
         rawText: input.rawText,
         mode: input.mode,
         promptStyle: input.promptStyle,

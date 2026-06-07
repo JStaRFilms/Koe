@@ -118,7 +118,7 @@ async function enhance(rawText, promptStyle = 'Clean', customPromptOverride = nu
     }
 
     const stylePrompt = resolveEnhancementPrompt(promptStyle, customPrompt);
-    const systemPrompt = `${REFINEMENT_GUARDRAILS} ${stylePrompt} Before you finish, check the final text and remove any transcript tags if any remain.`.trim();
+    const systemPrompt = `${REFINEMENT_GUARDRAILS} ${stylePrompt}`.trim();
 
     try {
         const response = await fetch(GROQ_CHAT_URL, {

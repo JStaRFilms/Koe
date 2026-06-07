@@ -458,6 +458,7 @@ export function useRecordingPipeline() {
             apiKey,
             language: settings.language === 'auto' ? undefined : settings.language,
             model: settings.model,
+            sessionId: currentRetryState.sessionId,
             audioSeconds: Math.max(1, Math.round(chunkDurationMillis / 1000)),
             onStage: (nextStage) =>
               setStatus({
@@ -520,6 +521,7 @@ export function useRecordingPipeline() {
               apiKey,
               promptStyle: settings.promptStyle,
               customPrompt: settings.customPrompt,
+              sessionId: currentRetryState.sessionId,
               onStage: (nextStage) =>
                 setStatus({
                   stage: 'processing',

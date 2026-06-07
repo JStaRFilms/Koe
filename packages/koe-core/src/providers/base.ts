@@ -12,6 +12,7 @@ export interface ProviderOptions {
     promptStyle?: string;
     customPrompt?: string;
     audioSeconds?: number;
+    sessionId?: string;
     onStage?: (stage: { stage: string; label: string; progress?: number }) => void;
 }
 

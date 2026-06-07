@@ -90,6 +90,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
           session: accountSession,
           audioUri,
           requestId: createRequestId(),
+          clientSessionId: options.sessionId,
           language: options.language,
           model: options.model || DEFAULT_WHISPER_MODEL,
           enhanceText: false,
@@ -159,6 +160,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
         const response = await refineAccountTranscript({
           session: accountSession,
           requestId: createRequestId(),
+          clientSessionId: options.sessionId,
           rawText: trimmed,
           promptStyle: options.promptStyle,
           customPrompt: options.customPrompt,
@@ -176,7 +178,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
     }
 
     const prompt = resolveEnhancementPrompt(options.promptStyle, options.customPrompt);
-    const systemPrompt = `${REFINEMENT_GUARDRAILS} ${prompt} Before you finish, check the final text and remove any transcript tags if any remain.`.trim();
+    const systemPrompt = `${REFINEMENT_GUARDRAILS} ${prompt}`.trim();
 
     options.onStage?.({
       stage: 'refining',

@@ -8,6 +8,64 @@ import { handleApiError } from "@/lib/server/errors";
 
 export const runtime = "nodejs";
 
+type HistoryRow = {
+  id: string;
+  request_id: string;
+  client_session_id: string | null;
+  mode: "byok" | "managed";
+  provider: string;
+  model: string | null;
+  raw_text: string;
+  refined_text: string | null;
+  audio_seconds: string | number | null;
+  created_at: string;
+};
+
+function compactTranscript(parts: Array<string | null | undefined>) {
+  return parts
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function groupHistoryRows(rows: HistoryRow[]) {
+  const groups = new Map<string, HistoryRow[]>();
+
+  rows.forEach((row) => {
+    const key = row.client_session_id?.trim() || String(row.request_id);
+    const group = groups.get(key) || [];
+    group.push(row);
+    groups.set(key, group);
+  });
+
+  return Array.from(groups.entries()).slice(0, 10).map(([key, groupRows]) => {
+    const latest = groupRows[0];
+    const orderedRows = groupRows.slice().reverse();
+    const rawText = compactTranscript(orderedRows.map((row) => row.raw_text));
+    const hasRefinedText = orderedRows.some((row) => String(row.refined_text || "").trim());
+    const refinedText = hasRefinedText
+      ? compactTranscript(orderedRows.map((row) => row.refined_text || row.raw_text))
+      : null;
+
+    return {
+      id: key,
+      requestId: String(latest.request_id),
+      requestIds: orderedRows.map((row) => String(row.request_id)),
+      clientSessionId: latest.client_session_id || null,
+      segmentCount: groupRows.length,
+      mode: latest.mode,
+      provider: latest.provider,
+      model: latest.model,
+      rawText,
+      refinedText,
+      audioSeconds: orderedRows.reduce((total, row) => total + Number(row.audio_seconds || 0), 0),
+      createdAt: toIso(latest.created_at),
+    };
+  });
+}
+
 async function getBillingSnapshot(userId: string) {
   try {
     await applyDuePlanChanges(userId);
@@ -44,11 +102,11 @@ export async function GET(request: Request) {
     );
 
     const history = await db`
-      SELECT id, request_id, mode, provider, model, raw_text, refined_text, audio_seconds, created_at
+      SELECT id, request_id, client_session_id, mode, provider, model, raw_text, refined_text, audio_seconds, created_at
       FROM transcript_history
       WHERE user_id = ${auth.user.id}
       ORDER BY created_at DESC
-      LIMIT 10
+      LIMIT 100
     `;
 
     const capabilities = await getCapabilities(auth.user.id);
@@ -76,17 +134,7 @@ export async function GET(request: Request) {
         model: settings?.model || "whisper-large-v3-turbo",
         updatedAt: toIso(settings?.updated_at),
       },
-      recentHistory: history.map((item) => ({
-        id: String(item.id),
-        requestId: String(item.request_id),
-        mode: item.mode,
-        provider: item.provider,
-        model: item.model,
-        rawText: item.raw_text,
-        refinedText: item.refined_text,
-        audioSeconds: Number(item.audio_seconds || 0),
-        createdAt: toIso(item.created_at),
-      })),
+      recentHistory: groupHistoryRows(history as HistoryRow[]),
       policy: { mobilePurchaseUiEnabled: false },
     });
   } catch (error) {
