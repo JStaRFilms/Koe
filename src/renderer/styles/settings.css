@@ -279,7 +279,24 @@
     transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
+}
+
+.section-nav-btn svg {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+}
+
+.section-nav-btn:hover svg {
+    opacity: 0.9;
+}
+
+.section-nav-btn.active svg {
+    opacity: 1;
+    color: var(--koe-accent);
 }
 
 .section-nav-btn:hover {
@@ -350,21 +367,20 @@
 }
 
 .section-header {
-    font-size: 13px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--koe-text);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 0.2px;
     border-bottom: 1px solid var(--koe-border);
-    padding-bottom: 8px;
+    padding-bottom: 10px;
     margin-bottom: 4px;
 }
 
 .section-description {
     color: var(--koe-text-muted);
     font-size: 12px;
-    line-height: 1.5;
-    margin: -12px 0 4px 0;
+    line-height: 1.6;
+    margin: -8px 0 4px 0;
 }
 
 /* Form Controls */
@@ -375,11 +391,10 @@
 }
 
 .setting-group label {
-    font-size: 11px;
+    font-size: 12px;
     color: var(--koe-text-muted);
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
 }
 
 .setting-group label small.input-help {
@@ -1174,6 +1189,212 @@ select option {
     height: 8px;
 }
 
+
+/* ─── Fieldset Grouping ──────────────────────────────────────── */
+.settings-fieldset {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 16px;
+    border: 1px solid var(--koe-border);
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .settings-fieldset {
+    background: rgba(0, 0, 0, 0.015);
+    border-color: rgba(0, 0, 0, 0.06);
+}
+
+.fieldset-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--koe-text-dim);
+    margin-bottom: 2px;
+}
+
+/* ─── Action Button Groups ───────────────────────────────────── */
+.action-group-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.action-group-primary {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.action-group-secondary {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.primary-btn.compact {
+    padding: 9px 20px;
+    font-size: 12px;
+}
+
+.secondary-btn.subtle {
+    background: transparent;
+    border-color: transparent;
+    color: var(--koe-text-muted);
+    padding: 7px 10px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.secondary-btn.subtle:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--koe-border);
+    color: var(--koe-text);
+}
+
+[data-theme="light"] .secondary-btn.subtle:hover {
+    background: rgba(0, 0, 0, 0.04);
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.billing-btn {
+    align-self: flex-start;
+}
+
+/* ─── Theme Picker ───────────────────────────────────────────── */
+.theme-picker {
+    display: flex;
+    gap: 12px;
+}
+
+.theme-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.theme-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.theme-option-swatch {
+    width: 80px;
+    height: 56px;
+    border-radius: 10px;
+    border: 2px solid var(--koe-border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-option-swatch:hover {
+    border-color: var(--koe-border-highlight);
+    transform: translateY(-1px);
+}
+
+.theme-option input[type="radio"]:checked + .theme-option-swatch {
+    border-color: var(--koe-accent);
+    box-shadow: 0 0 0 2px var(--koe-accent-glow);
+}
+
+.theme-option span {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--koe-text-muted);
+    transition: color 0.2s ease;
+}
+
+.theme-option input[type="radio"]:checked ~ span {
+    color: var(--koe-accent);
+    font-weight: 600;
+}
+
+.dark-swatch {
+    background: #0a0a0f;
+    color: #64647a;
+}
+
+.light-swatch {
+    background: #f5f5f7;
+    color: #6c6c7a;
+}
+
+.system-swatch {
+    background: linear-gradient(135deg, #0a0a0f 50%, #f5f5f7 50%);
+    color: #64647a;
+}
+
+[data-theme="light"] .dark-swatch {
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .light-swatch {
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .system-swatch {
+    border-color: rgba(0, 0, 0, 0.12);
+}
+
+/* ─── Account Snapshot Collapsible ───────────────────────────── */
+.account-snapshot-details {
+    border: 1px solid var(--koe-border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.account-snapshot-details summary {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--koe-text-muted);
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.08);
+    transition: all 0.2s ease;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.account-snapshot-details summary::before {
+    content: "▸";
+    font-size: 10px;
+    transition: transform 0.2s ease;
+}
+
+.account-snapshot-details[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.account-snapshot-details summary:hover {
+    color: var(--koe-text);
+    background: rgba(0, 0, 0, 0.12);
+}
+
+[data-theme="light"] .account-snapshot-details summary {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .account-snapshot-details summary:hover {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.account-snapshot-details .account-snapshot {
+    border: none;
+    border-radius: 0;
+    border-top: 1px solid var(--koe-border);
+}
 
 /* ==========================================================================
    Responsive Adaptations

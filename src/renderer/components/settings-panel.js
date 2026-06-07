@@ -179,7 +179,9 @@ export class SettingsPanel {
     updateSaveButtonState() {
         if (this.btnSave) {
             this.btnSave.disabled = !this.hasDirtySettings || this.isSavingSettings;
-            this.btnSave.textContent = this.isSavingSettings ? 'Saving...' : (this.hasDirtySettings ? 'Save changes' : 'No changes');
+            const checkIcon = '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+            const label = this.isSavingSettings ? 'Saving…' : (this.hasDirtySettings ? 'Save changes' : 'No changes');
+            this.btnSave.innerHTML = `${checkIcon} ${label}`;
         }
     }
 
@@ -489,7 +491,10 @@ export class SettingsPanel {
         }
 
         if (this.localFallbackNavButton) {
-            this.localFallbackNavButton.textContent = authenticated ? 'Fallback key' : 'Local BYOK';
+            const svgIcon = this.localFallbackNavButton.querySelector('svg');
+            const iconHTML = svgIcon ? svgIcon.outerHTML : '';
+            const label = authenticated ? 'Fallback key' : 'Local BYOK';
+            this.localFallbackNavButton.innerHTML = `${iconHTML}\n                                ${label}`;
         }
     }
 

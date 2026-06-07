@@ -21,6 +21,7 @@ class SettingsWindow {
 
         this.setupTabSwitching();
         this.setupSettingsSectionNav();
+        this.setupThemePicker();
         this.setupWindowControls();
         this.setupKeyboardShortcuts();
         this.initializePanels();
@@ -83,6 +84,40 @@ class SettingsWindow {
         } else if (navButtons[0]) {
             switchToSection(navButtons[0].dataset.section);
         }
+    }
+
+    /**
+     * Wire the visual theme picker radios ↔ hidden <select> for backwards compat
+     */
+    setupThemePicker() {
+        const themeSelect = document.getElementById('theme');
+        const radios = document.querySelectorAll('input[name="theme-radio"]');
+
+        if (!themeSelect || radios.length === 0) return;
+
+        // Sync initial select value → radios
+        const syncRadioFromSelect = () => {
+            const val = themeSelect.value;
+            radios.forEach(r => { r.checked = r.value === val; });
+        };
+
+        // On radio change → update hidden select + fire change event
+        radios.forEach(radio => {
+            radio.addEventListener('change', () => {
+                themeSelect.value = radio.value;
+                themeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+            });
+        });
+
+        // Watch for programmatic select changes (e.g., from settings-panel.js loadSettings)
+        const observer = new MutationObserver(syncRadioFromSelect);
+        observer.observe(themeSelect, { attributes: true, childList: true });
+
+        // Also listen for change events from code
+        themeSelect.addEventListener('change', syncRadioFromSelect);
+
+        // Initial sync
+        syncRadioFromSelect();
     }
 
     /**

@@ -86,18 +86,37 @@
                 <div class="settings-body" id="settings-scroll-region">
                     <div class="settings-workspace">
                         <aside class="settings-nav" aria-label="Settings sections">
-                            <button class="section-nav-btn active" data-section="account-section">Account</button>
-                            <button class="section-nav-btn" data-section="transcription-section">Transcription</button>
-                            <button class="section-nav-btn" data-section="local-fallback-section" id="local-fallback-nav-btn">Local fallback</button>
-                            <button class="section-nav-btn" data-section="appearance-section">Appearance</button>
-                            <button class="section-nav-btn" data-section="shortcuts-section">Shortcuts</button>
-                            <button class="section-nav-btn" data-section="advanced-section">Advanced</button>
+                            <button class="section-nav-btn active" data-section="account-section">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                Account
+                            </button>
+                            <button class="section-nav-btn" data-section="transcription-section">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>
+                                Transcription
+                            </button>
+                            <button class="section-nav-btn" data-section="local-fallback-section" id="local-fallback-nav-btn">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+                                Local BYOK
+                            </button>
+                            <button class="section-nav-btn" data-section="appearance-section">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                                Appearance
+                            </button>
+                            <button class="section-nav-btn" data-section="shortcuts-section">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2" ry="2"/><line x1="6" y1="8" x2="6.01" y2="8"/><line x1="10" y1="8" x2="10.01" y2="8"/><line x1="14" y1="8" x2="14.01" y2="8"/><line x1="18" y1="8" x2="18.01" y2="8"/><line x1="8" y1="12" x2="8.01" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="16" y1="12" x2="16.01" y2="12"/><line x1="7" y1="16" x2="17" y2="16"/></svg>
+                                Shortcuts
+                            </button>
+                            <button class="section-nav-btn" data-section="advanced-section">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                                Advanced
+                            </button>
                         </aside>
 
                         <main class="settings-content">
+                            <!-- ═══════ ACCOUNT ═══════ -->
                             <section class="settings-section-card active" id="account-section">
                                 <div class="section-header">Account</div>
-                                <p class="section-description">Sign in to use managed mode, store synced BYOK, and keep core preferences aligned across devices.</p>
+                                <p class="section-description">Sign in to sync your settings and API keys across devices, or use Koe in managed mode.</p>
 
                                 <div class="account-status-card" id="account-status-card">
                                     <div class="account-status-header">
@@ -107,73 +126,89 @@
                                         </div>
                                         <span class="account-status-chip signed-out" id="account-status-chip">Signed out</span>
                                     </div>
-                                    <div class="account-status-meta" id="account-status-meta">Local desktop fallback remains available when you save a Groq key below.</div>
+                                    <div class="account-status-meta" id="account-status-meta">You can still use Koe with a local API key — no account needed.</div>
                                 </div>
 
-                                <div class="section-grid two-col">
-                                    <div class="setting-group">
-                                        <label>Email</label>
-                                        <input type="text" id="account-email" placeholder="you@example.com">
-                                    </div>
-
-                                    <div class="setting-group">
-                                        <label>Password</label>
-                                        <input type="password" id="account-password" placeholder="At least 12 characters">
-                                    </div>
-                                </div>
-
-                                <div class="section-grid two-col align-end">
-                                    <div class="setting-group">
-                                        <label>Display Name <small class="input-help inline-help">Optional for sign up</small></label>
-                                        <input type="text" id="account-display-name" placeholder="Optional display name">
-                                    </div>
-
-                                    <div class="setting-group">
-                                        <label>Account actions</label>
-                                        <div class="inline-actions compact-actions">
-                                            <button class="secondary-btn" id="btn-account-sign-up">Sign Up</button>
-                                            <button class="secondary-btn" id="btn-account-sign-in">Sign In</button>
-                                            <button class="secondary-btn" id="btn-account-password-reset">Forgot Password</button>
-                                            <button class="secondary-btn" id="btn-account-sign-out">Sign Out</button>
-                                            <button class="secondary-btn" id="btn-account-email-verify">Verify Email</button>
-                                            <button class="secondary-btn" id="btn-account-refresh">Refresh</button>
-                                            <button class="secondary-btn" id="btn-account-web-billing">Manage Billing</button>
+                                <!-- Sign-in credentials -->
+                                <div class="settings-fieldset">
+                                    <div class="fieldset-label">Credentials</div>
+                                    <div class="section-grid two-col">
+                                        <div class="setting-group">
+                                            <label>Email</label>
+                                            <input type="text" id="account-email" placeholder="you@example.com">
+                                        </div>
+                                        <div class="setting-group">
+                                            <label>Password</label>
+                                            <input type="password" id="account-password" placeholder="At least 12 characters">
                                         </div>
                                     </div>
+                                    <div class="setting-group">
+                                        <label>Display name <small class="input-help inline-help">Optional — only needed for sign up</small></label>
+                                        <input type="text" id="account-display-name" placeholder="Optional display name" style="max-width: 50%;">
+                                    </div>
+                                </div>
+
+                                <!-- Actions split into primary + secondary -->
+                                <div class="settings-fieldset">
+                                    <div class="fieldset-label">Actions</div>
+                                    <div class="action-group-row">
+                                        <div class="action-group-primary">
+                                            <button class="primary-btn compact" id="btn-account-sign-in">Sign In</button>
+                                            <button class="secondary-btn" id="btn-account-sign-up">Create Account</button>
+                                        </div>
+                                        <div class="action-group-secondary">
+                                            <button class="secondary-btn subtle" id="btn-account-password-reset">Forgot Password</button>
+                                            <button class="secondary-btn subtle" id="btn-account-sign-out">Sign Out</button>
+                                            <button class="secondary-btn subtle" id="btn-account-email-verify">Verify Email</button>
+                                            <button class="secondary-btn subtle" id="btn-account-refresh">
+                                                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                                                Refresh
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button class="secondary-btn billing-btn" id="btn-account-web-billing">
+                                        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                                        Manage Billing
+                                    </button>
                                 </div>
                                 <div class="test-result" id="account-action-result"></div>
 
-                                <div class="section-grid two-col">
-                                    <div class="setting-group">
-                                        <label>Account Mode</label>
-                                        <div class="inline-actions">
-                                            <select id="account-mode-select">
-                                                <option value="managed">Managed</option>
-                                                <option value="byok">BYOK — Bring your own key</option>
-                                            </select>
-                                            <button class="secondary-btn" id="btn-account-mode-save">Apply Mode</button>
+                                <!-- Mode + BYOK -->
+                                <div class="settings-fieldset">
+                                    <div class="fieldset-label">Mode &amp; API Keys</div>
+                                    <div class="section-grid two-col">
+                                        <div class="setting-group">
+                                            <label>Account mode</label>
+                                            <div class="inline-actions">
+                                                <select id="account-mode-select">
+                                                    <option value="managed">Managed</option>
+                                                    <option value="byok">BYOK — Bring your own key</option>
+                                                </select>
+                                                <button class="secondary-btn" id="btn-account-mode-save">Apply</button>
+                                            </div>
+                                            <small class="input-help">The backend decides whether the selected mode is currently available.</small>
                                         </div>
-                                        <small class="input-help">The backend decides whether the selected mode is currently available.</small>
-                                    </div>
 
-                                    <div class="setting-group">
-                                        <label>Synced Groq BYOK</label>
-                                        <div class="saved-key-pill" id="account-byok-saved-label">No account key saved</div>
-                                        <div class="input-with-button wrap-on-small">
-                                            <input type="password" id="account-byok-key" placeholder="Save a Groq key to your account vault">
-                                            <button class="secondary-btn" id="btn-account-byok-save">Save</button>
-                                            <button class="secondary-btn danger-lite" id="btn-account-byok-delete">Delete</button>
+                                        <div class="setting-group">
+                                            <label>Synced Groq key</label>
+                                            <div class="saved-key-pill" id="account-byok-saved-label">No account key saved</div>
+                                            <div class="input-with-button wrap-on-small">
+                                                <input type="password" id="account-byok-key" placeholder="Paste your Groq key here">
+                                                <button class="secondary-btn" id="btn-account-byok-save">Save</button>
+                                                <button class="secondary-btn danger-lite" id="btn-account-byok-delete">Delete</button>
+                                            </div>
+                                            <small class="input-help" id="account-byok-help">Encrypted server-side. Only metadata is returned to the app.</small>
                                         </div>
-                                        <small class="input-help" id="account-byok-help">Stored server-side for signed-in desktop/mobile use. Metadata only is returned to the app.</small>
                                     </div>
                                 </div>
 
-                                <div class="setting-group">
-                                    <label>Account Snapshot</label>
+                                <details class="account-snapshot-details">
+                                    <summary>Account snapshot</summary>
                                     <div class="account-snapshot" id="account-snapshot">Loading account state...</div>
-                                </div>
+                                </details>
                             </section>
 
+                            <!-- ═══════ TRANSCRIPTION ═══════ -->
                             <section class="settings-section-card" id="transcription-section">
                                 <div class="section-header">Transcription</div>
                                 <p class="section-description">Tune language, model speed, and the rewrite behavior that is applied after transcription.</p>
@@ -198,7 +233,7 @@
                                     </div>
 
                                     <div class="setting-group">
-                                        <label>Transcription Model</label>
+                                        <label>Transcription model</label>
                                         <select id="transcription-model">
                                             <option value="whisper-large-v3-turbo">Fast (Turbo) — Lower accuracy, quicker</option>
                                             <option value="whisper-large-v3">Accurate (Large-v3) — Higher accuracy, slower</option>
@@ -210,7 +245,7 @@
                                     <div class="setting-row-card compact-toggle">
                                         <div>
                                             <label for="enhance-text">Enhance transcription with AI</label>
-                                            <small class="input-help">Enabled by default so Koe can clean grammar, punctuation, and filler words.</small>
+                                            <small class="input-help">Cleans up grammar, punctuation, and filler words automatically.</small>
                                         </div>
                                         <input type="checkbox" id="enhance-text" checked>
                                     </div>
@@ -225,7 +260,7 @@
                                 </div>
 
                                 <div class="setting-group" id="prompt-style-group">
-                                    <label>Enhancement Style</label>
+                                    <label>Enhancement style</label>
                                     <select id="prompt-style">
                                         <option value="Clean">Clean (Grammar & punctuation)</option>
                                         <option value="Professional">Professional (Formal tone)</option>
@@ -235,15 +270,16 @@
                                 </div>
 
                                 <div class="setting-group" id="custom-prompt-group">
-                                    <label>Refinement Prompt</label>
+                                    <label>Refinement prompt</label>
                                     <textarea id="custom-prompt" rows="6" placeholder="Tell the refinement layer how to behave."></textarea>
                                     <small class="input-help">Used first during enhancement. Clear it to fall back to the style preset.</small>
                                 </div>
                             </section>
 
+                            <!-- ═══════ LOCAL BYOK ═══════ -->
                             <section class="settings-section-card" id="local-fallback-section">
-                                <div class="section-header">Local Desktop Fallback</div>
-                                <p class="section-description" id="local-fallback-description">Keep a local Groq key available for desktop-only fallback when account mode is signed out or unavailable.</p>
+                                <div class="section-header">Local BYOK</div>
+                                <p class="section-description" id="local-fallback-description">Store a Groq API key on this device. Koe uses it as a fallback when you're signed out or offline.</p>
 
                                 <div class="fallback-summary-card hidden" id="local-fallback-summary">
                                     <small class="input-help">Signed-in recordings use your account mode above. Local desktop BYOK is hidden because it is only a device fallback.</small>
@@ -252,7 +288,7 @@
 
                                 <div class="fallback-content" id="local-fallback-content">
                                     <div class="setting-group">
-                                        <label>Groq API Key</label>
+                                        <label>Groq API key</label>
                                         <div class="input-with-button api-key-row">
                                             <input type="password" id="api-key" placeholder="Enter your Groq API key">
                                             <button class="icon-btn" id="btn-toggle-key" title="Show/Hide">
@@ -275,33 +311,56 @@
                                 </div>
                             </section>
 
+                            <!-- ═══════ APPEARANCE ═══════ -->
                             <section class="settings-section-card" id="appearance-section">
                                 <div class="section-header">Appearance</div>
-                                <p class="section-description">Choose the desktop theme Koe should preview and save.</p>
+                                <p class="section-description">Pick a theme for the Koe interface.</p>
 
-                                <div class="setting-group compact-field">
-                                    <label>Theme</label>
-                                    <select id="theme">
-                                        <option value="dark">Dark</option>
-                                        <option value="light">Light</option>
-                                        <option value="system">System (Auto)</option>
-                                    </select>
+                                <div class="theme-picker">
+                                    <label class="theme-option" data-value="dark">
+                                        <input type="radio" name="theme-radio" value="dark">
+                                        <div class="theme-option-swatch dark-swatch">
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                                        </div>
+                                        <span>Dark</span>
+                                    </label>
+                                    <label class="theme-option" data-value="light">
+                                        <input type="radio" name="theme-radio" value="light">
+                                        <div class="theme-option-swatch light-swatch">
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                                        </div>
+                                        <span>Light</span>
+                                    </label>
+                                    <label class="theme-option" data-value="system">
+                                        <input type="radio" name="theme-radio" value="system">
+                                        <div class="theme-option-swatch system-swatch">
+                                            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                                        </div>
+                                        <span>System</span>
+                                    </label>
                                 </div>
+                                <!-- Hidden original select for JS compatibility -->
+                                <select id="theme" style="display:none;">
+                                    <option value="dark">Dark</option>
+                                    <option value="light">Light</option>
+                                    <option value="system">System (Auto)</option>
+                                </select>
                             </section>
 
+                            <!-- ═══════ SHORTCUTS ═══════ -->
                             <section class="settings-section-card" id="shortcuts-section">
                                 <div class="section-header">Shortcuts</div>
                                 <p class="section-description">Set the global recording shortcut and review keyboard shortcuts.</p>
 
                                 <div class="setting-group compact-field">
-                                    <label>Global Hotkey</label>
+                                    <label>Global hotkey</label>
                                     <input type="text" id="hotkey" placeholder="e.g., CommandOrControl+Shift+Space" readonly>
                                     <small class="input-help">Click the field and press your desired key combination.</small>
                                     <div id="hotkey-error" class="hotkey-error"></div>
                                 </div>
 
                                 <div class="setting-group">
-                                    <label>Shortcut Reference</label>
+                                    <label>Shortcut reference</label>
                                     <div class="shortcut-reference-list">
                                         <div class="shortcut-reference-item">
                                             <div>
@@ -334,6 +393,7 @@
                                 </div>
                             </section>
 
+                            <!-- ═══════ ADVANCED ═══════ -->
                             <section class="settings-section-card" id="advanced-section">
                                 <div class="section-header">Advanced</div>
                                 <p class="section-description">Startup, update, and troubleshooting controls.</p>
@@ -357,7 +417,7 @@
                                 </div>
 
                                 <div class="setting-group compact-field">
-                                    <label>Debug & Support</label>
+                                    <label>Debug & support</label>
                                     <button class="secondary-btn" id="btn-open-logs">
                                         <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
                                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -376,12 +436,14 @@
                 </div>
                 <div class="settings-footer">
                     <div class="settings-footer-copy">
-                        <strong>Close is always allowed.</strong>
-                        <span>Use Save changes only when you want to commit edits.</span>
+                        <span>Changes aren't saved until you click <strong>Save</strong>.</span>
                     </div>
                     <div class="settings-footer-actions">
-                        <button class="secondary-btn" id="btn-cancel-settings">Close without saving</button>
-                        <button class="primary-btn" id="btn-save-settings">Save changes</button>
+                        <button class="secondary-btn" id="btn-cancel-settings">Discard</button>
+                        <button class="primary-btn" id="btn-save-settings">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Save changes
+                        </button>
                     </div>
                 </div>
             </div>
