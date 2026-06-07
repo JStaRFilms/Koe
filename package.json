@@ -8,6 +8,7 @@
     "dev:desktop": "concurrently -k \"vite\" \"set ELECTRON_RUN_AS_NODE=&& electron .\"",
     "dev:mobile": "pnpm --filter koe-mobile start",
     "dev:website": "pnpm --filter website dev",
+    "db:clear": "pnpm --dir koe-website db:clear",
     "build": "pnpm build:core && vite build && electron-builder && pnpm verify:desktop-package",
     "build:desktop": "pnpm build:core && vite build && electron-builder && pnpm verify:desktop-package",
     "build:core": "pnpm --filter @koe/core build",
