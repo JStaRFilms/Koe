@@ -4,8 +4,9 @@ import { ChangeEvent, useEffect, useRef, useState } from "react";
 import { CheckCircle2, Copy, FileAudio2, Loader2, Upload, XCircle } from "lucide-react";
 import { AppPhase } from "./types";
 import { formatSeconds } from "./webAppUtils";
+import { useToast } from "./Toast";
 
-const MAX_AUDIO_BYTES = 20 * 1024 * 1024;
+const MAX_AUDIO_BYTES = 4.5 * 1024 * 1024; // 4.5 MB Vercel Serverless Function payload limit
 
 function formatBytes(bytes: number) {
   if (!Number.isFinite(bytes) || bytes <= 0) return "0 B";
@@ -39,6 +40,7 @@ export function AudioUploadPanel({
   onCopyRefined,
   onClear,
 }: AudioUploadPanelProps) {
+  const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [estimatedSeconds, setEstimatedSeconds] = useState<number | null>(null);
   const [fileError, setFileError] = useState("");
@@ -86,7 +88,9 @@ export function AudioUploadPanel({
     if (!file) return;
 
     if (file.size > MAX_AUDIO_BYTES) {
-      setFileError("Audio file is too large. Keep uploads under 20 MB.");
+      const msg = "Audio file is too large. Web uploads are limited to 4.5 MB due to serverless constraints. Use the desktop or mobile app for larger files.";
+      setFileError(msg);
+      toast("File Too Large", msg, "error");
       return;
     }
 
@@ -130,7 +134,7 @@ export function AudioUploadPanel({
           Select audio file
         </span>
         <span className="text-sm text-muted leading-relaxed">
-          Upload WAV, MP3, M4A, WebM, or other browser-supported audio. Koe sends this through the same signed-in account pipeline as recording, so managed quota is checked before transcription.
+          Upload WAV, MP3, M4A, WebM, or other browser-supported audio. Web uploads are limited to 4.5 MB due to serverless execution limits (use the native desktop/mobile apps for up to 25 MB files).
         </span>
         <input
           ref={inputRef}
@@ -197,16 +201,16 @@ export function AudioUploadPanel({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 mt-5">
-        <button type="button" className="webapp-utility-button" onClick={onCopyRaw} disabled={!hasRaw}>
+      <div className="flex flex-col sm:flex-row gap-3 mt-5">
+        <button type="button" className="webapp-utility-button w-full sm:w-auto" onClick={onCopyRaw} disabled={!hasRaw}>
           <Copy className="w-4 h-4" />
           {copyState || "COPY RAW"}
         </button>
-        <button type="button" className="webapp-utility-button" onClick={onCopyRefined} disabled={!hasRefined}>
+        <button type="button" className="webapp-utility-button w-full sm:w-auto" onClick={onCopyRefined} disabled={!hasRefined}>
           <Copy className="w-4 h-4" />
           COPY REFINED
         </button>
-        <button type="button" className="webapp-utility-button" onClick={clearSelection}>
+        <button type="button" className="webapp-utility-button w-full sm:w-auto" onClick={clearSelection}>
           <CheckCircle2 className="w-4 h-4" />
           CLEAR
         </button>

@@ -74,12 +74,12 @@ export function RecorderPanel({
         {transcript || <span className="text-muted">Record speech and Koe will save the signed-in transcript to your account history.</span>}
       </div>
 
-      <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 mt-5">
-        <button type="button" className="webapp-utility-button" onClick={onCopy} disabled={!transcript}>
+      <div className="flex flex-col sm:flex-row gap-3 mt-5">
+        <button type="button" className="webapp-utility-button w-full sm:w-auto" onClick={onCopy} disabled={!transcript}>
           <Copy className="w-4 h-4" />
           {copyState || "COPY"}
         </button>
-        <button type="button" className="webapp-utility-button" onClick={onClear}>
+        <button type="button" className="webapp-utility-button w-full sm:w-auto" onClick={onClear}>
           <CheckCircle2 className="w-4 h-4" />
           CLEAR
         </button>

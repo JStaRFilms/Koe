@@ -14,12 +14,22 @@ import { usePaystackBilling } from "./hooks/usePaystackBilling";
 import { useWebRecorder } from "./hooks/useWebRecorder";
 import { AccountMode, AppPhase, AuthMode, AuthResponse, Snapshot, WebAppTab } from "./types";
 import { authHeaders, getInstallationId, getStoredToken, readApiError, setStoredToken } from "./webAppUtils";
+import { ToastProvider, useToast } from "./Toast";
 
 function createWebClientSessionId() {
   return `web-${crypto.randomUUID()}`;
 }
 
 export function WebKoeApp() {
+  return (
+    <ToastProvider>
+      <WebKoeAppInner />
+    </ToastProvider>
+  );
+}
+
+function WebKoeAppInner() {
+  const { toast } = useToast();
   const [token, setToken] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const activeClientSessionIdRef = useRef<string | null>(null);
@@ -35,8 +45,10 @@ export function WebKoeApp() {
   const [transcript, setTranscript] = useState("");
   const [uploadRawTranscript, setUploadRawTranscript] = useState("");
   const [uploadRefinedTranscript, setUploadRefinedTranscript] = useState("");
+  
   const { copiedEntryId, copyState, copyText, setCopyState } = useCopyFeedback(setStatus);
   const { requestPasswordReset, requestVerification } = useAuthEmailFlows({ email, token, setBusyLabel, setStatus });
+  
   const modeCopy = useMemo(() => {
     if (!snapshot) return "Sign in to load account mode.";
     if (snapshot.user.defaultMode === "managed") {
@@ -61,11 +73,14 @@ export function WebKoeApp() {
       setSnapshot(null);
       setToken(null);
       setStoredToken(null);
-      setStatus(error instanceof Error ? error.message : "Session expired. Please sign in again.");
+      const errorMsg = error instanceof Error ? error.message : "Session expired. Please sign in again.";
+      setStatus(errorMsg);
+      toast("Session Expired", errorMsg, "error");
     } finally {
       setBusyLabel("");
     }
-  }, [token]);
+  }, [token, toast]);
+
   const { startCheckout, changePlan, cancelPlan } = usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatus });
 
   const processAudio = useCallback(async (audioBlob: Blob, audioSeconds: number) => {
@@ -93,21 +108,36 @@ export function WebKoeApp() {
       form.append("enhanceText", String(snapshot.settings.enhanceText !== false));
 
       const response = await fetch("/api/v1/process", { method: "POST", headers: authHeaders(token), body: form });
+      
+      if (response.status === 413) {
+        throw new Error("Recorded audio is too large. Web processing is limited to 4.5 MB. Speak for a shorter duration or use the desktop app.");
+      }
+
       const payload = (await response.json().catch(() => ({}))) as { rawText?: string; refinedText?: string; empty?: boolean; error?: { message?: string } };
       if (!response.ok) throw new Error(payload.error?.message || "Processing failed.");
 
       const text = (payload.refinedText || payload.rawText || "").trim();
       setTranscript(text);
       setPhase("done");
-      setStatus(payload.empty || !text ? "No clear speech detected." : "Transcript saved to your account history.");
+      const completeMsg = payload.empty || !text ? "No clear speech detected." : "Transcript saved to your account history.";
+      setStatus(completeMsg);
+      
+      if (payload.empty || !text) {
+        toast("No Speech Detected", completeMsg, "warning");
+      } else {
+        toast("Processing Completed", completeMsg, "success");
+      }
+      
       await loadSnapshot(token);
     } catch (error) {
       setPhase("error");
-      setStatus(error instanceof Error ? error.message : "Processing failed.");
+      const errorMsg = error instanceof Error ? error.message : "Processing failed.";
+      setStatus(errorMsg);
+      toast("Processing Failed", errorMsg, "error");
     } finally {
       activeClientSessionIdRef.current = null;
     }
-  }, [loadSnapshot, snapshot, token]);
+  }, [loadSnapshot, snapshot, token, toast]);
 
   const processUploadedAudio = useCallback(async (audioFile: File, audioSeconds: number, enhanceText: boolean) => {
     if (!token || !snapshot) {
@@ -134,6 +164,11 @@ export function WebKoeApp() {
       form.append("enhanceText", String(enhanceText));
 
       const response = await fetch("/api/v1/process", { method: "POST", headers: authHeaders(token), body: form });
+      
+      if (response.status === 413) {
+        throw new Error("Audio file too large. Web uploads are limited to 4.5 MB due to serverless constraints. Use the desktop or mobile app for larger files.");
+      }
+
       const payload = (await response.json().catch(() => ({}))) as { rawText?: string; refinedText?: string; empty?: boolean; error?: { message?: string } };
       if (!response.ok) throw new Error(payload.error?.message || "Audio upload processing failed.");
 
@@ -143,13 +178,28 @@ export function WebKoeApp() {
       setUploadRawTranscript(rawText);
       setUploadRefinedTranscript(enhanceText ? refinedText || rawText : "");
       setUploadPhase("done");
-      setStatus(payload.empty || !text ? "No clear speech detected in uploaded audio." : enhanceText ? "Raw and refined upload transcripts saved to history." : "Raw upload transcript saved to history.");
+      
+      const successMsg = payload.empty || !text 
+        ? "No clear speech detected in uploaded audio." 
+        : enhanceText 
+          ? "Raw and refined upload transcripts saved to history." 
+          : "Raw upload transcript saved to history.";
+      setStatus(successMsg);
+      
+      if (payload.empty || !text) {
+        toast("No Speech Detected", successMsg, "warning");
+      } else {
+        toast("Upload Transcribed", successMsg, "success");
+      }
+      
       await loadSnapshot(token);
     } catch (error) {
       setUploadPhase("error");
-      setStatus(error instanceof Error ? error.message : "Audio upload processing failed.");
+      const errorMsg = error instanceof Error ? error.message : "Audio upload processing failed.";
+      setStatus(errorMsg);
+      toast("Upload Failed", errorMsg, "error");
     }
-  }, [loadSnapshot, snapshot, token]);
+  }, [loadSnapshot, snapshot, token, toast]);
 
   const recorder = useWebRecorder({
     onBeforeStart: () => {
@@ -157,12 +207,14 @@ export function WebKoeApp() {
       setTranscript("");
       setCopyState("");
       setPhase("recording");
+      toast("Recording Started", "Speak clearly into your microphone.", "info");
     },
     onAudioReady: processAudio,
     onStatus: setStatus,
     onError: (message) => {
       setPhase("error");
       setStatus(message);
+      toast("Recording Error", message, "error");
     },
   });
 
@@ -176,7 +228,8 @@ export function WebKoeApp() {
   }, [token, loadSnapshot]);
 
   const submitAuth = async () => {
-    setBusyLabel(authMode === "signin" ? "Signing in..." : "Creating account...");
+    const isSignIn = authMode === "signin";
+    setBusyLabel(isSignIn ? "Signing in..." : "Creating account...");
     setStatus("");
     try {
       const response = await fetch(`/api/v1/auth/${authMode}`, {
@@ -192,9 +245,13 @@ export function WebKoeApp() {
       if (authMode === "signup") {
         void requestVerification(payload.session.token);
       }
-      setStatus(authMode === "signup" ? "Account created. Sending verification email..." : "Signed in. Loading account state...");
+      const completeMsg = isSignIn ? "Signed in successfully. Welcome back!" : "Account created. Verification email sent.";
+      setStatus(completeMsg);
+      toast(isSignIn ? "Welcome Back" : "Account Created", completeMsg, "success");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Authentication failed.");
+      const errorMsg = error instanceof Error ? error.message : "Authentication failed.";
+      setStatus(errorMsg);
+      toast("Authentication Failed", errorMsg, "error");
     } finally {
       setBusyLabel("");
     }
@@ -215,6 +272,7 @@ export function WebKoeApp() {
       setUploadPhase("idle");
       setBusyLabel("");
       setStatus("Signed out.");
+      toast("Signed Out", "You have successfully signed out of Koe.", "success");
     }
   };
 
@@ -225,9 +283,13 @@ export function WebKoeApp() {
       const response = await fetch("/api/v1/account/mode", { method: "PATCH", headers: { ...authHeaders(token), "Content-Type": "application/json" }, body: JSON.stringify({ defaultMode }) });
       if (!response.ok) throw new Error(await readApiError(response));
       await loadSnapshot(token);
-      setStatus(`${defaultMode.toUpperCase()} mode selected.`);
+      const switchMsg = `${defaultMode.toUpperCase()} mode selected.`;
+      setStatus(switchMsg);
+      toast("Mode Changed", switchMsg, "success");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not switch mode.");
+      const errorMsg = error instanceof Error ? error.message : "Could not switch mode.";
+      setStatus(errorMsg);
+      toast("Mode Switch Failed", errorMsg, "error");
     } finally {
       setBusyLabel("");
     }
@@ -240,12 +302,12 @@ export function WebKoeApp() {
   }
 
   const accountPanel = <AccountPanel snapshot={snapshot} modeCopy={modeCopy} busyLabel={busyLabel} onRefresh={() => void loadSnapshot()} onRequestVerification={() => void requestVerification()} onSignOut={() => void signOut()} onSwitchMode={(mode) => void switchMode(mode)} onStartCheckout={(planCode) => void startCheckout(planCode)} onChangePlan={(planCode) => void changePlan(planCode)} onCancelPlan={() => void cancelPlan()} />;
-  const recorderPanel = <RecorderPanel phase={phase} transcript={transcript} inputLevel={recorder.inputLevel} busyLabel={busyLabel} isSupported={recorder.isSupported} copyState={copyState} onRecordToggle={phase === "recording" ? recorder.stopRecording : () => void recorder.startRecording()} onCopy={() => void copyText(transcript)} onClear={() => { setTranscript(""); setPhase("idle"); setStatus("Transcript cleared."); }} />;
-  const uploadPanel = <AudioUploadPanel phase={uploadPhase} rawTranscript={uploadRawTranscript} refinedTranscript={uploadRefinedTranscript} busyLabel={busyLabel} copyState={copyState} defaultEnhanceText={snapshot.settings.enhanceText !== false} onUpload={(file, audioSeconds, enhanceText) => void processUploadedAudio(file, audioSeconds, enhanceText)} onCopyRaw={() => void copyText(uploadRawTranscript)} onCopyRefined={() => void copyText(uploadRefinedTranscript || uploadRawTranscript)} onClear={() => { setUploadRawTranscript(""); setUploadRefinedTranscript(""); setUploadPhase("idle"); setStatus("Upload cleared."); }} />;
+  const recorderPanel = <RecorderPanel phase={phase} transcript={transcript} inputLevel={recorder.inputLevel} busyLabel={busyLabel} isSupported={recorder.isSupported} copyState={copyState} onRecordToggle={phase === "recording" ? recorder.stopRecording : () => void recorder.startRecording()} onCopy={() => void copyText(transcript)} onClear={() => { setTranscript(""); setPhase("idle"); setStatus("Transcript cleared."); toast("Cleared", "Recorder transcript cleared.", "info"); }} />;
+  const uploadPanel = <AudioUploadPanel phase={uploadPhase} rawTranscript={uploadRawTranscript} refinedTranscript={uploadRefinedTranscript} busyLabel={busyLabel} copyState={copyState} defaultEnhanceText={snapshot.settings.enhanceText !== false} onUpload={(file, audioSeconds, enhanceText) => void processUploadedAudio(file, audioSeconds, enhanceText)} onCopyRaw={() => void copyText(uploadRawTranscript)} onCopyRefined={() => void copyText(uploadRefinedTranscript || uploadRawTranscript)} onClear={() => { setUploadRawTranscript(""); setUploadRefinedTranscript(""); setUploadPhase("idle"); setStatus("Upload cleared."); toast("Cleared", "Upload panel cleared.", "info"); }} />;
   const historyPanel = <HistoryPanel history={snapshot.recentHistory} copiedEntryId={copiedEntryId} onCopyEntry={(id, text) => void copyText(text, id)} />;
 
   return (
-    <section className="max-w-7xl mx-auto w-full border-x border-zinc py-4 md:py-10 px-4 md:px-8 relative z-10">
+    <section className="max-w-7xl mx-auto w-full border-x border-[var(--color-zinc)] py-4 md:py-10 px-4 md:px-8 relative z-10">
       <WebAppTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="md:hidden space-y-4">
@@ -257,7 +319,12 @@ export function WebKoeApp() {
 
       <div className="hidden md:grid lg:grid-cols-[0.85fr_1.15fr] gap-8">
         {accountPanel}
-        <div className="space-y-6">{recorderPanel}{uploadPanel}<StatusNotice busyLabel={busyLabel} status={status} isSupported={recorder.isSupported} />{historyPanel}</div>
+        <div className="space-y-6">
+          {recorderPanel}
+          {uploadPanel}
+          <StatusNotice busyLabel={busyLabel} status={status} isSupported={recorder.isSupported} />
+          {historyPanel}
+        </div>
       </div>
     </section>
   );

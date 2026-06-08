@@ -105,6 +105,21 @@ body::before {
   white-space: nowrap;
 }
 
+@keyframes toast-in {
+  from {
+    transform: translateY(-1rem);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.toast-animate {
+  animation: toast-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 .voice-bar {
   transition: height 140ms cubic-bezier(0.25, 0.8, 0.25, 1);
   will-change: height;
@@ -306,12 +321,23 @@ body::before {
 .webapp-tab {
   min-height: 52px;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 3px;
   border-right: 1px solid var(--color-zinc);
-  font-size: 0.75rem;
+  font-size: 0.65rem;
   font-weight: 700;
+  padding: 6px 4px;
+}
+
+@media (min-width: 480px) {
+  .webapp-tab {
+    flex-direction: row;
+    gap: 8px;
+    font-size: 0.75rem;
+    padding: 10px 14px;
+  }
 }
 
 .webapp-tabs-shell {

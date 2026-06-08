@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { BillingPlanCode } from "../types";
 import { authHeaders, readApiError } from "../webAppUtils";
+import { useToast } from "../Toast";
 
 type PaystackBillingArgs = {
   token: string | null;
@@ -10,6 +11,7 @@ type PaystackBillingArgs = {
 };
 
 export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatus }: PaystackBillingArgs) {
+  const { toast } = useToast();
   const verifiedReferenceRef = useRef("");
   const startedCheckoutRef = useRef("");
 
@@ -36,10 +38,12 @@ export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatu
       }
       openCheckout(payload.checkout.authorization_url);
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not start Paystack checkout.");
+      const errorMsg = error instanceof Error ? error.message : "Could not start Paystack checkout.";
+      setStatus(errorMsg);
+      toast("Checkout Error", errorMsg, "error");
       setBusyLabel("");
     }
-  }, [openCheckout, setBusyLabel, setStatus, token]);
+  }, [openCheckout, setBusyLabel, setStatus, token, toast]);
 
   const changePlan = useCallback(async (planCode: BillingPlanCode) => {
     if (!token) return;
@@ -60,13 +64,17 @@ export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatu
         return;
       }
       await loadSnapshot(token);
-      setStatus("Plan change scheduled for the next billing period.");
+      const msg = "Plan change scheduled for the next billing period.";
+      setStatus(msg);
+      toast("Plan Scheduled", msg, "success");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not update managed plan.");
+      const errorMsg = error instanceof Error ? error.message : "Could not update managed plan.";
+      setStatus(errorMsg);
+      toast("Plan Update Failed", errorMsg, "error");
     } finally {
       setBusyLabel("");
     }
-  }, [loadSnapshot, openCheckout, setBusyLabel, setStatus, token]);
+  }, [loadSnapshot, openCheckout, setBusyLabel, setStatus, token, toast]);
 
   const cancelPlan = useCallback(async () => {
     if (!token) return;
@@ -78,13 +86,17 @@ export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatu
       });
       if (!response.ok) throw new Error(await readApiError(response));
       await loadSnapshot(token);
-      setStatus("Paid renewal canceled. Your quota remains available until the period ends.");
+      const msg = "Paid renewal canceled. Your quota remains available until the period ends.";
+      setStatus(msg);
+      toast("Subscription Canceled", msg, "success");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not cancel paid renewal.");
+      const errorMsg = error instanceof Error ? error.message : "Could not cancel paid renewal.";
+      setStatus(errorMsg);
+      toast("Cancellation Failed", errorMsg, "error");
     } finally {
       setBusyLabel("");
     }
-  }, [loadSnapshot, setBusyLabel, setStatus, token]);
+  }, [loadSnapshot, setBusyLabel, setStatus, token, toast]);
 
   const verifyCheckoutReference = useCallback(async (reference: string) => {
     if (!token || verifiedReferenceRef.current === reference) return;
@@ -99,13 +111,17 @@ export function usePaystackBilling({ token, loadSnapshot, setBusyLabel, setStatu
       if (!response.ok) throw new Error(await readApiError(response));
       window.history.replaceState({}, "", "/app");
       await loadSnapshot(token);
-      setStatus("Payment verified. Managed paid quota is active.");
+      const msg = "Payment verified. Managed paid quota is active.";
+      setStatus(msg);
+      toast("Payment Verified", msg, "success");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Could not verify Paystack payment yet.");
+      const errorMsg = error instanceof Error ? error.message : "Could not verify Paystack payment yet.";
+      setStatus(errorMsg);
+      toast("Verification Failed", errorMsg, "error");
     } finally {
       setBusyLabel("");
     }
-  }, [loadSnapshot, setBusyLabel, setStatus, token]);
+  }, [loadSnapshot, setBusyLabel, setStatus, token, toast]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

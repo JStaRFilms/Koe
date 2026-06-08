@@ -192,7 +192,7 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
               Pending {pendingPlanChange.changeType} to {planTargetCopy(pendingPlanChange.toPlanCode)} on {pendingPlanChange.effectiveAt ? new Date(pendingPlanChange.effectiveAt).toLocaleDateString() : "the next billing period"}.
             </p>
           ) : null}
-          <div className="hidden md:block space-y-3">
+          <div className="space-y-3">
             {snapshot.billing.plans.map((plan) => {
               const isCurrent = currentPlanCode === plan.code;
               const isUpgrade = currentPlanCode ? PLAN_RANK[plan.code] > PLAN_RANK[currentPlanCode] : false;
@@ -227,9 +227,6 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
               </button>
             ) : null}
           </div>
-          <p className="md:hidden text-xs text-muted leading-relaxed">
-            Paid plan checkout and plan changes are available from desktop web for now.
-          </p>
         </div>
       </div>
     </aside>

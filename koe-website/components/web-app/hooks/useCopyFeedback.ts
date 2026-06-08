@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { writeClipboard } from "../webAppUtils";
+import { useToast } from "../Toast";
 
 export function useCopyFeedback(onStatus: (message: string) => void) {
+  const { toast } = useToast();
   const copyTimerRef = useRef<number | null>(null);
   const entryCopyTimerRef = useRef<number | null>(null);
 
@@ -18,6 +20,7 @@ export function useCopyFeedback(onStatus: (message: string) => void) {
     try {
       await writeClipboard(text);
       onStatus("Copied to clipboard.");
+      toast("Copied to Clipboard", "The transcript has been copied to your clipboard.", "success");
       flashCopyState("COPIED");
       if (entryId) {
         if (entryCopyTimerRef.current !== null) window.clearTimeout(entryCopyTimerRef.current);
@@ -25,10 +28,12 @@ export function useCopyFeedback(onStatus: (message: string) => void) {
         entryCopyTimerRef.current = window.setTimeout(() => setCopiedEntryId(null), 1400);
       }
     } catch (error) {
-      onStatus(error instanceof Error ? error.message : "Copy failed.");
+      const msg = error instanceof Error ? error.message : "Copy failed.";
+      onStatus(msg);
+      toast("Copy Failed", msg, "error");
       flashCopyState("COPY FAILED");
     }
-  }, [flashCopyState, onStatus]);
+  }, [flashCopyState, onStatus, toast]);
 
   useEffect(() => () => {
     if (copyTimerRef.current !== null) window.clearTimeout(copyTimerRef.current);
