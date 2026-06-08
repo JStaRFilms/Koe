@@ -279,14 +279,12 @@
                                     <div class="fieldset-label">Audio file upload</div>
                                     <div class="setting-group">
                                         <label>Transcribe an existing audio file</label>
-                                        <small class="input-help">Uses the same desktop processing pipeline as recording. Signed-in account mode stays proxied through Koe, while local BYOK stays direct to Groq.</small>
                                         <input type="file" id="audio-upload-file" accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg,.flac,.aac,.mp4" hidden>
                                         <div class="setting-toggle-row upload-refine-toggle">
                                             <label class="checkbox-label">
                                                 <input type="checkbox" id="audio-upload-enhance" checked>
                                                 <span>Refine after transcription</span>
                                             </label>
-                                            <small class="input-help">On: return raw + polished text. Off: return raw transcription only.</small>
                                         </div>
                                         <div class="upload-action-row">
                                             <button class="secondary-btn" id="btn-audio-upload-select" type="button">Choose File</button>
@@ -297,19 +295,26 @@
                                         <div class="test-result" id="audio-upload-status"></div>
                                     </div>
 
-                                    <div class="setting-group upload-transcript-grid">
-                                        <div>
-                                            <label>Raw transcript</label>
-                                            <textarea id="audio-upload-raw-result" class="upload-result" rows="8" placeholder="Raw transcript appears here." readonly></textarea>
-                                            <div class="compact-actions">
-                                                <button class="secondary-btn" id="btn-audio-upload-copy-raw" type="button">Copy Raw</button>
+                                    <div class="setting-group upload-transcript-container">
+                                        <div class="transcript-header-row">
+                                            <span class="transcript-title-label" id="upload-transcript-label">Transcript</span>
+                                            <div class="transcript-toggle-group" id="upload-transcript-toggle-group" style="display: none;">
+                                                <button type="button" class="toggle-btn active" id="btn-upload-show-refined">Refined</button>
+                                                <button type="button" class="toggle-btn" id="btn-upload-show-raw">Raw</button>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label>Refined transcript</label>
-                                            <textarea id="audio-upload-result" class="upload-result" rows="8" placeholder="Refined transcript appears here when enabled." readonly></textarea>
-                                            <div class="compact-actions">
-                                                <button class="secondary-btn" id="btn-audio-upload-copy" type="button">Copy Refined</button>
+                                        <div class="transcript-viewport">
+                                            <div id="wrapper-upload-raw" style="display: none;">
+                                                <textarea id="audio-upload-raw-result" class="upload-result" rows="8" placeholder="Raw transcript appears here." readonly></textarea>
+                                                <div class="compact-actions" style="margin-top: 8px;">
+                                                    <button class="secondary-btn" id="btn-audio-upload-copy-raw" type="button">Copy Raw</button>
+                                                </div>
+                                            </div>
+                                            <div id="wrapper-upload-refined">
+                                                <textarea id="audio-upload-result" class="upload-result" rows="8" placeholder="Refined transcript appears here when enabled." readonly></textarea>
+                                                <div class="compact-actions" style="margin-top: 8px;">
+                                                    <button class="secondary-btn" id="btn-audio-upload-copy" type="button">Copy Refined</button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>

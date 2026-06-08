@@ -22,9 +22,9 @@ export function HistoryPanel({ history, copiedEntryId, onCopyEntry }: HistoryPan
   const [textModes, setTextModes] = useState<Record<string, "refined" | "raw">>({});
 
   return (
-    <div className="border-raw bg-void p-5 md:p-6">
-      <p className="text-amber text-xs font-bold mb-4">RECENT ACCOUNT HISTORY</p>
-      <div className="space-y-3 normal-case">
+    <div className="panel-brutal p-4 md:p-5">
+      <p className="text-amber text-xs font-bold mb-3">RECENT ACCOUNT HISTORY</p>
+      <div className="space-y-2.5 normal-case">
         {history.length ? (
           history.map((item) => {
             const hasDistinctRawText = Boolean(item.refinedText && item.refinedText.trim() !== item.rawText.trim());
@@ -32,23 +32,23 @@ export function HistoryPanel({ history, copiedEntryId, onCopyEntry }: HistoryPan
             const text = selectedMode === "raw" ? item.rawText : item.refinedText || item.rawText;
             const copied = copiedEntryId === item.id;
             return (
-              <div key={item.id} className="border-raw bg-zinc/10 p-4">
-                <div className="flex items-center justify-between gap-3 mb-2 text-xs uppercase text-muted">
+              <div key={item.id} className="border-raw bg-[color-mix(in_srgb,var(--color-zinc)_10%,var(--color-void))] p-3">
+                <div className="flex items-center justify-between gap-2.5 mb-1.5 text-xs uppercase text-muted">
                   <span>{item.mode} / {getHistorySourceLabel(item)}</span>
                   <span>{formatDate(item.createdAt)}</span>
                 </div>
-                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-                  <div className="text-[11px] uppercase text-muted">
+                <div className="flex flex-wrap items-center justify-between gap-1.5 mb-2">
+                  <div className="text-[10px] uppercase text-muted">
                     {item.segmentCount && item.segmentCount > 1 ? `${item.segmentCount} parts` : "1 recording"}
                     {item.audioSeconds > 0 ? ` / ${formatSeconds(item.audioSeconds)}` : ""}
                   </div>
                   {hasDistinctRawText ? (
-                    <div className="grid grid-cols-2 border-raw text-[11px] uppercase overflow-hidden">
+                    <div className="grid grid-cols-2 border-raw text-[10px] uppercase overflow-hidden">
                       {(["refined", "raw"] as const).map((mode) => (
                         <button
                           key={mode}
                           type="button"
-                          className={`px-2.5 py-1 ${selectedMode === mode ? "bg-amber text-void" : "bg-void text-muted"}`}
+                          className={`px-2 py-0.5 ${selectedMode === mode ? "bg-amber text-void" : "bg-void text-muted"}`}
                           onClick={() => setTextModes((current) => ({ ...current, [item.id]: mode }))}
                         >
                           {mode}
@@ -57,8 +57,8 @@ export function HistoryPanel({ history, copiedEntryId, onCopyEntry }: HistoryPan
                     </div>
                   ) : null}
                 </div>
-                <p className="text-sm text-bone line-clamp-3">{text}</p>
-                <button type="button" className="webapp-inline-action" onClick={() => onCopyEntry(item.id, text)}>
+                <p className="text-xs text-bone line-clamp-3 leading-relaxed">{text}</p>
+                <button type="button" className="webapp-inline-action mt-2" onClick={() => onCopyEntry(item.id, text)}>
                   <Copy className="w-3.5 h-3.5" />
                   {copied ? "COPIED" : "COPY ENTRY"}
                 </button>
@@ -66,7 +66,7 @@ export function HistoryPanel({ history, copiedEntryId, onCopyEntry }: HistoryPan
             );
           })
         ) : (
-          <p className="text-sm text-muted">No synced transcript history yet.</p>
+          <p className="text-xs text-muted">No synced transcript history yet.</p>
         )}
       </div>
     </div>

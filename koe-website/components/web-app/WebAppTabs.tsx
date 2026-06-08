@@ -9,8 +9,8 @@ type WebAppTabsProps = {
 const tabs = [
   { id: "record", label: "Record", icon: Mic },
   { id: "upload", label: "Upload", icon: Upload },
-  { id: "account", label: "Account", icon: UserRound },
   { id: "history", label: "History", icon: History },
+  { id: "account", label: "Account", icon: UserRound },
 ] satisfies Array<{ id: WebAppTab; label: string; icon: typeof Mic }>;
 
 export function WebAppTabs({ activeTab, onTabChange }: WebAppTabsProps) {

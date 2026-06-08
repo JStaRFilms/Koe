@@ -45,6 +45,18 @@ body::before {
   border: 1px solid var(--color-zinc);
 }
 
+.panel-brutal {
+  border: 1px solid var(--color-zinc);
+  background-color: color-mix(in srgb, var(--color-zinc) 8%, var(--color-void));
+  box-shadow: 4px 4px 0px var(--color-zinc);
+}
+
+.panel-brutal-amber {
+  border: 1.5px solid var(--color-amber);
+  background-color: color-mix(in srgb, var(--color-amber) 6%, var(--color-void));
+  box-shadow: 4px 4px 0px var(--color-amber);
+}
+
 .border-raw-b {
   border-bottom: 1px solid var(--color-zinc);
 }
@@ -244,7 +256,29 @@ body::before {
 }
 
 .webapp-action {
-  min-height: 64px;
+  min-height: 52px;
+}
+
+.webapp-action.btn-brutal {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  min-height: 44px;
+  gap: 8px;
+}
+
+.webapp-action.btn-brutal::after {
+  top: 2px;
+  left: 2px;
+  right: -5px;
+  bottom: -5px;
+}
+
+.webapp-action.btn-brutal:hover::after {
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .webapp-utility-button,
@@ -292,9 +326,9 @@ body::before {
 }
 
 .webapp-mode-button {
-  min-height: 104px;
+  min-height: 74px;
   border: 1px solid var(--color-zinc);
-  padding: 16px;
+  padding: 10px 12px;
   text-align: left;
   background: var(--color-void);
   color: var(--color-bone);
@@ -379,17 +413,22 @@ body::before {
 }
 
 .voice-pin {
-  width: 10px;
-  height: 34px;
-  border: 1px solid var(--color-amber);
-  background: var(--color-void);
-  opacity: 0.55;
+  width: 6px;
+  height: 28px;
+  background: var(--color-zinc);
+  opacity: 0.45;
   transition: height 120ms ease, opacity 120ms ease, background-color 120ms ease;
 }
 
 .voice-meter-live .voice-pin {
   background: var(--color-amber);
+  opacity: 1;
   animation: voice-pin-pulse 900ms ease-out infinite;
+}
+
+.voice-meter-error .voice-pin {
+  background: var(--color-crimson);
+  opacity: 1;
 }
 
 .voice-copy {
@@ -565,6 +604,17 @@ details>summary::-webkit-details-marker {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--color-amber);
+}
+
+/* Hide Scrollbar helper classes */
+.no-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.no-scrollbar {
+  -ms-overflow-style: none !important;  /* IE and Edge */
+  scrollbar-width: none !important;  /* Firefox */
 }
 
 @layer base {

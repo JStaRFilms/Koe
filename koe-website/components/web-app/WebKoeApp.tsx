@@ -6,7 +6,6 @@ import { AudioUploadPanel } from "./AudioUploadPanel";
 import { AuthPanel } from "./AuthPanel";
 import { HistoryPanel } from "./HistoryPanel";
 import { RecorderPanel } from "./RecorderPanel";
-import { StatusNotice } from "./StatusNotice";
 import { WebAppTabs } from "./WebAppTabs";
 import { useAuthEmailFlows } from "./hooks/useAuthEmailFlows";
 import { useCopyFeedback } from "./hooks/useCopyFeedback";
@@ -307,22 +306,28 @@ function WebKoeAppInner() {
   const historyPanel = <HistoryPanel history={snapshot.recentHistory} copiedEntryId={copiedEntryId} onCopyEntry={(id, text) => void copyText(text, id)} />;
 
   return (
-    <section className="max-w-7xl mx-auto w-full border-x border-[var(--color-zinc)] py-4 md:py-10 px-4 md:px-8 relative z-10">
+    <section className="max-w-[1600px] mx-auto w-full border-x border-[var(--color-zinc)] py-4 xl:py-6 px-4 md:px-8 relative z-10 flex flex-col xl:h-[calc(100vh-135px)] xl:overflow-hidden">
       <WebAppTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
       <div className="md:hidden space-y-4">
-        {activeTab === "record" ? <>{recorderPanel}<StatusNotice busyLabel={busyLabel} status={status} isSupported={recorder.isSupported} /></> : null}
-        {activeTab === "upload" ? <>{uploadPanel}<StatusNotice busyLabel={busyLabel} status={status} isSupported /></> : null}
+        {activeTab === "record" ? recorderPanel : null}
+        {activeTab === "upload" ? uploadPanel : null}
         {activeTab === "account" ? accountPanel : null}
         {activeTab === "history" ? historyPanel : null}
       </div>
 
-      <div className="hidden md:grid lg:grid-cols-[0.85fr_1.15fr] gap-8">
-        {accountPanel}
-        <div className="space-y-6">
+      <div className="hidden md:grid md:grid-cols-[0.85fr_1.15fr] xl:grid-cols-[0.85fr_1.15fr_1fr] gap-8 xl:h-full xl:overflow-hidden">
+        <div className="xl:h-full xl:overflow-y-auto pr-2 pb-6 no-scrollbar">
+          {accountPanel}
+        </div>
+        <div className="space-y-4 xl:h-full xl:overflow-y-auto pr-2 pb-6 no-scrollbar">
           {recorderPanel}
           {uploadPanel}
-          <StatusNotice busyLabel={busyLabel} status={status} isSupported={recorder.isSupported} />
+          <div className="xl:hidden">
+            {historyPanel}
+          </div>
+        </div>
+        <div className="hidden xl:block xl:h-full xl:overflow-y-auto pr-2 pb-6 no-scrollbar">
           {historyPanel}
         </div>
       </div>

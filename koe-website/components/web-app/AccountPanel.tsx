@@ -70,12 +70,12 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
   const canCancel = subscription?.status === "active" && !pendingPlanChange;
 
   return (
-    <aside className="space-y-4 md:space-y-6">
-      <div className="border-raw bg-void p-5 md:p-6">
-        <div className="flex items-start justify-between gap-4 mb-4">
+    <aside className="space-y-3">
+      <div className="panel-brutal p-4 md:p-5">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div>
-            <p className="text-amber text-xs font-bold mb-2">ACCOUNT</p>
-            <p className="text-bone normal-case break-all">{snapshot.user.email}</p>
+            <p className="text-amber text-xs font-bold mb-1.5">ACCOUNT</p>
+            <p className="text-bone normal-case break-all text-sm">{snapshot.user.email}</p>
           </div>
           <button type="button" className="webapp-icon-button" onClick={onSignOut} aria-label="Sign out">
             <LogOut className="w-5 h-5" />
@@ -87,9 +87,9 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
         </button>
       </div>
 
-      <div className="border-raw bg-zinc/10 p-5 md:p-6 normal-case">
-        <p className="text-amber uppercase text-xs font-bold mb-3">Email status</p>
-        <div className="flex items-start gap-3">
+      <div className="panel-brutal p-4 md:p-5 normal-case">
+        <p className="text-amber uppercase text-xs font-bold mb-2">Email status</p>
+        <div className="flex items-start gap-2.5">
           {isVerified ? <CheckCircle2 className="w-5 h-5 text-amber shrink-0 mt-0.5" /> : <MailCheck className="w-5 h-5 text-amber shrink-0 mt-0.5" />}
           <div>
             <p className="text-sm text-bone">{isVerified ? "Email verified." : "Email is not verified yet."}</p>
@@ -99,37 +99,40 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
           </div>
         </div>
         {!isVerified ? (
-          <button type="button" className="webapp-utility-button mt-4" onClick={onRequestVerification} disabled={Boolean(busyLabel)}>
+          <button type="button" className="webapp-utility-button mt-3" onClick={onRequestVerification} disabled={Boolean(busyLabel)}>
             <MailCheck className="w-4 h-4" />
             SEND VERIFICATION EMAIL
           </button>
         ) : null}
       </div>
 
-      <div className="border-raw bg-zinc/10 p-5 md:p-6">
-        <p className="text-amber text-xs font-bold mb-4">PROCESSING MODE</p>
-        <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="panel-brutal p-4 md:p-5">
+        <p className="text-amber text-xs font-bold mb-2.5">PROCESSING MODE</p>
+        <div className="grid grid-cols-2 border-raw text-xs uppercase overflow-hidden mb-3">
           {(["managed", "byok"] as const).map((mode) => {
             const selected = snapshot.user.defaultMode === mode;
             return (
               <button
                 key={mode}
                 type="button"
-                className={`webapp-mode-button ${selected ? "webapp-mode-button-active" : ""}`}
+                className={`py-2 font-bold cursor-pointer transition-colors text-center ${
+                  selected 
+                    ? "bg-amber text-void" 
+                    : "bg-void text-muted hover:bg-zinc/20"
+                }`}
                 onClick={() => onSwitchMode(mode)}
                 aria-pressed={selected}
               >
-                <p className="font-bold text-sm">{mode === "managed" ? "MANAGED" : "ACCOUNT BYOK"}</p>
-                <p className="normal-case text-xs mt-1">{mode === "managed" ? "No API key in browser." : "Uses saved encrypted key."}</p>
+                {mode === "managed" ? "MANAGED" : "ACCOUNT BYOK"}
               </button>
             );
           })}
         </div>
-        <p className="normal-case text-sm text-muted leading-relaxed">{modeCopy}</p>
+        <p className="normal-case text-xs text-muted leading-relaxed">{modeCopy}</p>
       </div>
 
-      <div className="border-raw bg-void p-5 md:p-6 normal-case">
-        <p className="text-amber uppercase text-xs font-bold mb-3">Account activity today</p>
+      <div className="panel-brutal p-4 md:p-5 normal-case">
+        <p className="text-amber uppercase text-xs font-bold mb-2">Account activity today</p>
         <p className="text-sm text-muted">
           Recordings: {snapshot.accountActivity?.recordingsToday ?? 0}
         </p>
@@ -139,13 +142,13 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
         <p className="text-sm text-muted">
           Processing calls: {snapshot.accountActivity?.processingCallsToday ?? 0} ({snapshot.accountActivity?.transcriptionCallsToday ?? 0} transcription / {snapshot.accountActivity?.refinementCallsToday ?? 0} refinement)
         </p>
-        <p className="mt-3 text-xs text-muted leading-relaxed">
+        <p className="mt-2 text-xs text-muted leading-relaxed">
           Device mix: {accountActivityCopy(snapshot)}.
         </p>
       </div>
 
-      <div className="border-raw bg-void p-5 md:p-6 normal-case">
-        <p className="text-amber uppercase text-xs font-bold mb-3">
+      <div className="panel-brutal p-4 md:p-5 normal-case">
+        <p className="text-amber uppercase text-xs font-bold mb-2">
           {snapshot.user.defaultMode === "byok" ? "BYOK/provider estimate" : "Managed quota"}
         </p>
         {snapshot.user.defaultMode === "byok" ? (
@@ -153,7 +156,7 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
             <p className="text-sm text-muted">
               Estimated account activity: {formatSeconds(snapshot.accountActivity?.audioSecondsToday ?? 0)} audio / {snapshot.accountActivity?.processingCallsToday ?? 0} processing calls today
             </p>
-            <p className="mt-3 text-xs text-muted leading-relaxed">
+            <p className="mt-2 text-xs text-muted leading-relaxed">
               Account BYOK uses your saved provider key. Koe can estimate usage from calls it makes, but exact remaining provider quota is controlled by Groq.
             </p>
           </>
@@ -166,7 +169,7 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
               Processing calls: {managedUsage.requestCountUsed} / {managedUsage.requestCountLimit}
             </p>
             {dynamicQuota ? (
-              <p className="mt-3 text-xs text-muted leading-relaxed">
+              <p className="mt-2 text-xs text-muted leading-relaxed">
                 {dynamicQuota.floor} guaranteed daily + {dynamicQuota.remaining} bonus remaining today from {dynamicQuota.currentLimit} available.
               </p>
             ) : null}
@@ -174,25 +177,25 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
         )}
       </div>
 
-      <div className="border-raw bg-zinc/10 p-5 md:p-6 normal-case">
-        <p className="text-amber uppercase text-xs font-bold mb-3">Managed billing</p>
+      <div className="panel-brutal p-4 md:p-5 normal-case">
+        <p className="text-amber uppercase text-xs font-bold mb-2">Managed billing</p>
         {subscription ? (
-          <div className="mb-4 text-sm text-muted leading-relaxed">
+          <div className="mb-3 text-sm text-muted leading-relaxed">
             <p className="text-bone">{subscription.planName}: {subscription.status.replace("_", " ")}</p>
             <p>Renews or ends: {subscription.currentPeriodEnd ? new Date(subscription.currentPeriodEnd).toLocaleDateString() : "pending Paystack confirmation"}</p>
           </div>
         ) : (
-          <p className="mb-4 text-sm text-muted leading-relaxed">
+          <p className="mb-3 text-xs text-muted leading-relaxed">
             Upgrade managed mode when you want higher monthly processing limits without managing an API key.
           </p>
         )}
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {pendingPlanChange ? (
             <p className="text-xs text-muted leading-relaxed">
               Pending {pendingPlanChange.changeType} to {planTargetCopy(pendingPlanChange.toPlanCode)} on {pendingPlanChange.effectiveAt ? new Date(pendingPlanChange.effectiveAt).toLocaleDateString() : "the next billing period"}.
             </p>
           ) : null}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {snapshot.billing.plans.map((plan) => {
               const isCurrent = currentPlanCode === plan.code;
               const isUpgrade = currentPlanCode ? PLAN_RANK[plan.code] > PLAN_RANK[currentPlanCode] : false;
@@ -202,12 +205,12 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
                 <button
                   key={plan.code}
                   type="button"
-                  className="webapp-utility-button w-full justify-between"
+                  className="webapp-utility-button w-full justify-between text-xs"
                   onClick={clickHandler}
                   disabled={billingBusy || isCurrent}
                 >
-                  <span className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4" />
+                  <span className="flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5" />
                     {actionLabel}: {plan.name}
                   </span>
                   <span>{formatNaira(plan.amountKobo)}/mo · {formatSeconds(plan.monthlyAudioSeconds)}</span>
@@ -217,7 +220,7 @@ export function AccountPanel({ snapshot, modeCopy, busyLabel, onRefresh, onReque
             {subscription ? (
               <button
                 type="button"
-                className="webapp-utility-button w-full justify-center"
+                className="webapp-utility-button w-full justify-center text-xs"
                 onClick={() => {
                   if (window.confirm("Cancel paid renewal? Your paid quota stays available until the period ends.")) onCancelPlan();
                 }}

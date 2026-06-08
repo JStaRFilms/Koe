@@ -8,7 +8,7 @@ type StatusNoticeProps = {
 
 export function StatusNotice({ busyLabel, status, isSupported }: StatusNoticeProps) {
   return (
-    <div className="border-raw bg-zinc/10 p-4 md:p-5 flex items-start gap-3 normal-case">
+    <div className="panel-brutal-amber p-4 md:p-5 flex items-start gap-3 normal-case">
       <AlertTriangle className="w-5 h-5 text-amber shrink-0 mt-0.5" />
       <p className="text-sm text-muted leading-relaxed">
         {busyLabel || status}{" "}

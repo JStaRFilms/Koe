@@ -38,11 +38,11 @@ export function RecorderPanel({
   const levelBand = Math.max(0, Math.min(6, Math.round((isRecording ? inputLevel : 0) * 6)));
 
   return (
-    <div className="border-raw bg-void p-5 md:p-8">
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5 md:mb-6">
+    <div className="panel-brutal p-4 md:p-5">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
         <div>
-          <p className="text-amber text-xs font-bold mb-2">WEB RECORDER</p>
-          <h1 className="font-deco text-3xl md:text-4xl text-bone">DICTATE IN BROWSER</h1>
+          <p className="text-amber text-xs font-bold mb-1.5">WEB RECORDER</p>
+          <h1 className="font-deco text-2xl md:text-3xl text-bone">DICTATE IN BROWSER</h1>
         </div>
         <button
           type="button"
@@ -70,11 +70,11 @@ export function RecorderPanel({
         </div>
       </div>
 
-      <div className="border-raw bg-zinc/10 min-h-[220px] p-5 normal-case leading-relaxed whitespace-pre-wrap">
+      <div className="border-raw bg-zinc/10 min-h-[160px] p-4 normal-case leading-relaxed text-sm whitespace-pre-wrap">
         {transcript || <span className="text-muted">Record speech and Koe will save the signed-in transcript to your account history.</span>}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mt-5">
+      <div className="flex flex-col sm:flex-row gap-3 mt-4">
         <button type="button" className="webapp-utility-button w-full sm:w-auto" onClick={onCopy} disabled={!transcript}>
           <Copy className="w-4 h-4" />
           {copyState || "COPY"}
