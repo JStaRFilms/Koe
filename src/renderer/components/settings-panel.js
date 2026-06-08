@@ -38,6 +38,13 @@ export class SettingsPanel {
         this.btnAudioUploadCopyRaw = document.getElementById('btn-audio-upload-copy-raw');
         this.btnAudioUploadCopy = document.getElementById('btn-audio-upload-copy');
 
+        this.btnUploadShowRefined = document.getElementById('btn-upload-show-refined');
+        this.btnUploadShowRaw = document.getElementById('btn-upload-show-raw');
+        this.wrapperUploadRaw = document.getElementById('wrapper-upload-raw');
+        this.wrapperUploadRefined = document.getElementById('wrapper-upload-refined');
+        this.uploadTranscriptLabel = document.getElementById('upload-transcript-label');
+        this.uploadTranscriptToggleGroup = document.getElementById('upload-transcript-toggle-group');
+
         this.selModel = document.getElementById('transcription-model');
         this.selTheme = document.getElementById('theme');
         this.inputHotkey = document.getElementById('hotkey');
@@ -227,7 +234,31 @@ export class SettingsPanel {
         if (this.audioUploadResult) {
             this.audioUploadResult.value = '';
         }
+        this.updateAudioUploadToggleVisibility(false);
+        this.showRefinedTranscript();
         this.updateAudioUploadButtons();
+    }
+
+    updateAudioUploadToggleVisibility(visible) {
+        if (this.uploadTranscriptToggleGroup) {
+            this.uploadTranscriptToggleGroup.style.display = visible ? 'flex' : 'none';
+        }
+    }
+
+    showRefinedTranscript() {
+        if (this.wrapperUploadRefined) this.wrapperUploadRefined.style.display = 'block';
+        if (this.wrapperUploadRaw) this.wrapperUploadRaw.style.display = 'none';
+        if (this.btnUploadShowRefined) this.btnUploadShowRefined.classList.add('active');
+        if (this.btnUploadShowRaw) this.btnUploadShowRaw.classList.remove('active');
+        if (this.uploadTranscriptLabel) this.uploadTranscriptLabel.textContent = 'Refined Transcript';
+    }
+
+    showRawTranscript() {
+        if (this.wrapperUploadRefined) this.wrapperUploadRefined.style.display = 'none';
+        if (this.wrapperUploadRaw) this.wrapperUploadRaw.style.display = 'block';
+        if (this.btnUploadShowRefined) this.btnUploadShowRefined.classList.remove('active');
+        if (this.btnUploadShowRaw) this.btnUploadShowRaw.classList.add('active');
+        if (this.uploadTranscriptLabel) this.uploadTranscriptLabel.textContent = 'Raw Transcript';
     }
 
     clearAudioUploadStatus() {
@@ -326,6 +357,19 @@ export class SettingsPanel {
                 this.audioUploadResult.value = shouldEnhance ? (refinedTranscript || rawTranscript) : '';
             }
 
+            const hasDistinctRaw = rawTranscript && refinedTranscript && rawTranscript !== refinedTranscript;
+            if (shouldEnhance && hasDistinctRaw) {
+                this.updateAudioUploadToggleVisibility(true);
+                this.showRefinedTranscript();
+            } else {
+                this.updateAudioUploadToggleVisibility(false);
+                if (shouldEnhance) {
+                    this.showRefinedTranscript();
+                } else {
+                    this.showRawTranscript();
+                }
+            }
+
             if (result?.empty || !transcript) {
                 this.showAudioUploadStatus('No clear speech detected in the uploaded audio.', true);
             } else {
@@ -413,6 +457,8 @@ export class SettingsPanel {
         this.btnAudioUploadCopy?.addEventListener('click', () => {
             void this.copyAudioUploadTranscript('refined');
         });
+        this.btnUploadShowRefined?.addEventListener('click', () => this.showRefinedTranscript());
+        this.btnUploadShowRaw?.addEventListener('click', () => this.showRawTranscript());
         this.btnOpenLogs?.addEventListener('click', () => this.openLogsFolder());
         this.updateAudioUploadButtons();
         this.renderAudioUploadSelection();

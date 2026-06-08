@@ -141,6 +141,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
           session: accountSession,
           audioUri: normalizedSource.uri,
           audioMimeType: normalizedSource.mimeType,
+          audioFileName: normalizedSource.fileName,
           requestId: createRequestId(),
           clientSessionId: options.sessionId,
           language: options.language,

@@ -1,5 +1,4 @@
 import Constants from 'expo-constants';
-import * as FileSystem from 'expo-file-system/legacy';
 import { Platform } from 'react-native';
 import { parseErrorMessage, sanitizeRefinedText } from '@koe/core';
 import type { StoredAccountSession } from '../storage/secure-storage';
@@ -195,6 +194,7 @@ interface ProcessAudioInput {
   session: StoredAccountSession;
   audioUri: string;
   audioMimeType?: string;
+  audioFileName?: string;
   requestId: string;
   clientSessionId?: string;
   mode?: AccountMode;
@@ -404,18 +404,40 @@ function requestMultipartJson<T>(path: string, formData: FormData, context: Auth
   });
 }
 
-async function appendAudioFile(formData: FormData, audioUri: string): Promise<void> {
+function inferAudioFileName(audioUri: string, providedFileName?: string) {
+  if (providedFileName?.trim()) {
+    return providedFileName.trim();
+  }
+
+  const normalized = audioUri.split('?')[0] || audioUri;
+  const segments = normalized.split('/');
+  const lastSegment = segments[segments.length - 1];
+  if (lastSegment) {
+    return decodeURIComponent(lastSegment);
+  }
+
+  const mimeType = inferAudioMimeType(audioUri);
+  if (mimeType === 'audio/webm') return 'recording.webm';
+  if (mimeType === 'audio/wav') return 'recording.wav';
+  if (mimeType === 'audio/mpeg') return 'recording.mp3';
+  return 'recording.m4a';
+}
+
+async function appendAudioFile(formData: FormData, audioUri: string, audioMimeType?: string, audioFileName?: string): Promise<void> {
+  const resolvedFileName = inferAudioFileName(audioUri, audioFileName);
+  const resolvedMimeType = inferAudioMimeType(audioUri, audioMimeType);
+
   if (audioUri.startsWith('blob:') || audioUri.startsWith('http')) {
     const blobResponse = await fetch(audioUri);
     const blob = await blobResponse.blob();
-    formData.append('file', blob, 'recording.webm');
+    formData.append('audio', blob, resolvedFileName);
     return;
   }
 
-  formData.append('file', {
+  formData.append('audio', {
     uri: audioUri,
-    name: 'recording.m4a',
-    type: 'audio/m4a',
+    name: resolvedFileName,
+    type: resolvedMimeType,
   } as never);
 }
 
@@ -580,31 +602,19 @@ function inferAudioMimeType(audioUri: string, providedMimeType?: string) {
 }
 
 export async function processAccountAudio(input: ProcessAudioInput): Promise<AccountProcessResponse> {
-  const audioBase64 = await FileSystem.readAsStringAsync(input.audioUri, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
+  const formData = new FormData();
+  formData.append('requestId', input.requestId);
+  if (input.clientSessionId) formData.append('clientSessionId', input.clientSessionId);
+  if (input.mode) formData.append('mode', input.mode);
+  if (input.language) formData.append('language', input.language);
+  if (input.model) formData.append('model', input.model);
+  if (input.promptStyle) formData.append('promptStyle', input.promptStyle);
+  if (input.customPrompt) formData.append('customPrompt', input.customPrompt);
+  formData.append('enhanceText', String(Boolean(input.enhanceText)));
+  formData.append('audioSeconds', String(Math.max(0, input.audioSeconds || 0)));
+  await appendAudioFile(formData, input.audioUri, input.audioMimeType, input.audioFileName);
 
-  return requestJson<AccountProcessResponse>(
-    '/api/v1/process',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        audioBase64,
-        audioMimeType: inferAudioMimeType(input.audioUri, input.audioMimeType),
-        requestId: input.requestId,
-        clientSessionId: input.clientSessionId,
-        mode: input.mode,
-        language: input.language,
-        model: input.model,
-        promptStyle: input.promptStyle,
-        customPrompt: input.customPrompt,
-        enhanceText: Boolean(input.enhanceText),
-        audioSeconds: Math.max(0, input.audioSeconds || 0),
-      }),
-    },
-    { session: input.session },
-  );
+  return requestMultipartJson<AccountProcessResponse>('/api/v1/process', formData, { session: input.session });
 }
 
 export async function refineAccountTranscript(input: RefineTranscriptInput): Promise<AccountRefineResponse> {

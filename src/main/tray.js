@@ -1,16 +1,155 @@
-const { Tray, Menu, app, nativeImage } = require('electron');
+const { Tray, Menu, app, nativeImage, dialog, clipboard } = require('electron');
 const path = require('path');
 const { CHANNELS } = require('../shared/constants');
 const { createSettingsWindow } = require('./settings-window');
 const { getRecordingState, toggleRecording } = require('./services/recording-state');
 const { showPillWindow } = require('./services/pill-window');
 const { ensureProcessingReady } = require('./services/processing-readiness');
+const { processAudio } = require('./services/groq');
+const { getSettings } = require('./services/settings');
+const historyService = require('./services/history');
 const fs = require('fs');
 
 const logger = require('./services/logger');
 
+const MAX_AUDIO_UPLOAD_BYTES = 20 * 1024 * 1024;
+
 let tray = null;
 let isRecording = false;
+let importSessionId = 100000;
+
+function inferAudioContentType(fileName = '') {
+    const normalizedName = String(fileName || '').trim().toLowerCase();
+    if (normalizedName.endsWith('.mp3')) return 'audio/mpeg';
+    if (normalizedName.endsWith('.m4a')) return 'audio/mp4';
+    if (normalizedName.endsWith('.wav')) return 'audio/wav';
+    if (normalizedName.endsWith('.webm')) return 'audio/webm';
+    if (normalizedName.endsWith('.ogg')) return 'audio/ogg';
+    if (normalizedName.endsWith('.flac')) return 'audio/flac';
+    if (normalizedName.endsWith('.aac')) return 'audio/aac';
+    if (normalizedName.endsWith('.mp4')) return 'audio/mp4';
+    return 'application/octet-stream';
+}
+
+function sendImportStatus(mainWindow, status) {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+        return;
+    }
+
+    mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_STATUS, {
+        ...status,
+        forceDisplay: true
+    });
+}
+
+function sendImportComplete(mainWindow, payload) {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+        return;
+    }
+
+    mainWindow.webContents.send(CHANNELS.TRANSCRIPTION_COMPLETE, {
+        ...payload,
+        forceDisplay: true
+    });
+}
+
+async function importAudioFile(mainWindow) {
+    if (!mainWindow || mainWindow.isDestroyed()) {
+        return;
+    }
+
+    if (!ensureProcessingReady(mainWindow)) {
+        logger.warn('Audio import blocked because no account session or local Groq key is configured.');
+        return;
+    }
+
+    const result = await dialog.showOpenDialog({
+        title: 'Import audio file',
+        properties: ['openFile'],
+        filters: [
+            { name: 'Audio Files', extensions: ['wav', 'mp3', 'm4a', 'webm', 'ogg', 'flac', 'aac', 'mp4'] },
+            { name: 'All Files', extensions: ['*'] }
+        ]
+    });
+
+    if (result.canceled || !result.filePaths?.[0]) {
+        return;
+    }
+
+    const filePath = result.filePaths[0];
+    const fileName = path.basename(filePath);
+    const sessionId = ++importSessionId;
+
+    try {
+        const stats = fs.statSync(filePath);
+        if (stats.size > MAX_AUDIO_UPLOAD_BYTES) {
+            throw new Error('Audio file is too large. Keep uploads under 20 MB.');
+        }
+
+        showPillWindow(mainWindow);
+        sendImportStatus(mainWindow, {
+            sessionId,
+            stage: 'uploading',
+            label: 'Importing audio',
+            detail: fileName,
+            progress: 8
+        });
+
+        const settings = getSettings();
+        const audioBuffer = fs.readFileSync(filePath);
+        const processed = await processAudio(audioBuffer, 0, {
+            requestId: `desktop-import-${Date.now()}`,
+            clientSessionId: `desktop-import-${Date.now()}`,
+            fileName,
+            contentType: inferAudioContentType(fileName),
+            enhanceText: settings.enhanceText !== false,
+            onStage: (stage) => sendImportStatus(mainWindow, { sessionId, ...stage })
+        });
+
+        const rawText = String(processed?.rawText || '').trim();
+        const refinedText = String(processed?.refinedText || '').trim() || rawText;
+        const transcript = refinedText || rawText;
+
+        if (!transcript || processed?.empty) {
+            sendImportStatus(mainWindow, {
+                sessionId,
+                stage: 'empty',
+                label: 'No speech detected',
+                detail: fileName,
+                progress: 100
+            });
+            return;
+        }
+
+        clipboard.writeText(transcript);
+        historyService.addHistoryEntry({
+            rawText,
+            refinedText,
+            language: settings.language || 'auto',
+            isLlamaEnhanced: refinedText !== rawText,
+            source: 'upload'
+        });
+
+        sendImportStatus(mainWindow, {
+            sessionId,
+            stage: 'refining',
+            label: settings.enhanceText !== false ? 'Copied refined transcript' : 'Copied raw transcript',
+            detail: 'Imported audio transcript copied to clipboard.',
+            progress: 96
+        });
+        sendImportComplete(mainWindow, { sessionId, text: transcript });
+    } catch (error) {
+        logger.error('[Tray Import] Audio import failed:', error);
+        showPillWindow(mainWindow);
+        sendImportStatus(mainWindow, {
+            sessionId,
+            stage: 'error',
+            error: error.message || 'Audio import failed.',
+            detail: fileName
+        });
+    }
+}
+
 
 function resolveTrayIcon() {
     const possiblePaths = [
@@ -79,6 +218,13 @@ function updateContextMenu(mainWindow) {
                     }
                     mainWindow.webContents.send(CHANNELS.RECORDING_TOGGLED, recordingState);
                 }
+            }
+        },
+        {
+            label: 'Import Audio File...',
+            enabled: !isRecording,
+            click: () => {
+                void importAudioFile(mainWindow);
             }
         },
         { type: 'separator' },
