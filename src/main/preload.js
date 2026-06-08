@@ -98,5 +98,9 @@ contextBridge.exposeInMainWorld('api', {
     onOpenUsageTab: (callback) => {
         ipcRenderer.removeAllListeners(CHANNELS.OPEN_USAGE_TAB);
         ipcRenderer.on(CHANNELS.OPEN_USAGE_TAB, () => callback());
+    },
+    onOpenImportTab: (callback) => {
+        ipcRenderer.removeAllListeners(CHANNELS.OPEN_IMPORT_TAB);
+        ipcRenderer.on(CHANNELS.OPEN_IMPORT_TAB, () => callback());
     }
 });

@@ -46,9 +46,10 @@ class SettingsWindow {
      * Set up settings-section navigation inside the Settings tab
      */
     setupSettingsSectionNav() {
+        const settingsPanel = document.getElementById('panel-settings');
         const scrollRegion = document.getElementById('settings-scroll-region');
-        const navButtons = document.querySelectorAll('.section-nav-btn[data-section]');
-        const sections = document.querySelectorAll('.settings-section-card');
+        const navButtons = settingsPanel?.querySelectorAll('.section-nav-btn[data-section]') || [];
+        const sections = settingsPanel?.querySelectorAll('.settings-section-card') || [];
 
         if (navButtons.length === 0) {
             return;
@@ -78,7 +79,7 @@ class SettingsWindow {
         });
 
         // Initialize with default active section
-        const activeBtn = document.querySelector('.section-nav-btn.active[data-section]');
+        const activeBtn = settingsPanel?.querySelector('.section-nav-btn.active[data-section]');
         if (activeBtn) {
             switchToSection(activeBtn.dataset.section);
         } else if (navButtons[0]) {
@@ -169,6 +170,10 @@ class SettingsWindow {
                     this.panels.usage.show();
                 }
                 break;
+            case 'import':
+                this.panels.settings?.renderAudioUploadSelection?.();
+                this.panels.settings?.updateAudioUploadButtons?.();
+                break;
         }
     }
 
@@ -192,6 +197,8 @@ class SettingsWindow {
                     this.panels.usage.hide();
                 }
                 break;
+            case 'import':
+                break;
         }
     }
 
@@ -214,6 +221,10 @@ class SettingsWindow {
                 if (this.panels.usage) {
                     this.panels.usage.fetchUsage();
                 }
+                break;
+            case 'import':
+                this.panels.settings?.renderAudioUploadSelection?.();
+                this.panels.settings?.updateAudioUploadButtons?.();
                 break;
         }
     }
@@ -270,9 +281,9 @@ class SettingsWindow {
             }
 
             // Tab switching with Ctrl/Cmd + number
-            if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '3') {
+            if ((e.ctrlKey || e.metaKey) && e.key >= '1' && e.key <= '4') {
                 e.preventDefault();
-                const tabMap = { '1': 'settings', '2': 'history', '3': 'usage' };
+                const tabMap = { '1': 'settings', '2': 'import', '3': 'history', '4': 'usage' };
                 this.switchToTab(tabMap[e.key]);
             }
         });
@@ -339,6 +350,9 @@ class SettingsWindow {
         }
         if (window.api.onOpenUsageTab) {
             window.api.onOpenUsageTab(() => this.switchToTab('usage'));
+        }
+        if (window.api.onOpenImportTab) {
+            window.api.onOpenImportTab(() => this.switchToTab('import'));
         }
     }
 }

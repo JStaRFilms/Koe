@@ -1,4 +1,5 @@
-const { Tray, Menu, app, nativeImage, dialog, clipboard } = require('electron');
+const { Tray, Menu, app, nativeImage, dialog } = require('electron');
+const { randomUUID } = require('crypto');
 const path = require('path');
 const { CHANNELS } = require('../shared/constants');
 const { createSettingsWindow } = require('./settings-window');
@@ -7,6 +8,7 @@ const { showPillWindow } = require('./services/pill-window');
 const { ensureProcessingReady } = require('./services/processing-readiness');
 const { processAudio } = require('./services/groq');
 const { getSettings } = require('./services/settings');
+const { autoPaste, writeToClipboard } = require('./services/clipboard');
 const historyService = require('./services/history');
 const fs = require('fs');
 
@@ -97,9 +99,10 @@ async function importAudioFile(mainWindow) {
 
         const settings = getSettings();
         const audioBuffer = fs.readFileSync(filePath);
+        const importRequestId = randomUUID();
         const processed = await processAudio(audioBuffer, 0, {
-            requestId: `desktop-import-${Date.now()}`,
-            clientSessionId: `desktop-import-${Date.now()}`,
+            requestId: importRequestId,
+            clientSessionId: `desktop-import-${importRequestId}`,
             fileName,
             contentType: inferAudioContentType(fileName),
             enhanceText: settings.enhanceText !== false,
@@ -121,7 +124,10 @@ async function importAudioFile(mainWindow) {
             return;
         }
 
-        clipboard.writeText(transcript);
+        writeToClipboard(transcript);
+        if (settings.autoPaste !== false) {
+            await autoPaste(transcript);
+        }
         historyService.addHistoryEntry({
             rawText,
             refinedText,
@@ -225,6 +231,12 @@ function updateContextMenu(mainWindow) {
             enabled: !isRecording,
             click: () => {
                 void importAudioFile(mainWindow);
+            }
+        },
+        {
+            label: 'Open Import Tab...',
+            click: () => {
+                createSettingsWindow('import');
             }
         },
         { type: 'separator' },

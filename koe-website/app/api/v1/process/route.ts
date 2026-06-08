@@ -109,12 +109,16 @@ async function parseProcessInput(request: Request): Promise<ProcessInput> {
 
 export async function POST(request: Request) {
   const stream = wantsNdjson(request);
+  let phase = "start";
+  let requestIdForLog: string | null = null;
 
   try {
+    phase = "auth";
     const auth = await getAuthContext(request);
     await assertRateLimit(request, { scope: "process:ip", max: 60, windowMs: 60_000 });
     await assertRateLimit(request, { scope: "process:user", key: auth.user.id, max: 30, windowMs: 60_000 });
 
+    phase = "parse_input";
     const {
       audio,
       requestId,
@@ -127,6 +131,7 @@ export async function POST(request: Request) {
       enhanceText,
       clientEstimatedAudioSeconds,
     } = await parseProcessInput(request);
+    requestIdForLog = requestId;
 
     if (audio.size === 0) {
       return apiError("BAD_REQUEST", "No audio file was uploaded.", 400);
@@ -136,10 +141,12 @@ export async function POST(request: Request) {
       return apiError("AUDIO_TOO_LARGE", "Audio file too large. Keep uploads under 20 MB.", 413);
     }
 
+    phase = "derive_duration";
     const serverAudioSeconds = await deriveAudioSeconds(audio);
     const requestedOrDefaultMode = requestedMode || auth.user.defaultMode;
     const billableAudioSeconds = serverAudioSeconds ?? (requestedOrDefaultMode === "managed" ? 0 : clientEstimatedAudioSeconds);
 
+    phase = "check_existing_history";
     const existing = one<{
       id: string;
       mode: "byok" | "managed";
@@ -177,6 +184,7 @@ export async function POST(request: Request) {
       return stream ? ndjsonResponse([{ type: "complete", ...payload }]) : NextResponse.json(payload);
     }
 
+    phase = "resolve_mode";
     const resolvedMode = await resolveAccountMode({
       userId: auth.user.id,
       defaultMode: auth.user.defaultMode,
@@ -193,15 +201,19 @@ export async function POST(request: Request) {
       );
     }
 
+    phase = "resolve_provider_key";
     const apiKey = await resolveProviderApiKey(auth.user.id, resolvedMode);
 
     try {
+      phase = "transcribe_provider";
       const rawText = await transcribeWithGroq({ apiKey, audio, language, model });
       const empty = !rawText || rawText.toLowerCase().includes("thanks for watching");
+      phase = "refine_provider";
       const refinedText = !empty && enhanceText
         ? await refineWithGroq({ apiKey, rawText, promptStyle, customPrompt })
         : rawText;
 
+      phase = "record_history";
       const historyId = await recordTranscriptHistory({
         userId: auth.user.id,
         deviceId: auth.device?.id,
@@ -214,6 +226,7 @@ export async function POST(request: Request) {
         audioSeconds: billableAudioSeconds,
       });
 
+      phase = "record_usage_success";
       await recordUsage({
         userId: auth.user.id,
         deviceId: auth.device?.id,
@@ -252,21 +265,27 @@ export async function POST(request: Request) {
       return NextResponse.json(payload);
     } catch (error) {
       if (error instanceof ApiError) {
-        await recordUsage({
-          userId: auth.user.id,
-          deviceId: auth.device?.id,
-          requestId,
-          resolvedMode,
-          action: "process",
-          model,
-          audioSeconds: billableAudioSeconds,
-          status: "error",
-          errorCode: error.code,
-        });
+        phase = "record_usage_error";
+        try {
+          await recordUsage({
+            userId: auth.user.id,
+            deviceId: auth.device?.id,
+            requestId,
+            resolvedMode,
+            action: "process",
+            model,
+            audioSeconds: billableAudioSeconds,
+            status: "error",
+            errorCode: error.code,
+          });
+        } catch (usageError) {
+          console.error("[Process] Failed to record error usage", { requestId, originalError: error, usageError });
+        }
       }
       throw error;
     }
   } catch (error) {
+    console.error("[Process] Request failed", { phase, requestId: requestIdForLog, error });
     if (error instanceof z.ZodError) {
       return apiError("BAD_REQUEST", "Invalid processing request.", 400);
     }

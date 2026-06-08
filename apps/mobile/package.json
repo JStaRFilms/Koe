@@ -1,6 +1,6 @@
 {
   "name": "koe-mobile",
-  "version": "1.1.13",
+  "version": "1.1.14",
   "main": "expo-router/entry",
   "scripts": {
     "start": "expo start",

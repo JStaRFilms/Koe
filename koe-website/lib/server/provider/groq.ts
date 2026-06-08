@@ -34,6 +34,9 @@ export async function transcribeWithGroq(args: {
     headers: { Authorization: `Bearer ${args.apiKey}` },
     body: upstreamForm,
     cache: "no-store",
+  }).catch((error) => {
+    console.error("[Groq] Transcription network failure", error);
+    throw new ApiError("UPSTREAM_ERROR", "Transcription provider could not be reached.", 502, true);
   });
 
   const payload = (await upstream.json().catch(() => ({}))) as {
@@ -74,6 +77,9 @@ export async function refineWithGroq(args: {
       max_completion_tokens: 1024,
     }),
     cache: "no-store",
+  }).catch((error) => {
+    console.error("[Groq] Refinement network failure", error);
+    throw new ApiError("UPSTREAM_ERROR", "Refinement provider could not be reached.", 502, true);
   });
 
   if (!response.ok) {

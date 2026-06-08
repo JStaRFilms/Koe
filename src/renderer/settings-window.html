@@ -56,6 +56,15 @@
             </svg>
             Settings
         </button>
+        <button class="tab-btn" data-tab="import" id="tab-import">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Import
+        </button>
         <button class="tab-btn" data-tab="history" id="tab-history">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round">
@@ -275,50 +284,6 @@
                                     <small class="input-help">Used first during enhancement. Clear it to fall back to the style preset.</small>
                                 </div>
 
-                                <div class="settings-fieldset upload-fieldset">
-                                    <div class="fieldset-label">Audio file upload</div>
-                                    <div class="setting-group">
-                                        <label>Transcribe an existing audio file</label>
-                                        <input type="file" id="audio-upload-file" accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg,.flac,.aac,.mp4" hidden>
-                                        <div class="setting-toggle-row upload-refine-toggle">
-                                            <label class="checkbox-label">
-                                                <input type="checkbox" id="audio-upload-enhance" checked>
-                                                <span>Refine after transcription</span>
-                                            </label>
-                                        </div>
-                                        <div class="upload-action-row">
-                                            <button class="secondary-btn" id="btn-audio-upload-select" type="button">Choose File</button>
-                                            <button class="primary-btn compact" id="btn-audio-upload-process" type="button">Transcribe + Refine</button>
-                                            <button class="secondary-btn subtle" id="btn-audio-upload-clear" type="button">Clear</button>
-                                        </div>
-                                        <div class="upload-selection-card" id="audio-upload-selection">No audio file selected yet.</div>
-                                        <div class="test-result" id="audio-upload-status"></div>
-                                    </div>
-
-                                    <div class="setting-group upload-transcript-container">
-                                        <div class="transcript-header-row">
-                                            <span class="transcript-title-label" id="upload-transcript-label">Transcript</span>
-                                            <div class="transcript-toggle-group" id="upload-transcript-toggle-group" style="display: none;">
-                                                <button type="button" class="toggle-btn active" id="btn-upload-show-refined">Refined</button>
-                                                <button type="button" class="toggle-btn" id="btn-upload-show-raw">Raw</button>
-                                            </div>
-                                        </div>
-                                        <div class="transcript-viewport">
-                                            <div id="wrapper-upload-raw" style="display: none;">
-                                                <textarea id="audio-upload-raw-result" class="upload-result" rows="8" placeholder="Raw transcript appears here." readonly></textarea>
-                                                <div class="compact-actions" style="margin-top: 8px;">
-                                                    <button class="secondary-btn" id="btn-audio-upload-copy-raw" type="button">Copy Raw</button>
-                                                </div>
-                                            </div>
-                                            <div id="wrapper-upload-refined">
-                                                <textarea id="audio-upload-result" class="upload-result" rows="8" placeholder="Refined transcript appears here when enabled." readonly></textarea>
-                                                <div class="compact-actions" style="margin-top: 8px;">
-                                                    <button class="secondary-btn" id="btn-audio-upload-copy" type="button">Copy Refined</button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
                             </section>
 
                             <!-- ═══════ LOCAL BYOK ═══════ -->
@@ -424,7 +389,7 @@
                                         <div class="shortcut-reference-item">
                                             <div>
                                                 <div class="shortcut-reference-title">Switch settings tabs</div>
-                                                <small class="input-help">Jump between Settings, History, and Usage.</small>
+                                                <small class="input-help">Jump between Settings, Import, History, and Usage.</small>
                                             </div>
                                             <div class="shortcut-keys" id="shortcut-settings-tabs"></div>
                                         </div>
@@ -489,6 +454,56 @@
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                             Save changes
                         </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Tab -->
+        <div class="tab-panel" id="panel-import">
+            <div class="import-tab-content">
+                <div class="import-tab-header">
+                    <div class="section-header">Import Audio</div>
+                    <p class="section-description">Transcribe an existing audio file. Signed-in account mode syncs to Koe history; local BYOK stays direct on this desktop.</p>
+                </div>
+
+                <div class="settings-fieldset upload-fieldset">
+                    <div class="fieldset-label">Audio file upload</div>
+                    <div class="setting-group">
+                        <label>Transcribe an existing audio file</label>
+                        <small class="input-help">Uses the same desktop processing pipeline as recording. Signed-in account mode stays proxied through Koe, while local BYOK stays direct to Groq.</small>
+                        <input type="file" id="audio-upload-file" accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg,.flac,.aac,.mp4" hidden>
+                        <div class="setting-toggle-row upload-refine-toggle">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="audio-upload-enhance" checked>
+                                <span>Refine after transcription</span>
+                            </label>
+                            <small class="input-help">On: return raw + polished text. Off: return raw transcription only.</small>
+                        </div>
+                        <div class="upload-action-row">
+                            <button class="secondary-btn" id="btn-audio-upload-select" type="button">Choose File</button>
+                            <button class="primary-btn compact" id="btn-audio-upload-process" type="button">Transcribe + Refine</button>
+                            <button class="secondary-btn subtle" id="btn-audio-upload-clear" type="button">Clear</button>
+                        </div>
+                        <div class="upload-selection-card" id="audio-upload-selection">No audio file selected yet.</div>
+                        <div class="test-result" id="audio-upload-status"></div>
+                    </div>
+
+                    <div class="setting-group upload-transcript-grid">
+                        <div>
+                            <label>Raw transcript</label>
+                            <textarea id="audio-upload-raw-result" class="upload-result" rows="8" placeholder="Raw transcript appears here." readonly></textarea>
+                            <div class="compact-actions">
+                                <button class="secondary-btn" id="btn-audio-upload-copy-raw" type="button">Copy Raw</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label>Refined transcript</label>
+                            <textarea id="audio-upload-result" class="upload-result" rows="8" placeholder="Refined transcript appears here when enabled." readonly></textarea>
+                            <div class="compact-actions">
+                                <button class="secondary-btn" id="btn-audio-upload-copy" type="button">Copy Refined</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

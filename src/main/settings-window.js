@@ -11,7 +11,7 @@ let settingsWindow = null;
 
 /**
  * Create the settings window
- * @param {string} initialTab - Tab to open initially ('settings', 'history', 'usage')
+ * @param {string} initialTab - Tab to open initially ('settings', 'history', 'usage', 'import')
  * @returns {BrowserWindow} The created window
  */
 function createSettingsWindow(initialTab = 'settings') {
@@ -106,7 +106,8 @@ function getTabChannel(tabName) {
     const channelMap = {
         'settings': CHANNELS.OPEN_SETTINGS_TAB,
         'history': CHANNELS.OPEN_HISTORY_TAB,
-        'usage': CHANNELS.OPEN_USAGE_TAB
+        'usage': CHANNELS.OPEN_USAGE_TAB,
+        'import': CHANNELS.OPEN_IMPORT_TAB
     };
     return channelMap[tabName] || CHANNELS.OPEN_SETTINGS_TAB;
 }

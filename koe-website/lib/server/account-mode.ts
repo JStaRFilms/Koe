@@ -209,13 +209,31 @@ export async function resolveProviderApiKey(userId: string, resolvedMode: Resolv
     throw new ApiError("MISSING_BYOK_CREDENTIAL", "Save a Groq API key before using BYOK mode.", 409);
   }
 
-  return decryptSecret({
-    userId,
-    provider: credential.provider,
-    encryptedSecret: credential.encrypted_secret,
-    encryptionIv: credential.encryption_iv,
-    encryptionTag: credential.encryption_tag,
-    encryptionKeyId: credential.encryption_key_id,
-    encryptionVersion: Number(credential.encryption_version),
-  });
+  try {
+    return decryptSecret({
+      userId,
+      provider: credential.provider,
+      encryptedSecret: credential.encrypted_secret,
+      encryptionIv: credential.encryption_iv,
+      encryptionTag: credential.encryption_tag,
+      encryptionKeyId: credential.encryption_key_id,
+      encryptionVersion: Number(credential.encryption_version),
+    });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    console.error("[AccountMode] Saved BYOK credential could not be decrypted.", {
+      userId,
+      credentialId: credential.id,
+      keyId: credential.encryption_key_id,
+      error,
+    });
+    throw new ApiError(
+      "MISSING_BYOK_CREDENTIAL",
+      "Saved Groq key could not be decrypted. Delete and re-save your account Groq key, or switch to managed mode.",
+      409,
+    );
+  }
 }

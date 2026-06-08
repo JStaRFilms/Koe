@@ -672,7 +672,8 @@ export class SettingsPanel {
         this.renderShortcutSequence(this.shortcutSettingsTabs, [
             [modifier, '1'],
             [modifier, '2'],
-            [modifier, '3']
+            [modifier, '3'],
+            [modifier, '4']
         ]);
         this.renderShortcutSequence(this.shortcutSettingsClose, ['Esc']);
     }

@@ -51,6 +51,7 @@ export function handleApiError(error: unknown) {
     return apiError(error.code, error.message, error.status, error.retryable);
   }
 
+  console.error("[API] Unhandled request failure", error);
   return apiError("INTERNAL_ERROR", "Request failed.", 500, true);
 }
 

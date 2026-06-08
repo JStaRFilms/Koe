@@ -44,7 +44,8 @@ const CHANNELS = {
     CLOSE_SETTINGS_WINDOW: 'window:close-settings-window',
     OPEN_SETTINGS_TAB: 'tab:open-settings',
     OPEN_HISTORY_TAB: 'tab:open-history',
-    OPEN_USAGE_TAB: 'tab:open-usage'
+    OPEN_USAGE_TAB: 'tab:open-usage',
+    OPEN_IMPORT_TAB: 'tab:open-import'
 };
 
 const DEFAULT_SETTINGS = {
