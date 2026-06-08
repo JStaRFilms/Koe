@@ -16,20 +16,41 @@ function formatBytes(bytes: number) {
 
 type AudioUploadPanelProps = {
   phase: AppPhase;
-  transcript: string;
+  rawTranscript: string;
+  refinedTranscript: string;
   busyLabel: string;
   copyState: string;
-  onUpload: (file: File, audioSeconds: number) => void;
-  onCopy: () => void;
+  defaultEnhanceText: boolean;
+  onUpload: (file: File, audioSeconds: number, enhanceText: boolean) => void;
+  onCopyRaw: () => void;
+  onCopyRefined: () => void;
   onClear: () => void;
 };
 
-export function AudioUploadPanel({ phase, transcript, busyLabel, copyState, onUpload, onCopy, onClear }: AudioUploadPanelProps) {
+export function AudioUploadPanel({
+  phase,
+  rawTranscript,
+  refinedTranscript,
+  busyLabel,
+  copyState,
+  defaultEnhanceText,
+  onUpload,
+  onCopyRaw,
+  onCopyRefined,
+  onClear,
+}: AudioUploadPanelProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [estimatedSeconds, setEstimatedSeconds] = useState<number | null>(null);
   const [fileError, setFileError] = useState("");
+  const [enhanceText, setEnhanceText] = useState(defaultEnhanceText);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const isProcessing = phase === "processing";
+  const hasRaw = Boolean(rawTranscript.trim());
+  const hasRefined = Boolean(refinedTranscript.trim());
+
+  useEffect(() => {
+    setEnhanceText(defaultEnhanceText);
+  }, [defaultEnhanceText]);
 
   useEffect(() => {
     if (!selectedFile) return;
@@ -82,7 +103,7 @@ export function AudioUploadPanel({ phase, transcript, busyLabel, copyState, onUp
 
   const submitUpload = () => {
     if (!selectedFile || fileError || isProcessing || busyLabel) return;
-    onUpload(selectedFile, estimatedSeconds || 0);
+    onUpload(selectedFile, estimatedSeconds || 0, enhanceText);
   };
 
   return (
@@ -99,7 +120,7 @@ export function AudioUploadPanel({ phase, transcript, busyLabel, copyState, onUp
           disabled={!selectedFile || Boolean(fileError) || isProcessing || Boolean(busyLabel)}
         >
           {isProcessing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-          {isProcessing ? "UPLOADING" : "PROCESS FILE"}
+          {isProcessing ? "PROCESSING" : enhanceText ? "TRANSCRIBE + REFINE" : "TRANSCRIBE RAW"}
         </button>
       </div>
 
@@ -145,14 +166,45 @@ export function AudioUploadPanel({ phase, transcript, busyLabel, copyState, onUp
         {fileError ? <p className="text-sm text-crimson mt-3">{fileError}</p> : null}
       </div>
 
-      <div className="border-raw bg-zinc/10 min-h-[180px] p-5 normal-case leading-relaxed whitespace-pre-wrap mt-4">
-        {transcript || <span className="text-muted">Uploaded audio transcripts will appear here and be saved to your signed-in account history.</span>}
+      <label className="border-raw bg-zinc/10 p-4 mt-4 normal-case flex items-start gap-3 cursor-pointer">
+        <input
+          type="checkbox"
+          className="mt-1"
+          checked={enhanceText}
+          onChange={(event) => setEnhanceText(event.target.checked)}
+          disabled={isProcessing || Boolean(busyLabel)}
+        />
+        <span>
+          <span className="block text-bone text-sm font-bold uppercase">Refine after transcription</span>
+          <span className="block text-xs text-muted mt-1 leading-relaxed">
+            On: return raw + polished text. Off: return raw transcription only.
+          </span>
+        </span>
+      </label>
+
+      <div className="grid md:grid-cols-2 gap-4 mt-4">
+        <div>
+          <p className="text-amber text-xs font-bold mb-2">RAW TRANSCRIPT</p>
+          <div className="border-raw bg-zinc/10 min-h-[180px] p-5 normal-case leading-relaxed whitespace-pre-wrap">
+            {rawTranscript || <span className="text-muted">Raw uploaded audio transcript will appear here.</span>}
+          </div>
+        </div>
+        <div>
+          <p className="text-amber text-xs font-bold mb-2">REFINED TRANSCRIPT</p>
+          <div className="border-raw bg-zinc/10 min-h-[180px] p-5 normal-case leading-relaxed whitespace-pre-wrap">
+            {refinedTranscript || <span className="text-muted">Refined text appears here when refinement is enabled.</span>}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-3 mt-5">
-        <button type="button" className="webapp-utility-button" onClick={onCopy} disabled={!transcript}>
+        <button type="button" className="webapp-utility-button" onClick={onCopyRaw} disabled={!hasRaw}>
           <Copy className="w-4 h-4" />
-          {copyState || "COPY"}
+          {copyState || "COPY RAW"}
+        </button>
+        <button type="button" className="webapp-utility-button" onClick={onCopyRefined} disabled={!hasRefined}>
+          <Copy className="w-4 h-4" />
+          COPY REFINED
         </button>
         <button type="button" className="webapp-utility-button" onClick={clearSelection}>
           <CheckCircle2 className="w-4 h-4" />

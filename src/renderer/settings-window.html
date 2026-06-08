@@ -281,20 +281,36 @@
                                         <label>Transcribe an existing audio file</label>
                                         <small class="input-help">Uses the same desktop processing pipeline as recording. Signed-in account mode stays proxied through Koe, while local BYOK stays direct to Groq.</small>
                                         <input type="file" id="audio-upload-file" accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg,.flac,.aac,.mp4" hidden>
+                                        <div class="setting-toggle-row upload-refine-toggle">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="audio-upload-enhance" checked>
+                                                <span>Refine after transcription</span>
+                                            </label>
+                                            <small class="input-help">On: return raw + polished text. Off: return raw transcription only.</small>
+                                        </div>
                                         <div class="upload-action-row">
                                             <button class="secondary-btn" id="btn-audio-upload-select" type="button">Choose File</button>
-                                            <button class="primary-btn compact" id="btn-audio-upload-process" type="button">Process File</button>
+                                            <button class="primary-btn compact" id="btn-audio-upload-process" type="button">Transcribe + Refine</button>
                                             <button class="secondary-btn subtle" id="btn-audio-upload-clear" type="button">Clear</button>
                                         </div>
                                         <div class="upload-selection-card" id="audio-upload-selection">No audio file selected yet.</div>
                                         <div class="test-result" id="audio-upload-status"></div>
                                     </div>
 
-                                    <div class="setting-group">
-                                        <label>Upload transcript</label>
-                                        <textarea id="audio-upload-result" class="upload-result" rows="8" placeholder="Processed upload transcripts will appear here." readonly></textarea>
-                                        <div class="compact-actions">
-                                            <button class="secondary-btn" id="btn-audio-upload-copy" type="button">Copy Transcript</button>
+                                    <div class="setting-group upload-transcript-grid">
+                                        <div>
+                                            <label>Raw transcript</label>
+                                            <textarea id="audio-upload-raw-result" class="upload-result" rows="8" placeholder="Raw transcript appears here." readonly></textarea>
+                                            <div class="compact-actions">
+                                                <button class="secondary-btn" id="btn-audio-upload-copy-raw" type="button">Copy Raw</button>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label>Refined transcript</label>
+                                            <textarea id="audio-upload-result" class="upload-result" rows="8" placeholder="Refined transcript appears here when enabled." readonly></textarea>
+                                            <div class="compact-actions">
+                                                <button class="secondary-btn" id="btn-audio-upload-copy" type="button">Copy Refined</button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

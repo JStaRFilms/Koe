@@ -33,6 +33,8 @@ export interface PipelineStatus {
   stage: RecordingStage;
   label: string;
   transcript?: string;
+  rawTranscript?: string;
+  refinedTranscript?: string;
   error?: string;
   progress?: number;
 }
@@ -107,7 +109,7 @@ function buildRetryState(
   };
 }
 
-function buildImportedRetryState(file: ImportedAudioAsset): PersistedRetryState {
+function buildImportedRetryState(file: ImportedAudioAsset, enhanceText: boolean): PersistedRetryState {
   return {
     sessionId: `mobile-import-${Date.now()}`,
     audioUri: file.uri,
@@ -115,6 +117,7 @@ function buildImportedRetryState(file: ImportedAudioAsset): PersistedRetryState 
     audioDurationsMillis: [],
     audioMimeType: file.mimeType ?? null,
     audioFileName: file.fileName ?? null,
+    enhanceText,
     durationMillis: 0,
     createdAt: Date.now(),
     rawText: null,
@@ -128,12 +131,12 @@ function sanitizeImportFileName(fileName: string) {
   return cleaned || `audio-import-${Date.now()}`;
 }
 
-function persistImportedAudioFile(
+async function persistImportedAudioFile(
   fileUri: string,
   providedFileName?: string,
   providedMimeType?: string,
   sizeBytes = 0
-): ImportedAudioAsset {
+): Promise<ImportedAudioAsset> {
   const importDirectory = new Directory(Paths.document, IMPORT_DIRECTORY_NAME);
   if (!importDirectory.exists) {
     importDirectory.create({ idempotent: true, intermediates: true });
@@ -143,7 +146,8 @@ function persistImportedAudioFile(
   const fallbackFileName = sourceFile.name || `audio-import${sourceFile.extension || ''}`;
   const safeFileName = sanitizeImportFileName(providedFileName || fallbackFileName);
   const destination = new ExpoFile(importDirectory, `${Date.now()}-${safeFileName}`);
-  sourceFile.copy(destination);
+  const bytes = await sourceFile.bytes();
+  destination.write(bytes);
 
   return {
     uri: destination.uri,
@@ -466,7 +470,7 @@ export function useRecordingPipeline() {
   }, []);
 
   const finalizeSuccess = useCallback(
-    async (rawText: string, finalText: string, durationMillis: number, cleanupAudioUris: string[] = []) => {
+    async (rawText: string, finalText: string, durationMillis: number, cleanupAudioUris: string[] = [], showBoth = false) => {
       await Clipboard.setStringAsync(finalText);
       await persistUsage(durationMillis);
       deleteImportedAudioFiles(cleanupAudioUris);
@@ -493,8 +497,10 @@ export function useRecordingPipeline() {
 
       setStatus({
         stage: 'copied',
-        label: 'Copied to clipboard',
-        transcript: finalText,
+        label: showBoth && finalText !== rawText ? 'Raw + refined copied' : 'Copied to clipboard',
+        transcript: showBoth && finalText !== rawText ? `Raw:\n${rawText}\n\nRefined:\n${finalText}` : finalText,
+        rawTranscript: rawText,
+        refinedTranscript: finalText !== rawText ? finalText : undefined,
         progress: 100,
       });
       setSessionDurationMillis(0);
@@ -526,6 +532,7 @@ export function useRecordingPipeline() {
 
       try {
         const settings = await loadAppSettings();
+        const shouldEnhance = currentRetryState.enhanceText ?? settings.enhanceText;
         const apiKey = (await getGroqApiKey()) || '';
         const totalChunkCount = pendingAudioUris.length;
 
@@ -587,12 +594,12 @@ export function useRecordingPipeline() {
             label:
               pendingAudioUris.length > 0
                 ? `Processing audio part ${chunkNumber + 1} of ${totalChunkCount}...`
-                : settings.enhanceText
+                : shouldEnhance
                   ? 'Polishing transcript...'
                   : 'Finalizing copy...',
             transcript: rawText || undefined,
             progress: Math.min(
-              settings.enhanceText ? 78 : 96,
+              shouldEnhance ? 78 : 96,
               22 + Math.round(((chunkNumber / Math.max(totalChunkCount, 1)) * 56))
             ),
           });
@@ -612,7 +619,7 @@ export function useRecordingPipeline() {
           return;
         }
 
-        const refinedText = settings.enhanceText
+        const refinedText = shouldEnhance
           ? await mobileProvider.refineTranscript(rawText, {
               apiKey,
               promptStyle: settings.promptStyle,
@@ -628,7 +635,7 @@ export function useRecordingPipeline() {
             })
           : rawText;
 
-        await finalizeSuccess(rawText, refinedText, currentRetryState.durationMillis, cleanupAudioUris);
+        await finalizeSuccess(rawText, refinedText, currentRetryState.durationMillis, cleanupAudioUris, shouldEnhance);
       } catch (error) {
         const message = getErrorMessage(error);
         const failedState: PersistedRetryState = {
@@ -736,7 +743,7 @@ export function useRecordingPipeline() {
     }
   }, [clearResetTimer, recorder, resetChunkTracking, setStatus]);
 
-  const importAudioFile = useCallback(async () => {
+  const importAudioFile = useCallback(async (enhanceText = true) => {
     clearResetTimer();
 
     if (retryStateRef.current) {
@@ -788,13 +795,14 @@ export function useRecordingPipeline() {
         return;
       }
 
-      const importedFile = persistImportedAudioFile(
+      const selectedFileName = (selectedFile as { name?: string }).name;
+      const importedFile = await persistImportedAudioFile(
         selectedFile.uri,
-        undefined,
+        selectedFileName,
         selectedFile.type,
         selectedFile.size
       );
-      const retryState = buildImportedRetryState(importedFile);
+      const retryState = buildImportedRetryState(importedFile, enhanceText);
 
       finalRecordingRef.current = { url: null, error: null };
       activeSessionRef.current = null;

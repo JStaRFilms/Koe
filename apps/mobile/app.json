@@ -2,7 +2,7 @@
   "expo": {
     "name": "Koe",
     "slug": "koe-mobile",
-    "version": "1.1.11",
+    "version": "1.1.12",
     "icon": "./assets/icon.png",
     "orientation": "portrait",
     "scheme": "koe",
@@ -25,7 +25,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A0A0A"
       },
-      "versionCode": 20,
+      "versionCode": 21,
       "permissions": [
         "RECORD_AUDIO",
         "android.permission.RECORD_AUDIO",

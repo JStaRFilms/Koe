@@ -930,6 +930,30 @@ select option {
     word-break: break-word;
 }
 
+.upload-refine-toggle {
+    margin: 12px 0;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--koe-text);
+    cursor: pointer;
+}
+
+.checkbox-label input {
+    width: auto;
+}
+
+.upload-transcript-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
 .upload-result {
     min-height: 160px;
     resize: vertical;
@@ -1456,6 +1480,10 @@ select option {
     .upload-action-row .secondary-btn,
     .upload-action-row .primary-btn {
         width: 100%;
+    }
+
+    .upload-transcript-grid {
+        grid-template-columns: 1fr;
     }
 
     .settings-nav {

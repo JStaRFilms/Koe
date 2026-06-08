@@ -33,7 +33,8 @@ export function WebKoeApp() {
   const [busyLabel, setBusyLabel] = useState("");
   const [status, setStatus] = useState("Sign in to use Koe in the browser.");
   const [transcript, setTranscript] = useState("");
-  const [uploadTranscript, setUploadTranscript] = useState("");
+  const [uploadRawTranscript, setUploadRawTranscript] = useState("");
+  const [uploadRefinedTranscript, setUploadRefinedTranscript] = useState("");
   const { copiedEntryId, copyState, copyText, setCopyState } = useCopyFeedback(setStatus);
   const { requestPasswordReset, requestVerification } = useAuthEmailFlows({ email, token, setBusyLabel, setStatus });
   const modeCopy = useMemo(() => {
@@ -108,15 +109,16 @@ export function WebKoeApp() {
     }
   }, [loadSnapshot, snapshot, token]);
 
-  const processUploadedAudio = useCallback(async (audioFile: File, audioSeconds: number) => {
+  const processUploadedAudio = useCallback(async (audioFile: File, audioSeconds: number, enhanceText: boolean) => {
     if (!token || !snapshot) {
       setStatus("Sign in before uploading audio.");
       return;
     }
 
     setUploadPhase("processing");
-    setUploadTranscript("");
-    setStatus("Uploading audio through your signed-in Koe account...");
+    setUploadRawTranscript("");
+    setUploadRefinedTranscript("");
+    setStatus(enhanceText ? "Uploading audio for transcription and refinement..." : "Uploading audio for raw transcription...");
     try {
       const clientSessionId = `web-upload-${crypto.randomUUID()}`;
       const form = new FormData();
@@ -129,16 +131,19 @@ export function WebKoeApp() {
       form.append("model", snapshot.settings.model || "whisper-large-v3-turbo");
       form.append("promptStyle", snapshot.settings.promptStyle || "Clean");
       form.append("customPrompt", snapshot.settings.customPrompt || "");
-      form.append("enhanceText", String(snapshot.settings.enhanceText !== false));
+      form.append("enhanceText", String(enhanceText));
 
       const response = await fetch("/api/v1/process", { method: "POST", headers: authHeaders(token), body: form });
       const payload = (await response.json().catch(() => ({}))) as { rawText?: string; refinedText?: string; empty?: boolean; error?: { message?: string } };
       if (!response.ok) throw new Error(payload.error?.message || "Audio upload processing failed.");
 
-      const text = (payload.refinedText || payload.rawText || "").trim();
-      setUploadTranscript(text);
+      const rawText = (payload.rawText || "").trim();
+      const refinedText = (payload.refinedText || "").trim();
+      const text = refinedText || rawText;
+      setUploadRawTranscript(rawText);
+      setUploadRefinedTranscript(enhanceText ? refinedText || rawText : "");
       setUploadPhase("done");
-      setStatus(payload.empty || !text ? "No clear speech detected in uploaded audio." : "Uploaded audio transcript saved to your account history.");
+      setStatus(payload.empty || !text ? "No clear speech detected in uploaded audio." : enhanceText ? "Raw and refined upload transcripts saved to history." : "Raw upload transcript saved to history.");
       await loadSnapshot(token);
     } catch (error) {
       setUploadPhase("error");
@@ -204,7 +209,8 @@ export function WebKoeApp() {
       setSnapshot(null);
       setStoredToken(null);
       setTranscript("");
-      setUploadTranscript("");
+      setUploadRawTranscript("");
+      setUploadRefinedTranscript("");
       setPhase("idle");
       setUploadPhase("idle");
       setBusyLabel("");
@@ -235,7 +241,7 @@ export function WebKoeApp() {
 
   const accountPanel = <AccountPanel snapshot={snapshot} modeCopy={modeCopy} busyLabel={busyLabel} onRefresh={() => void loadSnapshot()} onRequestVerification={() => void requestVerification()} onSignOut={() => void signOut()} onSwitchMode={(mode) => void switchMode(mode)} onStartCheckout={(planCode) => void startCheckout(planCode)} onChangePlan={(planCode) => void changePlan(planCode)} onCancelPlan={() => void cancelPlan()} />;
   const recorderPanel = <RecorderPanel phase={phase} transcript={transcript} inputLevel={recorder.inputLevel} busyLabel={busyLabel} isSupported={recorder.isSupported} copyState={copyState} onRecordToggle={phase === "recording" ? recorder.stopRecording : () => void recorder.startRecording()} onCopy={() => void copyText(transcript)} onClear={() => { setTranscript(""); setPhase("idle"); setStatus("Transcript cleared."); }} />;
-  const uploadPanel = <AudioUploadPanel phase={uploadPhase} transcript={uploadTranscript} busyLabel={busyLabel} copyState={copyState} onUpload={(file, audioSeconds) => void processUploadedAudio(file, audioSeconds)} onCopy={() => void copyText(uploadTranscript)} onClear={() => { setUploadTranscript(""); setUploadPhase("idle"); setStatus("Upload cleared."); }} />;
+  const uploadPanel = <AudioUploadPanel phase={uploadPhase} rawTranscript={uploadRawTranscript} refinedTranscript={uploadRefinedTranscript} busyLabel={busyLabel} copyState={copyState} defaultEnhanceText={snapshot.settings.enhanceText !== false} onUpload={(file, audioSeconds, enhanceText) => void processUploadedAudio(file, audioSeconds, enhanceText)} onCopyRaw={() => void copyText(uploadRawTranscript)} onCopyRefined={() => void copyText(uploadRefinedTranscript || uploadRawTranscript)} onClear={() => { setUploadRawTranscript(""); setUploadRefinedTranscript(""); setUploadPhase("idle"); setStatus("Upload cleared."); }} />;
   const historyPanel = <HistoryPanel history={snapshot.recentHistory} copiedEntryId={copiedEntryId} onCopyEntry={(id, text) => void copyText(text, id)} />;
 
   return (

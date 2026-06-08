@@ -3,12 +3,13 @@ import {
   StyleSheet,
   Text,
   View,
+  Switch,
   useColorScheme,
   Animated,
   Easing,
   Dimensions,
 } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Colors, Spacing, Typography } from '../src/constants/Theme';
 import { RECORDER_STATES, type ScreenStage } from '../src/constants/RecorderStates';
 import { useRecordingPipeline } from '../src/hooks/use-recording-pipeline';
@@ -42,6 +43,7 @@ export default function RecorderScreen() {
   const stateMeta = RECORDER_STATES[stage];
   const waveBars = useRef(Array.from({ length: 8 }, () => new Animated.Value(8))).current;
   const sweepValue = useRef(new Animated.Value(0)).current;
+  const [enhanceImportedAudio, setEnhanceImportedAudio] = useState(true);
 
   useEffect(() => {
     Animated.parallel(
@@ -191,13 +193,28 @@ export default function RecorderScreen() {
           />
 
           {!isRecording && !hasPendingRetry && (
-            <BrutalButton
-              onPress={() => void importAudioFile()}
-              title="Import audio file"
-              variant="outline"
-              disabled={status.stage === 'processing'}
-              style={{ width: '100%' }}
-            />
+            <View style={[styles.importPanel, { borderColor: theme.border }]}>
+              <View style={styles.importToggleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[styles.importToggleLabel, { color: theme.text }]}>Refine after import</Text>
+                  <Text style={[styles.importToggleHelp, { color: theme.textMuted }]}>On returns raw + polished text. Off keeps raw transcription only.</Text>
+                </View>
+                <Switch
+                  value={enhanceImportedAudio}
+                  onValueChange={setEnhanceImportedAudio}
+                  disabled={status.stage === 'processing'}
+                  trackColor={{ false: theme.border, true: theme.accent }}
+                  thumbColor={theme.text}
+                />
+              </View>
+              <BrutalButton
+                onPress={() => void importAudioFile(enhanceImportedAudio)}
+                title={enhanceImportedAudio ? "Import + refine audio file" : "Import raw audio file"}
+                variant="outline"
+                disabled={status.stage === 'processing'}
+                style={{ width: '100%' }}
+              />
+            </View>
           )}
 
           <View style={styles.helperSection}>
@@ -206,7 +223,7 @@ export default function RecorderScreen() {
                 ? 'Listening. Tap again to stop.'
                 : status.stage === 'processing'
                   ? 'Transcribing your audio into text.'
-                  : 'Record live or import a file. Audio is refined and copied to your clipboard.'}
+                  : 'Record live or import a file. Use the import toggle to choose raw-only or refined output.'}
             </Text>
           </View>
 
@@ -317,6 +334,28 @@ const styles = StyleSheet.create({
   },
   actionSection: {
     paddingTop: Spacing.md,
+  },
+  importPanel: {
+    borderWidth: 1,
+    padding: Spacing.md,
+    gap: Spacing.md,
+    backgroundColor: 'rgba(0,0,0,0.12)',
+  },
+  importToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  importToggleLabel: {
+    fontSize: Typography.sizes.sm,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  importToggleHelp: {
+    fontSize: Typography.sizes.xs,
+    lineHeight: 18,
+    marginTop: 4,
   },
   helperSection: {
     alignItems: 'center',

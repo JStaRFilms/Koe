@@ -177,7 +177,8 @@ function setupIpcHandlers(mainWindow) {
             requestId: randomUUID(),
             clientSessionId: `desktop-upload-${randomUUID()}`,
             fileName,
-            contentType: inferAudioContentType(fileName, payload?.contentType)
+            contentType: inferAudioContentType(fileName, payload?.contentType),
+            enhanceText: payload?.enhanceText !== false
         });
 
         const rawText = String(result?.rawText || '').trim();

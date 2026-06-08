@@ -29,10 +29,13 @@ export class SettingsPanel {
         this.inputAudioUploadFile = document.getElementById('audio-upload-file');
         this.audioUploadSelection = document.getElementById('audio-upload-selection');
         this.audioUploadStatus = document.getElementById('audio-upload-status');
+        this.audioUploadRawResult = document.getElementById('audio-upload-raw-result');
         this.audioUploadResult = document.getElementById('audio-upload-result');
+        this.chkAudioUploadEnhance = document.getElementById('audio-upload-enhance');
         this.btnAudioUploadSelect = document.getElementById('btn-audio-upload-select');
         this.btnAudioUploadProcess = document.getElementById('btn-audio-upload-process');
         this.btnAudioUploadClear = document.getElementById('btn-audio-upload-clear');
+        this.btnAudioUploadCopyRaw = document.getElementById('btn-audio-upload-copy-raw');
         this.btnAudioUploadCopy = document.getElementById('btn-audio-upload-copy');
 
         this.selModel = document.getElementById('transcription-model');
@@ -193,8 +196,9 @@ export class SettingsPanel {
 
     updateAudioUploadButtons() {
         if (this.btnAudioUploadProcess) {
+            const shouldEnhance = this.chkAudioUploadEnhance?.checked !== false;
             this.btnAudioUploadProcess.disabled = !this.selectedAudioUploadFile || this.audioUploadBusy;
-            this.btnAudioUploadProcess.textContent = this.audioUploadBusy ? 'Processing…' : 'Process File';
+            this.btnAudioUploadProcess.textContent = this.audioUploadBusy ? 'Processing…' : shouldEnhance ? 'Transcribe + Refine' : 'Transcribe Raw';
         }
         if (this.btnAudioUploadSelect) {
             this.btnAudioUploadSelect.disabled = this.audioUploadBusy;
@@ -205,12 +209,21 @@ export class SettingsPanel {
         if (this.inputAudioUploadFile) {
             this.inputAudioUploadFile.disabled = this.audioUploadBusy;
         }
+        if (this.chkAudioUploadEnhance) {
+            this.chkAudioUploadEnhance.disabled = this.audioUploadBusy;
+        }
+        if (this.btnAudioUploadCopyRaw) {
+            this.btnAudioUploadCopyRaw.disabled = !String(this.audioUploadRawResult?.value || '').trim();
+        }
         if (this.btnAudioUploadCopy) {
             this.btnAudioUploadCopy.disabled = !String(this.audioUploadResult?.value || '').trim();
         }
     }
 
     clearAudioUploadResult() {
+        if (this.audioUploadRawResult) {
+            this.audioUploadRawResult.value = '';
+        }
         if (this.audioUploadResult) {
             this.audioUploadResult.value = '';
         }
@@ -294,22 +307,29 @@ export class SettingsPanel {
 
         try {
             const audioData = await this.selectedAudioUploadFile.arrayBuffer();
+            const shouldEnhance = this.chkAudioUploadEnhance?.checked !== false;
             const result = await window.api.processAudioUpload({
                 audioData,
                 audioSeconds: this.audioUploadEstimatedSeconds || 0,
                 fileName: this.selectedAudioUploadFile.name,
-                contentType: this.selectedAudioUploadFile.type || ''
+                contentType: this.selectedAudioUploadFile.type || '',
+                enhanceText: shouldEnhance
             });
-            const transcript = String(result?.refinedText || result?.rawText || '').trim();
+            const rawTranscript = String(result?.rawText || '').trim();
+            const refinedTranscript = String(result?.refinedText || '').trim();
+            const transcript = refinedTranscript || rawTranscript;
 
+            if (this.audioUploadRawResult) {
+                this.audioUploadRawResult.value = rawTranscript;
+            }
             if (this.audioUploadResult) {
-                this.audioUploadResult.value = transcript;
+                this.audioUploadResult.value = shouldEnhance ? (refinedTranscript || rawTranscript) : '';
             }
 
             if (result?.empty || !transcript) {
                 this.showAudioUploadStatus('No clear speech detected in the uploaded audio.', true);
             } else {
-                this.showAudioUploadStatus('Audio file processed successfully ✓', true);
+                this.showAudioUploadStatus(shouldEnhance ? 'Audio file transcribed and refined successfully ✓' : 'Raw audio transcription completed ✓', true);
             }
 
             await this.loadAccountState(false).catch(() => {});
@@ -322,15 +342,15 @@ export class SettingsPanel {
         }
     }
 
-    async copyAudioUploadTranscript() {
-        const transcript = String(this.audioUploadResult?.value || '').trim();
+    async copyAudioUploadTranscript(source = 'refined') {
+        const transcript = String((source === 'raw' ? this.audioUploadRawResult : this.audioUploadResult)?.value || '').trim();
         if (!transcript) {
             return;
         }
 
         try {
             await navigator.clipboard.writeText(transcript);
-            this.showAudioUploadStatus('Copied upload transcript ✓', true);
+            this.showAudioUploadStatus(source === 'raw' ? 'Copied raw upload transcript ✓' : 'Copied refined upload transcript ✓', true);
         } catch (_error) {
             this.showAudioUploadStatus('Could not copy the upload transcript.', false);
         }
@@ -385,9 +405,13 @@ export class SettingsPanel {
         this.btnAudioUploadProcess?.addEventListener('click', () => {
             void this.handleAudioUploadProcess();
         });
+        this.chkAudioUploadEnhance?.addEventListener('change', () => this.updateAudioUploadButtons());
         this.btnAudioUploadClear?.addEventListener('click', () => this.clearAudioUploadSelection());
+        this.btnAudioUploadCopyRaw?.addEventListener('click', () => {
+            void this.copyAudioUploadTranscript('raw');
+        });
         this.btnAudioUploadCopy?.addEventListener('click', () => {
-            void this.copyAudioUploadTranscript();
+            void this.copyAudioUploadTranscript('refined');
         });
         this.btnOpenLogs?.addEventListener('click', () => this.openLogsFolder());
         this.updateAudioUploadButtons();
