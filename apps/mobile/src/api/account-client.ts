@@ -194,6 +194,7 @@ interface AuthHeadersContext {
 interface ProcessAudioInput {
   session: StoredAccountSession;
   audioUri: string;
+  audioMimeType?: string;
   requestId: string;
   clientSessionId?: string;
   mode?: AccountMode;
@@ -561,11 +562,20 @@ export async function deleteAccountGroqCredential(session: StoredAccountSession)
   await requestVoid('/api/v1/account/credentials/groq', { method: 'DELETE' }, { session });
 }
 
-function inferAudioMimeType(audioUri: string) {
+function inferAudioMimeType(audioUri: string, providedMimeType?: string) {
+  if (providedMimeType?.trim()) {
+    return providedMimeType.trim();
+  }
+
   const lower = audioUri.toLowerCase();
   if (lower.includes('.webm')) return 'audio/webm';
   if (lower.includes('.wav')) return 'audio/wav';
   if (lower.includes('.mp3')) return 'audio/mpeg';
+  if (lower.includes('.ogg')) return 'audio/ogg';
+  if (lower.includes('.flac')) return 'audio/flac';
+  if (lower.includes('.aac')) return 'audio/aac';
+  if (lower.includes('.caf')) return 'audio/x-caf';
+  if (lower.includes('.mp4')) return 'audio/mp4';
   return 'audio/m4a';
 }
 
@@ -581,7 +591,7 @@ export async function processAccountAudio(input: ProcessAudioInput): Promise<Acc
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         audioBase64,
-        audioMimeType: inferAudioMimeType(input.audioUri),
+        audioMimeType: inferAudioMimeType(input.audioUri, input.audioMimeType),
         requestId: input.requestId,
         clientSessionId: input.clientSessionId,
         mode: input.mode,

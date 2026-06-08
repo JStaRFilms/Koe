@@ -16,6 +16,12 @@ import {
 } from '../api/account-client';
 import { clearAccountSession, getAccountSession, getGroqApiKey } from '../storage/secure-storage';
 
+export interface MobileAudioUploadSource {
+  uri: string;
+  fileName?: string;
+  mimeType?: string;
+}
+
 function normalizeApiError(status: number, payload: unknown, fallback: string): Error {
   const parsed = parseErrorMessage(payload, fallback);
 
@@ -43,18 +49,62 @@ async function parseJsonResponse(response: Response): Promise<unknown> {
   }
 }
 
-async function appendAudioFile(formData: FormData, audioUri: string): Promise<void> {
-  if (audioUri.startsWith('blob:') || audioUri.startsWith('http')) {
-    const blobResponse = await fetch(audioUri);
+function inferAudioMimeType(audioUri: string, providedMimeType?: string) {
+  if (providedMimeType?.trim()) {
+    return providedMimeType.trim();
+  }
+
+  const lower = audioUri.toLowerCase();
+  if (lower.includes('.webm')) return 'audio/webm';
+  if (lower.includes('.wav')) return 'audio/wav';
+  if (lower.includes('.mp3')) return 'audio/mpeg';
+  if (lower.includes('.ogg')) return 'audio/ogg';
+  if (lower.includes('.flac')) return 'audio/flac';
+  if (lower.includes('.aac')) return 'audio/aac';
+  if (lower.includes('.caf')) return 'audio/x-caf';
+  if (lower.includes('.mp4')) return 'audio/mp4';
+  return 'audio/m4a';
+}
+
+function inferAudioFileName(audioUri: string, providedFileName?: string) {
+  if (providedFileName?.trim()) {
+    return providedFileName.trim();
+  }
+
+  const normalized = audioUri.split('?')[0] || audioUri;
+  const segments = normalized.split('/');
+  const lastSegment = segments[segments.length - 1];
+  if (lastSegment) {
+    return decodeURIComponent(lastSegment);
+  }
+
+  const mimeType = inferAudioMimeType(audioUri);
+  if (mimeType === 'audio/webm') return 'recording.webm';
+  if (mimeType === 'audio/wav') return 'recording.wav';
+  if (mimeType === 'audio/mpeg') return 'recording.mp3';
+  return 'recording.m4a';
+}
+
+function normalizeAudioSource(audioSource: string | MobileAudioUploadSource): MobileAudioUploadSource {
+  return typeof audioSource === 'string' ? { uri: audioSource } : audioSource;
+}
+
+async function appendAudioFile(formData: FormData, audioSource: string | MobileAudioUploadSource): Promise<void> {
+  const { uri, fileName, mimeType } = normalizeAudioSource(audioSource);
+  const resolvedFileName = inferAudioFileName(uri, fileName);
+  const resolvedMimeType = inferAudioMimeType(uri, mimeType);
+
+  if (uri.startsWith('blob:') || uri.startsWith('http')) {
+    const blobResponse = await fetch(uri);
     const blob = await blobResponse.blob();
-    formData.append('file', blob, 'recording.webm');
+    formData.append('file', blob, resolvedFileName);
     return;
   }
 
   formData.append('file', {
-    uri: audioUri,
-    name: 'recording.m4a',
-    type: 'audio/m4a',
+    uri,
+    name: resolvedFileName,
+    type: resolvedMimeType,
   } as never);
 }
 
@@ -76,7 +126,8 @@ async function normalizeAuthenticatedError(error: unknown, fallback: string) {
 }
 
 export class MobileGroqProvider implements TranscriptionProvider {
-  async transcribeSegment(audioUri: string, options: ProviderOptions): Promise<string> {
+  async transcribeSegment(audioSource: string | MobileAudioUploadSource, options: ProviderOptions): Promise<string> {
+    const normalizedSource = normalizeAudioSource(audioSource);
     const accountSession = await getAccountSession();
     if (accountSession?.token) {
       options.onStage?.({
@@ -88,7 +139,8 @@ export class MobileGroqProvider implements TranscriptionProvider {
       try {
         const response = await processAccountAudio({
           session: accountSession,
-          audioUri,
+          audioUri: normalizedSource.uri,
+          audioMimeType: normalizedSource.mimeType,
           requestId: createRequestId(),
           clientSessionId: options.sessionId,
           language: options.language,
@@ -109,7 +161,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
     }
 
     const formData = new FormData();
-    await appendAudioFile(formData, audioUri);
+    await appendAudioFile(formData, normalizedSource);
     formData.append('model', options.model || DEFAULT_WHISPER_MODEL);
 
     if (options.language && options.language !== 'auto') {

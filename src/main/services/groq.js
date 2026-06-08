@@ -25,15 +25,15 @@ function emitStage(onStage, stage, label, progress) {
 
 // parseErrorMessage moved to @koe/core
 
-async function transcribeDirect(wavBuffer, language = 'auto', model = getSetting('model') || DEFAULT_MODEL) {
+async function transcribeDirect(wavBuffer, language = 'auto', model = getSetting('model') || DEFAULT_MODEL, fileOptions = {}) {
     const apiKey = getSetting('groqApiKey');
     if (!apiKey) {
         throw new Error('Groq API Key is not configured. Please open settings and add your API Key.');
     }
 
     const formData = new FormData();
-    const blob = new Blob([wavBuffer], { type: 'audio/wav' });
-    formData.append('file', blob, 'audio.wav');
+    const blob = new Blob([wavBuffer], { type: fileOptions.contentType || 'audio/wav' });
+    formData.append('file', blob, fileOptions.fileName || 'audio.wav');
     formData.append('model', model);
 
     if (language && language !== 'auto') {
@@ -156,7 +156,10 @@ async function enhance(rawText, promptStyle = 'Clean', customPromptOverride = nu
 
 async function processDirectPipeline(taskItem) {
     emitStage(taskItem.onStage, 'transcribing', 'Transcribing', 58);
-    const rawText = await transcribeDirect(taskItem.wavBuffer, taskItem.language, taskItem.model);
+    const rawText = await transcribeDirect(taskItem.wavBuffer, taskItem.language, taskItem.model, {
+        fileName: taskItem.fileName,
+        contentType: taskItem.contentType
+    });
 
     if (!rawText) {
         return { rawText: '', refinedText: '', empty: true };
@@ -204,7 +207,9 @@ async function processAudio(wavBuffer, audioSeconds = 0, options = {}) {
         requestId: options.requestId,
         clientSessionId: options.clientSessionId,
         sessionId: options.sessionId,
-        mode: options.mode
+        mode: options.mode,
+        fileName: options.fileName || 'audio.wav',
+        contentType: options.contentType || 'audio/wav'
     };
 
     return rateLimiter.enqueue(item, processTask);

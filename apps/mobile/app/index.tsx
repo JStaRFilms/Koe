@@ -30,6 +30,7 @@ export default function RecorderScreen() {
     durationMillis,
     voiceLevels,
     startRecording,
+    importAudioFile,
     stopAndProcess,
     retryLastSession,
     discardRetrySession,
@@ -189,13 +190,23 @@ export default function RecorderScreen() {
             style={{ width: '100%' }}
           />
 
+          {!isRecording && !hasPendingRetry && (
+            <BrutalButton
+              onPress={() => void importAudioFile()}
+              title="Import audio file"
+              variant="outline"
+              disabled={status.stage === 'processing'}
+              style={{ width: '100%' }}
+            />
+          )}
+
           <View style={styles.helperSection}>
             <Text style={[styles.helperText, { color: theme.textMuted }]}>
               {status.stage === 'recording'
                 ? 'Listening. Tap again to stop.'
                 : status.stage === 'processing'
-                  ? 'Refining your recording into text.'
-                  : 'Captured audio is refined and copied to your clipboard.'}
+                  ? 'Transcribing your audio into text.'
+                  : 'Record live or import a file. Audio is refined and copied to your clipboard.'}
             </Text>
           </View>
 
@@ -212,7 +223,7 @@ export default function RecorderScreen() {
               {hasPendingRetry && (
                 <BrutalButton
                   onPress={discardRetrySession}
-                  title="Discard saved session"
+                  title="Discard saved audio"
                   variant="danger"
                   style={{ width: '100%' }}
                 />
@@ -224,7 +235,7 @@ export default function RecorderScreen() {
         <View style={styles.footer}>
           <Text style={[styles.usageText, { color: theme.textDim }]}>
             {usageStats
-              ? `This phone today: ${usageStats.requestCount} recordings // ${usageStats.audioSecondsUsed}s audio`
+              ? `This phone today: ${usageStats.requestCount} captures // ${usageStats.audioSecondsUsed}s audio`
               : 'This phone usage updates after your first capture.'}
           </Text>
         </View>

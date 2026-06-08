@@ -1,3 +1,5 @@
+const MAX_AUDIO_UPLOAD_BYTES = 20 * 1024 * 1024;
+
 export class SettingsPanel {
     constructor() {
         this.panel = document.getElementById('settings-panel');
@@ -24,6 +26,14 @@ export class SettingsPanel {
         this.testResult = document.getElementById('test-key-result');
         this.promptStyleGroup = document.getElementById('prompt-style-group');
         this.customPromptGroup = document.getElementById('custom-prompt-group');
+        this.inputAudioUploadFile = document.getElementById('audio-upload-file');
+        this.audioUploadSelection = document.getElementById('audio-upload-selection');
+        this.audioUploadStatus = document.getElementById('audio-upload-status');
+        this.audioUploadResult = document.getElementById('audio-upload-result');
+        this.btnAudioUploadSelect = document.getElementById('btn-audio-upload-select');
+        this.btnAudioUploadProcess = document.getElementById('btn-audio-upload-process');
+        this.btnAudioUploadClear = document.getElementById('btn-audio-upload-clear');
+        this.btnAudioUploadCopy = document.getElementById('btn-audio-upload-copy');
 
         this.selModel = document.getElementById('transcription-model');
         this.selTheme = document.getElementById('theme');
@@ -66,6 +76,9 @@ export class SettingsPanel {
         this.savedSettingsSnapshot = null;
         this.hasDirtySettings = false;
         this.isSavingSettings = false;
+        this.selectedAudioUploadFile = null;
+        this.audioUploadEstimatedSeconds = null;
+        this.audioUploadBusy = false;
 
         this.initListeners();
         this.initDirtyTracking();
@@ -87,6 +100,240 @@ export class SettingsPanel {
     hide() {
         this.panel.classList.add('hide');
         this.hideResult(this.testResult);
+    }
+
+    formatBytes(bytes) {
+        if (!Number.isFinite(bytes) || bytes <= 0) {
+            return '0 B';
+        }
+
+        const units = ['B', 'KB', 'MB', 'GB'];
+        const unitIndex = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+        const value = bytes / (1024 ** unitIndex);
+        return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    }
+
+    formatAudioSeconds(seconds) {
+        const value = Math.max(0, Math.round(Number(seconds || 0)));
+        if (!value) {
+            return 'duration detected server-side when possible';
+        }
+        if (value < 60) {
+            return `${value}s`;
+        }
+
+        const minutes = Math.floor(value / 60);
+        const remainingSeconds = value % 60;
+        return remainingSeconds ? `${minutes}m ${remainingSeconds}s` : `${minutes}m`;
+    }
+
+    async estimateAudioUploadDuration(file) {
+        if (!file) {
+            return null;
+        }
+
+        return new Promise((resolve) => {
+            const objectUrl = URL.createObjectURL(file);
+            const audio = document.createElement('audio');
+
+            const cleanup = () => {
+                audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+                audio.removeEventListener('error', handleError);
+                audio.removeAttribute('src');
+                URL.revokeObjectURL(objectUrl);
+            };
+
+            const handleLoadedMetadata = () => {
+                const duration = Number.isFinite(audio.duration) && audio.duration > 0
+                    ? Math.max(1, Math.round(audio.duration))
+                    : null;
+                cleanup();
+                resolve(duration);
+            };
+
+            const handleError = () => {
+                cleanup();
+                resolve(null);
+            };
+
+            audio.preload = 'metadata';
+            audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+            audio.addEventListener('error', handleError);
+            audio.src = objectUrl;
+        });
+    }
+
+    renderAudioUploadSelection() {
+        if (!this.audioUploadSelection) {
+            return;
+        }
+
+        if (!this.selectedAudioUploadFile) {
+            this.audioUploadSelection.innerHTML = 'No audio file selected yet.';
+            this.updateAudioUploadButtons();
+            return;
+        }
+
+        const durationLabel = this.formatAudioSeconds(this.audioUploadEstimatedSeconds);
+        this.audioUploadSelection.replaceChildren();
+
+        const title = document.createElement('strong');
+        title.textContent = this.selectedAudioUploadFile.name;
+
+        const meta = document.createElement('div');
+        meta.textContent = `${this.formatBytes(this.selectedAudioUploadFile.size)} · ${durationLabel}`;
+
+        const help = document.createElement('div');
+        help.textContent = 'Uploads use your saved desktop settings plus the currently resolved account mode.';
+        help.style.marginTop = '8px';
+
+        this.audioUploadSelection.append(title, meta, help);
+        this.updateAudioUploadButtons();
+    }
+
+    updateAudioUploadButtons() {
+        if (this.btnAudioUploadProcess) {
+            this.btnAudioUploadProcess.disabled = !this.selectedAudioUploadFile || this.audioUploadBusy;
+            this.btnAudioUploadProcess.textContent = this.audioUploadBusy ? 'Processing…' : 'Process File';
+        }
+        if (this.btnAudioUploadSelect) {
+            this.btnAudioUploadSelect.disabled = this.audioUploadBusy;
+        }
+        if (this.btnAudioUploadClear) {
+            this.btnAudioUploadClear.disabled = this.audioUploadBusy;
+        }
+        if (this.inputAudioUploadFile) {
+            this.inputAudioUploadFile.disabled = this.audioUploadBusy;
+        }
+        if (this.btnAudioUploadCopy) {
+            this.btnAudioUploadCopy.disabled = !String(this.audioUploadResult?.value || '').trim();
+        }
+    }
+
+    clearAudioUploadResult() {
+        if (this.audioUploadResult) {
+            this.audioUploadResult.value = '';
+        }
+        this.updateAudioUploadButtons();
+    }
+
+    clearAudioUploadStatus() {
+        this.hideResult(this.audioUploadStatus);
+    }
+
+    showAudioUploadStatus(message, isSuccess) {
+        this.showResult(this.audioUploadStatus, message, isSuccess);
+    }
+
+    clearAudioUploadSelection(options = {}) {
+        const shouldKeepTranscript = options.keepTranscript === true;
+        this.selectedAudioUploadFile = null;
+        this.audioUploadEstimatedSeconds = null;
+
+        if (this.inputAudioUploadFile) {
+            this.inputAudioUploadFile.value = '';
+        }
+
+        if (!shouldKeepTranscript) {
+            this.clearAudioUploadResult();
+        }
+
+        this.clearAudioUploadStatus();
+        this.renderAudioUploadSelection();
+    }
+
+    async handleAudioUploadSelection(event) {
+        const file = event?.target?.files?.[0] || null;
+        this.clearAudioUploadStatus();
+        this.clearAudioUploadResult();
+        this.selectedAudioUploadFile = null;
+        this.audioUploadEstimatedSeconds = null;
+
+        if (!file) {
+            this.renderAudioUploadSelection();
+            return;
+        }
+
+        if (file.size > MAX_AUDIO_UPLOAD_BYTES) {
+            if (this.inputAudioUploadFile) {
+                this.inputAudioUploadFile.value = '';
+            }
+            this.showAudioUploadStatus('Audio file is too large. Keep uploads under 20 MB.', false);
+            this.renderAudioUploadSelection();
+            return;
+        }
+
+        this.selectedAudioUploadFile = file;
+        this.renderAudioUploadSelection();
+        const estimatedSeconds = await this.estimateAudioUploadDuration(file);
+        if (this.selectedAudioUploadFile !== file) {
+            return;
+        }
+        this.audioUploadEstimatedSeconds = estimatedSeconds;
+        this.renderAudioUploadSelection();
+    }
+
+    async handleAudioUploadProcess() {
+        if (!window.api?.processAudioUpload || !this.selectedAudioUploadFile || this.audioUploadBusy) {
+            return;
+        }
+
+        if (this.hasUnsavedChanges()) {
+            const shouldSave = window.confirm('Audio upload uses your saved desktop settings. Save current changes before processing?\n\nOK = save and continue\nCancel = use the last saved settings');
+            if (shouldSave) {
+                const saved = await this.saveSettings();
+                if (!saved) {
+                    return;
+                }
+            }
+        }
+
+        this.audioUploadBusy = true;
+        this.updateAudioUploadButtons();
+        this.clearAudioUploadStatus();
+
+        try {
+            const audioData = await this.selectedAudioUploadFile.arrayBuffer();
+            const result = await window.api.processAudioUpload({
+                audioData,
+                audioSeconds: this.audioUploadEstimatedSeconds || 0,
+                fileName: this.selectedAudioUploadFile.name,
+                contentType: this.selectedAudioUploadFile.type || ''
+            });
+            const transcript = String(result?.refinedText || result?.rawText || '').trim();
+
+            if (this.audioUploadResult) {
+                this.audioUploadResult.value = transcript;
+            }
+
+            if (result?.empty || !transcript) {
+                this.showAudioUploadStatus('No clear speech detected in the uploaded audio.', true);
+            } else {
+                this.showAudioUploadStatus('Audio file processed successfully ✓', true);
+            }
+
+            await this.loadAccountState(false).catch(() => {});
+            this.renderAudioUploadSelection();
+        } catch (error) {
+            this.showAudioUploadStatus(this.cleanActionErrorMessage(error, 'Audio upload failed.'), false);
+        } finally {
+            this.audioUploadBusy = false;
+            this.updateAudioUploadButtons();
+        }
+    }
+
+    async copyAudioUploadTranscript() {
+        const transcript = String(this.audioUploadResult?.value || '').trim();
+        if (!transcript) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(transcript);
+            this.showAudioUploadStatus('Copied upload transcript ✓', true);
+        } catch (_error) {
+            this.showAudioUploadStatus('Could not copy the upload transcript.', false);
+        }
     }
 
     initListeners() {
@@ -131,7 +378,20 @@ export class SettingsPanel {
             this.inputHotkey.addEventListener('keydown', (e) => this.handleHotkeyInput(e));
         }
 
+        this.inputAudioUploadFile?.addEventListener('change', (event) => {
+            void this.handleAudioUploadSelection(event);
+        });
+        this.btnAudioUploadSelect?.addEventListener('click', () => this.inputAudioUploadFile?.click());
+        this.btnAudioUploadProcess?.addEventListener('click', () => {
+            void this.handleAudioUploadProcess();
+        });
+        this.btnAudioUploadClear?.addEventListener('click', () => this.clearAudioUploadSelection());
+        this.btnAudioUploadCopy?.addEventListener('click', () => {
+            void this.copyAudioUploadTranscript();
+        });
         this.btnOpenLogs?.addEventListener('click', () => this.openLogsFolder());
+        this.updateAudioUploadButtons();
+        this.renderAudioUploadSelection();
     }
 
     initDirtyTracking() {

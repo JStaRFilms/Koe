@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { AppState } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { useAudioRecorder, useAudioRecorderState, type RecordingStatus } from 'expo-audio';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
+import { Directory, File as ExpoFile, Paths } from 'expo-file-system';
 import type { UsageStats } from '@koe/core';
-import { mobileProvider } from '../providers/mobile-provider';
+import { mobileProvider, type MobileAudioUploadSource } from '../providers/mobile-provider';
 import {
   cancelRecorder,
   DEFAULT_RECORDING_OPTIONS,
@@ -44,6 +45,10 @@ interface ActiveRecordingSession {
   chunkDurationsMillis: number[];
 }
 
+interface ImportedAudioAsset extends MobileAudioUploadSource {
+  sizeBytes: number;
+}
+
 const CHUNK_MIN_DURATION_MS = 10_000;
 const CHUNK_HARD_CAP_MS = 30_000;
 const PAUSE_CLOSE_MS = 1_200;
@@ -51,6 +56,8 @@ const MIN_CHUNK_DURATION_MS = 900;
 const SPEECH_ACTIVITY_THRESHOLD = 0.12;
 const VOICE_BAR_COUNT = 8;
 const VOICE_BAR_WEIGHTS = [0.36, 0.54, 0.78, 1, 1, 0.78, 0.54, 0.36];
+const MAX_IMPORT_AUDIO_BYTES = 20 * 1024 * 1024;
+const IMPORT_DIRECTORY_NAME = 'audio-imports';
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) {
@@ -98,6 +105,90 @@ function buildRetryState(
     interrupted: false,
     lastError: null,
   };
+}
+
+function buildImportedRetryState(file: ImportedAudioAsset): PersistedRetryState {
+  return {
+    sessionId: `mobile-import-${Date.now()}`,
+    audioUri: file.uri,
+    audioUris: [file.uri],
+    audioDurationsMillis: [],
+    audioMimeType: file.mimeType ?? null,
+    audioFileName: file.fileName ?? null,
+    durationMillis: 0,
+    createdAt: Date.now(),
+    rawText: null,
+    interrupted: false,
+    lastError: null,
+  };
+}
+
+function sanitizeImportFileName(fileName: string) {
+  const cleaned = fileName.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+  return cleaned || `audio-import-${Date.now()}`;
+}
+
+function persistImportedAudioFile(
+  fileUri: string,
+  providedFileName?: string,
+  providedMimeType?: string,
+  sizeBytes = 0
+): ImportedAudioAsset {
+  const importDirectory = new Directory(Paths.document, IMPORT_DIRECTORY_NAME);
+  if (!importDirectory.exists) {
+    importDirectory.create({ idempotent: true, intermediates: true });
+  }
+
+  const sourceFile = new ExpoFile(fileUri);
+  const fallbackFileName = sourceFile.name || `audio-import${sourceFile.extension || ''}`;
+  const safeFileName = sanitizeImportFileName(providedFileName || fallbackFileName);
+  const destination = new ExpoFile(importDirectory, `${Date.now()}-${safeFileName}`);
+  sourceFile.copy(destination);
+
+  return {
+    uri: destination.uri,
+    fileName: safeFileName,
+    mimeType: providedMimeType?.trim() || sourceFile.type?.trim() || undefined,
+    sizeBytes,
+  };
+}
+
+function isFilePickerCancellation(error: unknown) {
+  const message = getErrorMessage(error).toLowerCase();
+  return message.includes('cancel');
+}
+
+function resolveRetryAudioInput(state: PersistedRetryState, audioUri: string): string | MobileAudioUploadSource {
+  if (!state.audioMimeType && !state.audioFileName) {
+    return audioUri;
+  }
+
+  return {
+    uri: audioUri,
+    mimeType: state.audioMimeType ?? undefined,
+    fileName: state.audioFileName ?? undefined,
+  };
+}
+
+function isImportedAudioUri(uri: string) {
+  return uri.includes(`/${IMPORT_DIRECTORY_NAME}/`);
+}
+
+function deleteImportedAudioFiles(audioUris: string[]) {
+  for (const uri of audioUris) {
+    if (!uri || !isImportedAudioUri(uri)) {
+      continue;
+    }
+
+    try {
+      const file = new ExpoFile(uri);
+      if (file.exists) {
+        file.delete();
+      }
+    } catch {
+      // Best-effort cleanup only. Retry state is still cleared below.
+    }
+  }
 }
 
 function meteringToVoiceBars(metering: number | undefined, durationMillis: number, previous: number[]) {
@@ -193,10 +284,10 @@ export function useRecordingPipeline() {
     setHasPendingRetry(true);
     setStatus({
       stage: 'error',
-      label: retryState.interrupted ? 'Saved recording interrupted' : 'Saved recording needs retry',
+      label: retryState.interrupted ? 'Saved audio interrupted' : 'Saved audio needs retry',
       error:
         retryState.lastError ??
-        'Your previous recording was preserved locally. Retry it before starting a new session.',
+        'Your previous audio was preserved locally. Retry it before starting a new session.',
       transcript: retryState.rawText ?? undefined,
       progress: 0,
     });
@@ -375,9 +466,10 @@ export function useRecordingPipeline() {
   }, []);
 
   const finalizeSuccess = useCallback(
-    async (rawText: string, finalText: string, durationMillis: number) => {
+    async (rawText: string, finalText: string, durationMillis: number, cleanupAudioUris: string[] = []) => {
       await Clipboard.setStringAsync(finalText);
       await persistUsage(durationMillis);
+      deleteImportedAudioFiles(cleanupAudioUris);
       await clearRetryState();
 
       await addToHistory({
@@ -421,6 +513,7 @@ export function useRecordingPipeline() {
         interrupted: false,
         lastError: null,
       };
+      const cleanupAudioUris = getRetryAudioUris(retryState);
       let pendingAudioUris = getRetryAudioUris(currentRetryState);
       let pendingAudioDurationsMillis = Array.isArray(currentRetryState.audioDurationsMillis)
         ? currentRetryState.audioDurationsMillis.slice(0, pendingAudioUris.length)
@@ -440,8 +533,8 @@ export function useRecordingPipeline() {
           stage: 'processing',
           label:
             totalChunkCount > 1
-              ? `Processing recording part 1 of ${totalChunkCount}...`
-              : 'Processing recording...',
+              ? `Processing audio part 1 of ${totalChunkCount}...`
+              : 'Processing audio...',
           transcript: rawText || undefined,
           progress: 12,
         });
@@ -453,19 +546,21 @@ export function useRecordingPipeline() {
           const chunkProgressBase = 18 + Math.round((completedChunkCount / Math.max(totalChunkCount, 1)) * 48);
           const fallbackChunkDuration = currentRetryState.durationMillis / Math.max(totalChunkCount, 1);
           const chunkDurationMillis = pendingAudioDurationsMillis[0] ?? fallbackChunkDuration;
+          const audioSeconds = chunkDurationMillis > 0 ? Math.max(1, Math.round(chunkDurationMillis / 1000)) : 0;
+          const audioInput = resolveRetryAudioInput(currentRetryState, audioUri);
 
-          const chunkText = await mobileProvider.transcribeSegment(audioUri, {
+          const chunkText = await mobileProvider.transcribeSegment(audioInput, {
             apiKey,
             language: settings.language === 'auto' ? undefined : settings.language,
             model: settings.model,
             sessionId: currentRetryState.sessionId,
-            audioSeconds: Math.max(1, Math.round(chunkDurationMillis / 1000)),
+            audioSeconds,
             onStage: (nextStage) =>
               setStatus({
                 stage: 'processing',
                 label:
                   totalChunkCount > 1
-                    ? `Processing recording part ${chunkNumber} of ${totalChunkCount}...`
+                    ? `Processing audio part ${chunkNumber} of ${totalChunkCount}...`
                     : nextStage.label,
                 transcript: rawText || undefined,
                 progress: Math.min(72, nextStage.progress ?? chunkProgressBase),
@@ -491,7 +586,7 @@ export function useRecordingPipeline() {
             stage: 'processing',
             label:
               pendingAudioUris.length > 0
-                ? `Processing recording part ${chunkNumber + 1} of ${totalChunkCount}...`
+                ? `Processing audio part ${chunkNumber + 1} of ${totalChunkCount}...`
                 : settings.enhanceText
                   ? 'Polishing transcript...'
                   : 'Finalizing copy...',
@@ -504,6 +599,7 @@ export function useRecordingPipeline() {
         }
 
         if (!rawText.trim()) {
+          deleteImportedAudioFiles(cleanupAudioUris);
           await clearRetryState();
           retryStateRef.current = null;
           setHasPendingRetry(false);
@@ -532,7 +628,7 @@ export function useRecordingPipeline() {
             })
           : rawText;
 
-        await finalizeSuccess(rawText, refinedText, currentRetryState.durationMillis);
+        await finalizeSuccess(rawText, refinedText, currentRetryState.durationMillis, cleanupAudioUris);
       } catch (error) {
         const message = getErrorMessage(error);
         const failedState: PersistedRetryState = {
@@ -567,8 +663,8 @@ export function useRecordingPipeline() {
     if (retryStateRef.current) {
       setStatus({
         stage: 'error',
-        label: 'Resolve saved recording first',
-        error: 'Retry or discard the saved failed recording before starting a new one.',
+        label: 'Resolve saved audio first',
+        error: 'Retry or discard the saved failed audio before starting a new session.',
         transcript: retryStateRef.current.rawText ?? undefined,
         progress: 0,
       });
@@ -639,6 +735,97 @@ export function useRecordingPipeline() {
       });
     }
   }, [clearResetTimer, recorder, resetChunkTracking, setStatus]);
+
+  const importAudioFile = useCallback(async () => {
+    clearResetTimer();
+
+    if (retryStateRef.current) {
+      setStatus({
+        stage: 'error',
+        label: 'Resolve saved audio first',
+        error: 'Retry or discard the saved failed audio before importing a new file.',
+        transcript: retryStateRef.current.rawText ?? undefined,
+        progress: 0,
+      });
+      return;
+    }
+
+    if (Platform.OS === 'web') {
+      setStatus({
+        stage: 'error',
+        label: 'Audio import unavailable',
+        error: 'Audio file import is supported in the iOS and Android mobile apps.',
+        progress: 0,
+      });
+      return;
+    }
+
+    const [apiKey, accountSession] = await Promise.all([getGroqApiKey(), getAccountSession()]);
+    if (!accountSession?.token && !apiKey?.trim()) {
+      setStatus({
+        stage: 'error',
+        label: 'Sign in or save a key',
+        error: 'Sign in for managed/account processing, or save a local Groq key in Settings.',
+        progress: 0,
+      });
+      return;
+    }
+
+    try {
+      const picked = await ExpoFile.pickFileAsync(undefined, 'audio/*');
+      const selectedFile = Array.isArray(picked) ? picked[0] : picked;
+      if (!selectedFile?.uri) {
+        return;
+      }
+
+      if (selectedFile.size > MAX_IMPORT_AUDIO_BYTES) {
+        setStatus({
+          stage: 'error',
+          label: 'File too large',
+          error: 'Audio file is too large. Keep uploads under 20 MB.',
+          progress: 0,
+        });
+        return;
+      }
+
+      const importedFile = persistImportedAudioFile(
+        selectedFile.uri,
+        undefined,
+        selectedFile.type,
+        selectedFile.size
+      );
+      const retryState = buildImportedRetryState(importedFile);
+
+      finalRecordingRef.current = { url: null, error: null };
+      activeSessionRef.current = null;
+      stopRequestedRef.current = false;
+      rotationGuardRef.current = false;
+      resetChunkTracking();
+      setIsSessionRecording(false);
+      setSessionDurationMillis(0);
+      setStatus({
+        stage: 'processing',
+        label: 'Preparing audio file...',
+        progress: 6,
+      });
+
+      retryStateRef.current = retryState;
+      setHasPendingRetry(true);
+      await saveRetryState(retryState);
+      await processRetryState(retryState);
+    } catch (error) {
+      if (isFilePickerCancellation(error)) {
+        return;
+      }
+
+      setStatus({
+        stage: 'error',
+        label: 'Audio import failed',
+        error: getErrorMessage(error),
+        progress: 0,
+      });
+    }
+  }, [clearResetTimer, processRetryState, resetChunkTracking, setStatus]);
 
   const stopAndProcess = useCallback(async () => {
     const activeSession = activeSessionRef.current;
@@ -763,6 +950,8 @@ export function useRecordingPipeline() {
   }, [processRetryState, setStatus]);
 
   const discardRetrySession = useCallback(async () => {
+    const retryState = retryStateRef.current ?? (await loadRetryState());
+    deleteImportedAudioFiles(retryState ? getRetryAudioUris(retryState) : []);
     await clearRetryState();
     retryStateRef.current = null;
     setHasPendingRetry(false);
@@ -824,6 +1013,7 @@ export function useRecordingPipeline() {
     durationMillis: sessionDurationMillis,
     voiceLevels,
     startRecording: startRecordingSession,
+    importAudioFile,
     stopAndProcess,
     retryLastSession,
     discardRetrySession,

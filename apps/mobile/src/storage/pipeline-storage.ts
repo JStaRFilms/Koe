@@ -9,6 +9,8 @@ export interface PersistedRetryState {
   audioUri?: string | null;
   audioUris?: string[];
   audioDurationsMillis?: number[];
+  audioMimeType?: string | null;
+  audioFileName?: string | null;
   durationMillis: number;
   createdAt: number;
   lastError?: string | null;

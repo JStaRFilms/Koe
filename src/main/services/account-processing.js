@@ -102,6 +102,16 @@ async function parseNdjsonStream(response, onStage) {
     throw createApiError('BAD_RESPONSE', 'Account processing ended before returning a result.');
 }
 
+function sanitizeMultipartHeaderValue(value, fallback) {
+    const normalized = String(value || '').replace(/[\r\n"\\]/g, '_').slice(0, 160);
+    return normalized || fallback;
+}
+
+function sanitizeContentType(value, fallback = 'application/octet-stream') {
+    const normalized = String(value || '').trim().toLowerCase();
+    return /^[a-z0-9!#$&^_.+-]+\/[a-z0-9!#$&^_.+-]+$/.test(normalized) ? normalized : fallback;
+}
+
 function buildMultipartBody(fields, file) {
     const boundary = `----koe-desktop-${randomBytes(12).toString('hex')}`;
     const parts = [];
@@ -118,10 +128,14 @@ function buildMultipartBody(fields, file) {
         ));
     }
 
+    const fieldName = sanitizeMultipartHeaderValue(file.fieldName, 'audio');
+    const filename = sanitizeMultipartHeaderValue(file.filename, 'audio.wav');
+    const contentType = sanitizeContentType(file.contentType, 'audio/wav');
+
     parts.push(Buffer.from(
         `--${boundary}\r\n` +
-        `Content-Disposition: form-data; name="${file.fieldName}"; filename="${file.filename}"\r\n` +
-        `Content-Type: ${file.contentType}\r\n\r\n`
+        `Content-Disposition: form-data; name="${fieldName}"; filename="${filename}"\r\n` +
+        `Content-Type: ${contentType}\r\n\r\n`
     ));
     parts.push(Buffer.from(file.bytes));
     parts.push(Buffer.from(`\r\n--${boundary}--\r\n`));
@@ -149,8 +163,8 @@ async function processViaAuthenticatedBackend(taskItem, processingContext) {
         mode: taskItem.mode || ''
     }, {
         fieldName: 'audio',
-        filename: 'audio.wav',
-        contentType: 'audio/wav',
+        filename: taskItem.fileName || 'audio.wav',
+        contentType: taskItem.contentType || 'audio/wav',
         bytes: taskItem.wavBuffer
     });
 

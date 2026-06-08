@@ -137,7 +137,8 @@ export async function POST(request: Request) {
     }
 
     const serverAudioSeconds = await deriveAudioSeconds(audio);
-    const billableAudioSeconds = serverAudioSeconds ?? clientEstimatedAudioSeconds;
+    const requestedOrDefaultMode = requestedMode || auth.user.defaultMode;
+    const billableAudioSeconds = serverAudioSeconds ?? (requestedOrDefaultMode === "managed" ? 0 : clientEstimatedAudioSeconds);
 
     const existing = one<{
       id: string;
@@ -184,7 +185,7 @@ export async function POST(request: Request) {
       estimatedAudioSeconds: billableAudioSeconds,
     });
 
-    if (resolvedMode.mode === "managed" && !billableAudioSeconds) {
+    if (resolvedMode.mode === "managed" && !serverAudioSeconds) {
       throw new ApiError(
         "BAD_REQUEST",
         "Could not determine audio duration for managed processing.",

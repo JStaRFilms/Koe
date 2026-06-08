@@ -1,7 +1,8 @@
 const { ipcMain, dialog, shell, app } = require('electron');
+const { randomUUID } = require('crypto');
 const { CHANNELS } = require('../shared/constants');
 const { getSettings, setSettings } = require('./services/settings');
-const { validateApiKey } = require('./services/groq');
+const { validateApiKey, processAudio } = require('./services/groq');
 const accountClient = require('./services/account-client');
 const rateLimiter = require('./services/rate-limiter');
 const historyService = require('./services/history');
@@ -16,7 +17,53 @@ const { applyAutoUpdatePreference } = require('./services/updater');
 const logger = require('./services/logger');
 const fs = require('fs');
 
+const MAX_AUDIO_UPLOAD_BYTES = 20 * 1024 * 1024;
+
 let mainWindowRef = null;
+
+function sanitizeUploadFileName(fileName = '') {
+    const normalized = String(fileName || '').trim().replace(/[\r\n"\\]/g, '_').slice(0, 160);
+    return normalized || 'audio-upload';
+}
+
+function inferAudioContentType(fileName = '', explicitType = '') {
+    const normalizedType = String(explicitType || '').trim().toLowerCase();
+    const allowedTypes = new Set(['audio/mpeg', 'audio/mp4', 'audio/wav', 'audio/webm', 'audio/ogg', 'audio/flac', 'audio/aac', 'audio/x-caf']);
+    if (allowedTypes.has(normalizedType)) {
+        return normalizedType;
+    }
+
+    const normalizedName = String(fileName || '').trim().toLowerCase();
+    if (normalizedName.endsWith('.mp3')) return 'audio/mpeg';
+    if (normalizedName.endsWith('.m4a')) return 'audio/mp4';
+    if (normalizedName.endsWith('.wav')) return 'audio/wav';
+    if (normalizedName.endsWith('.webm')) return 'audio/webm';
+    if (normalizedName.endsWith('.ogg')) return 'audio/ogg';
+    if (normalizedName.endsWith('.flac')) return 'audio/flac';
+    if (normalizedName.endsWith('.aac')) return 'audio/aac';
+    if (normalizedName.endsWith('.mp4')) return 'audio/mp4';
+    return 'application/octet-stream';
+}
+
+function toBuffer(input) {
+    if (!input) {
+        return Buffer.alloc(0);
+    }
+
+    if (Buffer.isBuffer(input)) {
+        return input;
+    }
+
+    if (input instanceof ArrayBuffer) {
+        return Buffer.from(new Uint8Array(input));
+    }
+
+    if (ArrayBuffer.isView(input)) {
+        return Buffer.from(input.buffer, input.byteOffset, input.byteLength);
+    }
+
+    throw new Error('Unsupported audio upload payload.');
+}
 
 async function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
@@ -113,6 +160,46 @@ function setupIpcHandlers(mainWindow) {
             logger.warn('[Usage] Could not load account quota snapshot:', error.message);
             return stats;
         }
+    });
+    ipcMain.handle(CHANNELS.PROCESS_AUDIO_UPLOAD, async (event, payload) => {
+        const fileName = sanitizeUploadFileName(payload?.fileName);
+        const audioBuffer = toBuffer(payload?.audioData);
+
+        if (audioBuffer.length === 0) {
+            throw new Error('No audio file was selected.');
+        }
+
+        if (audioBuffer.length > MAX_AUDIO_UPLOAD_BYTES) {
+            throw new Error('Audio file is too large. Keep uploads under 20 MB.');
+        }
+
+        const result = await processAudio(audioBuffer, Number(payload?.audioSeconds || 0) || 0, {
+            requestId: randomUUID(),
+            clientSessionId: `desktop-upload-${randomUUID()}`,
+            fileName,
+            contentType: inferAudioContentType(fileName, payload?.contentType)
+        });
+
+        const rawText = String(result?.rawText || '').trim();
+        const refinedText = String(result?.refinedText || '').trim() || rawText;
+
+        if (!result?.empty && (rawText || refinedText)) {
+            const settings = getSettings();
+            historyService.addHistoryEntry({
+                rawText,
+                refinedText,
+                language: settings.language || 'auto',
+                isLlamaEnhanced: refinedText !== rawText,
+                source: 'upload'
+            });
+        }
+
+        return {
+            rawText,
+            refinedText,
+            empty: Boolean(result?.empty) || (!rawText && !refinedText),
+            fileName
+        };
     });
     ipcMain.handle(CHANNELS.GET_HISTORY, async () => historyService.getHistory());
     ipcMain.handle(CHANNELS.CLEAR_HISTORY, async () => historyService.clearHistory());

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AccountPanel } from "./AccountPanel";
+import { AudioUploadPanel } from "./AudioUploadPanel";
 import { AuthPanel } from "./AuthPanel";
 import { HistoryPanel } from "./HistoryPanel";
 import { RecorderPanel } from "./RecorderPanel";
@@ -28,9 +29,11 @@ export function WebKoeApp() {
   const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [phase, setPhase] = useState<AppPhase>("idle");
+  const [uploadPhase, setUploadPhase] = useState<AppPhase>("idle");
   const [busyLabel, setBusyLabel] = useState("");
   const [status, setStatus] = useState("Sign in to use Koe in the browser.");
   const [transcript, setTranscript] = useState("");
+  const [uploadTranscript, setUploadTranscript] = useState("");
   const { copiedEntryId, copyState, copyText, setCopyState } = useCopyFeedback(setStatus);
   const { requestPasswordReset, requestVerification } = useAuthEmailFlows({ email, token, setBusyLabel, setStatus });
   const modeCopy = useMemo(() => {
@@ -105,6 +108,44 @@ export function WebKoeApp() {
     }
   }, [loadSnapshot, snapshot, token]);
 
+  const processUploadedAudio = useCallback(async (audioFile: File, audioSeconds: number) => {
+    if (!token || !snapshot) {
+      setStatus("Sign in before uploading audio.");
+      return;
+    }
+
+    setUploadPhase("processing");
+    setUploadTranscript("");
+    setStatus("Uploading audio through your signed-in Koe account...");
+    try {
+      const clientSessionId = `web-upload-${crypto.randomUUID()}`;
+      const form = new FormData();
+      form.append("audio", audioFile, audioFile.name || "koe-upload-audio");
+      form.append("requestId", crypto.randomUUID());
+      form.append("clientSessionId", clientSessionId);
+      form.append("audioSeconds", String(audioSeconds));
+      form.append("mode", snapshot.user.defaultMode);
+      form.append("language", snapshot.settings.language || "auto");
+      form.append("model", snapshot.settings.model || "whisper-large-v3-turbo");
+      form.append("promptStyle", snapshot.settings.promptStyle || "Clean");
+      form.append("customPrompt", snapshot.settings.customPrompt || "");
+      form.append("enhanceText", String(snapshot.settings.enhanceText !== false));
+
+      const response = await fetch("/api/v1/process", { method: "POST", headers: authHeaders(token), body: form });
+      const payload = (await response.json().catch(() => ({}))) as { rawText?: string; refinedText?: string; empty?: boolean; error?: { message?: string } };
+      if (!response.ok) throw new Error(payload.error?.message || "Audio upload processing failed.");
+
+      const text = (payload.refinedText || payload.rawText || "").trim();
+      setUploadTranscript(text);
+      setUploadPhase("done");
+      setStatus(payload.empty || !text ? "No clear speech detected in uploaded audio." : "Uploaded audio transcript saved to your account history.");
+      await loadSnapshot(token);
+    } catch (error) {
+      setUploadPhase("error");
+      setStatus(error instanceof Error ? error.message : "Audio upload processing failed.");
+    }
+  }, [loadSnapshot, snapshot, token]);
+
   const recorder = useWebRecorder({
     onBeforeStart: () => {
       activeClientSessionIdRef.current = createWebClientSessionId();
@@ -163,7 +204,9 @@ export function WebKoeApp() {
       setSnapshot(null);
       setStoredToken(null);
       setTranscript("");
+      setUploadTranscript("");
       setPhase("idle");
+      setUploadPhase("idle");
       setBusyLabel("");
       setStatus("Signed out.");
     }
@@ -192,6 +235,7 @@ export function WebKoeApp() {
 
   const accountPanel = <AccountPanel snapshot={snapshot} modeCopy={modeCopy} busyLabel={busyLabel} onRefresh={() => void loadSnapshot()} onRequestVerification={() => void requestVerification()} onSignOut={() => void signOut()} onSwitchMode={(mode) => void switchMode(mode)} onStartCheckout={(planCode) => void startCheckout(planCode)} onChangePlan={(planCode) => void changePlan(planCode)} onCancelPlan={() => void cancelPlan()} />;
   const recorderPanel = <RecorderPanel phase={phase} transcript={transcript} inputLevel={recorder.inputLevel} busyLabel={busyLabel} isSupported={recorder.isSupported} copyState={copyState} onRecordToggle={phase === "recording" ? recorder.stopRecording : () => void recorder.startRecording()} onCopy={() => void copyText(transcript)} onClear={() => { setTranscript(""); setPhase("idle"); setStatus("Transcript cleared."); }} />;
+  const uploadPanel = <AudioUploadPanel phase={uploadPhase} transcript={uploadTranscript} busyLabel={busyLabel} copyState={copyState} onUpload={(file, audioSeconds) => void processUploadedAudio(file, audioSeconds)} onCopy={() => void copyText(uploadTranscript)} onClear={() => { setUploadTranscript(""); setUploadPhase("idle"); setStatus("Upload cleared."); }} />;
   const historyPanel = <HistoryPanel history={snapshot.recentHistory} copiedEntryId={copiedEntryId} onCopyEntry={(id, text) => void copyText(text, id)} />;
 
   return (
@@ -200,13 +244,14 @@ export function WebKoeApp() {
 
       <div className="md:hidden space-y-4">
         {activeTab === "record" ? <>{recorderPanel}<StatusNotice busyLabel={busyLabel} status={status} isSupported={recorder.isSupported} /></> : null}
+        {activeTab === "upload" ? <>{uploadPanel}<StatusNotice busyLabel={busyLabel} status={status} isSupported /></> : null}
         {activeTab === "account" ? accountPanel : null}
         {activeTab === "history" ? historyPanel : null}
       </div>
 
       <div className="hidden md:grid lg:grid-cols-[0.85fr_1.15fr] gap-8">
         {accountPanel}
-        <div className="space-y-6">{recorderPanel}<StatusNotice busyLabel={busyLabel} status={status} isSupported={recorder.isSupported} />{historyPanel}</div>
+        <div className="space-y-6">{recorderPanel}{uploadPanel}<StatusNotice busyLabel={busyLabel} status={status} isSupported={recorder.isSupported} />{historyPanel}</div>
       </div>
     </section>
   );

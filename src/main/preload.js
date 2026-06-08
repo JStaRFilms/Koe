@@ -53,6 +53,7 @@ contextBridge.exposeInMainWorld('api', {
     sendAudioSegment: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SEGMENT, payload),
     sendAudioChunk: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SEGMENT, payload),
     notifyAudioSessionStopped: (payload) => ipcRenderer.send(CHANNELS.AUDIO_SESSION_STOPPED, payload),
+    processAudioUpload: (payload) => ipcRenderer.invoke(CHANNELS.PROCESS_AUDIO_UPLOAD, payload),
 
     // Window Controls
     hideWindow: () => ipcRenderer.send(CHANNELS.WINDOW_HIDE),

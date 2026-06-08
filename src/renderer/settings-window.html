@@ -274,6 +274,30 @@
                                     <textarea id="custom-prompt" rows="6" placeholder="Tell the refinement layer how to behave."></textarea>
                                     <small class="input-help">Used first during enhancement. Clear it to fall back to the style preset.</small>
                                 </div>
+
+                                <div class="settings-fieldset upload-fieldset">
+                                    <div class="fieldset-label">Audio file upload</div>
+                                    <div class="setting-group">
+                                        <label>Transcribe an existing audio file</label>
+                                        <small class="input-help">Uses the same desktop processing pipeline as recording. Signed-in account mode stays proxied through Koe, while local BYOK stays direct to Groq.</small>
+                                        <input type="file" id="audio-upload-file" accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg,.flac,.aac,.mp4" hidden>
+                                        <div class="upload-action-row">
+                                            <button class="secondary-btn" id="btn-audio-upload-select" type="button">Choose File</button>
+                                            <button class="primary-btn compact" id="btn-audio-upload-process" type="button">Process File</button>
+                                            <button class="secondary-btn subtle" id="btn-audio-upload-clear" type="button">Clear</button>
+                                        </div>
+                                        <div class="upload-selection-card" id="audio-upload-selection">No audio file selected yet.</div>
+                                        <div class="test-result" id="audio-upload-status"></div>
+                                    </div>
+
+                                    <div class="setting-group">
+                                        <label>Upload transcript</label>
+                                        <textarea id="audio-upload-result" class="upload-result" rows="8" placeholder="Processed upload transcripts will appear here." readonly></textarea>
+                                        <div class="compact-actions">
+                                            <button class="secondary-btn" id="btn-audio-upload-copy" type="button">Copy Transcript</button>
+                                        </div>
+                                    </div>
+                                </div>
                             </section>
 
                             <!-- ═══════ LOCAL BYOK ═══════ -->

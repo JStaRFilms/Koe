@@ -1,7 +1,7 @@
 export type AccountMode = "byok" | "managed";
 export type AppPhase = "idle" | "recording" | "processing" | "done" | "error";
 export type AuthMode = "signin" | "signup" | "reset";
-export type WebAppTab = "record" | "account" | "history";
+export type WebAppTab = "record" | "upload" | "account" | "history";
 export type BillingPlanCode = "managed_lite" | "managed_plus" | "managed_pro";
 export type BillingPlanTarget = BillingPlanCode | "managed_free";
 
