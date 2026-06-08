@@ -470,38 +470,92 @@
                 <div class="settings-fieldset upload-fieldset">
                     <div class="fieldset-label">Audio file upload</div>
                     <div class="setting-group">
-                        <label>Transcribe an existing audio file</label>
-                        <small class="input-help">Uses the same desktop processing pipeline as recording. Signed-in account mode stays proxied through Koe, while local BYOK stays direct to Groq.</small>
-                        <input type="file" id="audio-upload-file" accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg,.flac,.aac,.mp4" hidden>
-                        <div class="setting-toggle-row upload-refine-toggle">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="audio-upload-enhance" checked>
-                                <span>Refine after transcription</span>
-                            </label>
-                            <small class="input-help">On: return raw + polished text. Off: return raw transcription only.</small>
+                        <div class="upload-dropzone" id="audio-upload-dropzone">
+                            <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                <polyline points="17 8 12 3 7 8" />
+                                <line x1="12" y1="3" x2="12" y2="15" />
+                            </svg>
+                            <div class="dropzone-text">Drag & drop your audio file here or <span class="dropzone-browse">browse files</span></div>
+                            <div class="dropzone-subtext">Supports WAV, MP3, M4A, WEBM, FLAC up to 20 MB</div>
+                            <input type="file" id="audio-upload-file" accept="audio/*,.wav,.mp3,.m4a,.webm,.ogg,.flac,.aac,.mp4" hidden>
                         </div>
+
+                        <div class="setting-row-card upload-refine-row">
+                            <div class="setting-label-col">
+                                <label for="audio-upload-enhance" class="checkbox-label" style="cursor: pointer;">Refine transcription with AI</label>
+                                <small class="input-help">Cleans grammar, formats structure, and polishes the transcript automatically.</small>
+                            </div>
+                            <label class="switch-toggle">
+                                <input type="checkbox" id="audio-upload-enhance" checked>
+                                <span class="switch-slider"></span>
+                            </label>
+                        </div>
+
                         <div class="upload-action-row">
-                            <button class="secondary-btn" id="btn-audio-upload-select" type="button">Choose File</button>
+                            <button class="secondary-btn" id="btn-audio-upload-select" type="button">
+                                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 2px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                Choose File
+                            </button>
                             <button class="primary-btn compact" id="btn-audio-upload-process" type="button">Transcribe + Refine</button>
                             <button class="secondary-btn subtle" id="btn-audio-upload-clear" type="button">Clear</button>
                         </div>
+
                         <div class="upload-selection-card" id="audio-upload-selection">No audio file selected yet.</div>
+                        
+                        <div class="upload-loader-container" id="upload-loader" style="display: none;">
+                            <div class="waveform-loader">
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                                <div class="waveform-bar"></div>
+                            </div>
+                            <span class="loader-text">Processing audio pipeline...</span>
+                        </div>
+
                         <div class="test-result" id="audio-upload-status"></div>
                     </div>
 
-                    <div class="setting-group upload-transcript-grid">
-                        <div>
-                            <label>Raw transcript</label>
-                            <textarea id="audio-upload-raw-result" class="upload-result" rows="8" placeholder="Raw transcript appears here." readonly></textarea>
-                            <div class="compact-actions">
-                                <button class="secondary-btn" id="btn-audio-upload-copy-raw" type="button">Copy Raw</button>
+                    <div class="setting-group upload-transcript-grid-wrapper">
+                        <div class="upload-transcript-grid">
+                            <div class="transcript-card-container">
+                                <div class="transcript-card-header">
+                                    <span class="transcript-card-title">Raw Transcript</span>
+                                    <div class="transcript-metrics">
+                                        <span class="metric-badge" id="raw-char-count">0 chars</span>
+                                        <span class="metric-badge" id="raw-word-count">0 words</span>
+                                    </div>
+                                </div>
+                                <textarea id="audio-upload-raw-result" class="upload-result" rows="8" placeholder="Raw transcript will appear here." readonly></textarea>
+                                <div class="compact-actions">
+                                    <button class="secondary-btn" id="btn-audio-upload-copy-raw" type="button">
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                        <span>Copy Raw</span>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                        <div>
-                            <label>Refined transcript</label>
-                            <textarea id="audio-upload-result" class="upload-result" rows="8" placeholder="Refined transcript appears here when enabled." readonly></textarea>
-                            <div class="compact-actions">
-                                <button class="secondary-btn" id="btn-audio-upload-copy" type="button">Copy Refined</button>
+                            <div class="transcript-card-container">
+                                <div class="transcript-card-header">
+                                    <span class="transcript-card-title">Refined Transcript</span>
+                                    <div class="transcript-metrics">
+                                        <span class="metric-badge" id="refined-char-count">0 chars</span>
+                                        <span class="metric-badge" id="refined-word-count">0 words</span>
+                                    </div>
+                                </div>
+                                <textarea id="audio-upload-result" class="upload-result" rows="8" placeholder="Refined transcript will appear here." readonly></textarea>
+                                <div class="compact-actions">
+                                    <button class="secondary-btn" id="btn-audio-upload-copy" type="button">
+                                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;">
+                                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                        </svg>
+                                        <span>Copy Refined</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

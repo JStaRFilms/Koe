@@ -38,6 +38,15 @@ export class SettingsPanel {
         this.btnAudioUploadCopyRaw = document.getElementById('btn-audio-upload-copy-raw');
         this.btnAudioUploadCopy = document.getElementById('btn-audio-upload-copy');
 
+        // Redesigned elements
+        this.uploadDropzone = document.getElementById('audio-upload-dropzone');
+        this.uploadLoader = document.getElementById('upload-loader');
+        this.rawCharCount = document.getElementById('raw-char-count');
+        this.rawWordCount = document.getElementById('raw-word-count');
+        this.refinedCharCount = document.getElementById('refined-char-count');
+        this.refinedWordCount = document.getElementById('refined-word-count');
+        this.selectedAudioUrl = null;
+
         this.btnUploadShowRefined = document.getElementById('btn-upload-show-refined');
         this.btnUploadShowRaw = document.getElementById('btn-upload-show-raw');
         this.wrapperUploadRaw = document.getElementById('wrapper-upload-raw');
@@ -178,26 +187,55 @@ export class SettingsPanel {
             return;
         }
 
+        // Clean up previous URL if any
+        if (this.selectedAudioUrl) {
+            URL.revokeObjectURL(this.selectedAudioUrl);
+            this.selectedAudioUrl = null;
+        }
+
         if (!this.selectedAudioUploadFile) {
             this.audioUploadSelection.innerHTML = 'No audio file selected yet.';
+            this.audioUploadSelection.style.display = 'block';
             this.updateAudioUploadButtons();
             return;
         }
 
-        const durationLabel = this.formatAudioSeconds(this.audioUploadEstimatedSeconds);
+        this.audioUploadSelection.style.display = 'block';
         this.audioUploadSelection.replaceChildren();
 
         const title = document.createElement('strong');
         title.textContent = this.selectedAudioUploadFile.name;
 
+        const durationLabel = this.formatAudioSeconds(this.audioUploadEstimatedSeconds);
         const meta = document.createElement('div');
         meta.textContent = `${this.formatBytes(this.selectedAudioUploadFile.size)} · ${durationLabel}`;
 
         const help = document.createElement('div');
         help.textContent = 'Uploads use your saved desktop settings plus the currently resolved account mode.';
         help.style.marginTop = '8px';
+        help.className = 'input-help';
 
-        this.audioUploadSelection.append(title, meta, help);
+        // Add audio preview player
+        const previewContainer = document.createElement('div');
+        previewContainer.className = 'audio-preview-container';
+
+        const previewTitle = document.createElement('label');
+        previewTitle.textContent = 'Audio Preview';
+        previewTitle.style.fontSize = '10px';
+        previewTitle.style.fontWeight = 'bold';
+        previewTitle.style.textTransform = 'uppercase';
+        previewTitle.style.color = 'var(--koe-text-muted)';
+
+        this.selectedAudioUrl = URL.createObjectURL(this.selectedAudioUploadFile);
+
+        const player = document.createElement('audio');
+        player.className = 'audio-preview-player';
+        player.controls = true;
+        player.src = this.selectedAudioUrl;
+
+        previewContainer.append(previewTitle, player);
+
+        this.audioUploadSelection.append(title, meta, previewContainer, help);
         this.updateAudioUploadButtons();
     }
 
@@ -234,9 +272,31 @@ export class SettingsPanel {
         if (this.audioUploadResult) {
             this.audioUploadResult.value = '';
         }
+        this.updateTranscriptMetrics();
         this.updateAudioUploadToggleVisibility(false);
         this.showRefinedTranscript();
         this.updateAudioUploadButtons();
+    }
+
+    updateTranscriptMetrics() {
+        const rawText = this.audioUploadRawResult?.value || '';
+        const refinedText = this.audioUploadResult?.value || '';
+
+        if (this.rawCharCount) {
+            this.rawCharCount.textContent = `${rawText.length} char${rawText.length === 1 ? '' : 's'}`;
+        }
+        if (this.rawWordCount) {
+            const words = rawText.trim() ? rawText.trim().split(/\s+/).length : 0;
+            this.rawWordCount.textContent = `${words} word${words === 1 ? '' : 's'}`;
+        }
+
+        if (this.refinedCharCount) {
+            this.refinedCharCount.textContent = `${refinedText.length} char${refinedText.length === 1 ? '' : 's'}`;
+        }
+        if (this.refinedWordCount) {
+            const words = refinedText.trim() ? refinedText.trim().split(/\s+/).length : 0;
+            this.refinedWordCount.textContent = `${words} word${words === 1 ? '' : 's'}`;
+        }
     }
 
     updateAudioUploadToggleVisibility(visible) {
@@ -335,6 +395,9 @@ export class SettingsPanel {
         this.audioUploadBusy = true;
         this.updateAudioUploadButtons();
         this.clearAudioUploadStatus();
+        if (this.uploadLoader) {
+            this.uploadLoader.style.display = 'flex';
+        }
 
         try {
             const audioData = await this.selectedAudioUploadFile.arrayBuffer();
@@ -356,6 +419,8 @@ export class SettingsPanel {
             if (this.audioUploadResult) {
                 this.audioUploadResult.value = shouldEnhance ? (refinedTranscript || rawTranscript) : '';
             }
+
+            this.updateTranscriptMetrics();
 
             const hasDistinctRaw = rawTranscript && refinedTranscript && rawTranscript !== refinedTranscript;
             if (shouldEnhance && hasDistinctRaw) {
@@ -382,18 +447,35 @@ export class SettingsPanel {
             this.showAudioUploadStatus(this.cleanActionErrorMessage(error, 'Audio upload failed.'), false);
         } finally {
             this.audioUploadBusy = false;
+            if (this.uploadLoader) {
+                this.uploadLoader.style.display = 'none';
+            }
             this.updateAudioUploadButtons();
         }
     }
 
     async copyAudioUploadTranscript(source = 'refined') {
+        const targetBtn = source === 'raw' ? this.btnAudioUploadCopyRaw : this.btnAudioUploadCopy;
         const transcript = String((source === 'raw' ? this.audioUploadRawResult : this.audioUploadResult)?.value || '').trim();
-        if (!transcript) {
+        if (!transcript || !targetBtn) {
             return;
         }
 
         try {
             await navigator.clipboard.writeText(transcript);
+            
+            // Add premium visual copy feedback
+            const originalHTML = targetBtn.innerHTML;
+            targetBtn.classList.add('copy-success');
+            
+            const checkIcon = `<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+            targetBtn.innerHTML = `${checkIcon}<span>Copied ✓</span>`;
+            
+            setTimeout(() => {
+                targetBtn.classList.remove('copy-success');
+                targetBtn.innerHTML = originalHTML;
+            }, 1500);
+
             this.showAudioUploadStatus(source === 'raw' ? 'Copied raw upload transcript ✓' : 'Copied refined upload transcript ✓', true);
         } catch (_error) {
             this.showAudioUploadStatus('Could not copy the upload transcript.', false);
@@ -440,6 +522,32 @@ export class SettingsPanel {
             this.inputHotkey.addEventListener('focus', () => this.startHotkeyRecording());
             this.inputHotkey.addEventListener('blur', () => this.stopHotkeyRecording());
             this.inputHotkey.addEventListener('keydown', (e) => this.handleHotkeyInput(e));
+        }
+
+        // Drag & Drop Dropzone listener
+        if (this.uploadDropzone) {
+            this.uploadDropzone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                this.uploadDropzone.classList.add('dragover');
+            });
+            this.uploadDropzone.addEventListener('dragleave', () => {
+                this.uploadDropzone.classList.remove('dragover');
+            });
+            this.uploadDropzone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                this.uploadDropzone.classList.remove('dragover');
+                const file = e.dataTransfer?.files?.[0];
+                if (file) {
+                    const mockEvent = { target: { files: [file] } };
+                    void this.handleAudioUploadSelection(mockEvent);
+                }
+            });
+            this.uploadDropzone.addEventListener('click', (e) => {
+                // Prevent trigger loop when clicking the file input itself
+                if (e.target !== this.inputAudioUploadFile) {
+                    this.inputAudioUploadFile?.click();
+                }
+            });
         }
 
         this.inputAudioUploadFile?.addEventListener('change', (event) => {
