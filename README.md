@@ -11,7 +11,7 @@
 
 ---
 
-## What is Koe?
+## What is Koe? 
 
 **Koe** (声, Japanese for "voice") is a free, open-source alternative to subscription-based voice dictation tools. Press a hotkey (Desktop) or a button (Mobile), speak naturally, and get polished AI text typed at your cursor or copied to your clipboard.
 
