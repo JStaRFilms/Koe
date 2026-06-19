@@ -73,7 +73,7 @@ export interface AccountSnapshot {
   };
   accountActivity?: AccountActivitySummary;
   deviceActivity?: AccountActivitySummary;
-  recentHistory: Array<{
+  recentHistory: {
     id: string;
     requestId: string;
     requestIds?: string[];
@@ -88,7 +88,7 @@ export interface AccountSnapshot {
     refinedText: string | null;
     audioSeconds: number;
     createdAt: string | null;
-  }>;
+  }[];
   policy: {
     mobilePurchaseUiEnabled: boolean;
   };
@@ -100,11 +100,11 @@ export interface AccountActivitySummary {
   processingCallsToday: number;
   transcriptionCallsToday: number;
   refinementCallsToday: number;
-  sourceBreakdown: Array<{
+  sourceBreakdown: {
     source: AccountPlatform | 'desktop' | 'unknown';
     recordingsToday: number;
     audioSecondsToday: number;
-  }>;
+  }[];
 }
 
 export interface AccountSessionResponse {

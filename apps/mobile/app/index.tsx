@@ -9,7 +9,7 @@ import {
   Easing,
   Dimensions,
 } from 'react-native';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Colors, Spacing, Typography } from '../src/constants/Theme';
 import { RECORDER_STATES, type ScreenStage } from '../src/constants/RecorderStates';
 import { useRecordingPipeline } from '../src/hooks/use-recording-pipeline';
@@ -43,8 +43,8 @@ export default function RecorderScreen() {
 
   const stage = status.stage as ScreenStage;
   const stateMeta = RECORDER_STATES[stage];
-  const waveBars = useRef(Array.from({ length: 8 }, () => new Animated.Value(8))).current;
-  const sweepValue = useRef(new Animated.Value(0)).current;
+  const waveBars = useMemo(() => Array.from({ length: 8 }, () => new Animated.Value(8)), []);
+  const sweepValue = useMemo(() => new Animated.Value(0), []);
   const [enhanceImportedAudio, setEnhanceImportedAudio] = useState(true);
   const [accountDeviceUsage, setAccountDeviceUsage] = useState<{
     recordingsToday: number;

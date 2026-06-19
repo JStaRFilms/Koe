@@ -264,7 +264,7 @@ export class MobileGroqProvider implements TranscriptionProvider {
     }
 
     if (typeof payload === 'object' && payload && 'choices' in payload) {
-      const content = (payload as { choices?: Array<{ message?: { content?: string } }> }).choices?.[0]
+      const content = (payload as { choices?: { message?: { content?: string } }[] }).choices?.[0]
         ?.message?.content;
       return sanitizeRefinedText(content || trimmed) || trimmed;
     }
