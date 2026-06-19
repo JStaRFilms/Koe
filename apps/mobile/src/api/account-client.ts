@@ -71,18 +71,8 @@ export interface AccountSnapshot {
     model: string;
     updatedAt?: string | null;
   };
-  accountActivity?: {
-    recordingsToday: number;
-    audioSecondsToday: number;
-    processingCallsToday: number;
-    transcriptionCallsToday: number;
-    refinementCallsToday: number;
-    sourceBreakdown: Array<{
-      source: AccountPlatform | 'desktop' | 'unknown';
-      recordingsToday: number;
-      audioSecondsToday: number;
-    }>;
-  };
+  accountActivity?: AccountActivitySummary;
+  deviceActivity?: AccountActivitySummary;
   recentHistory: Array<{
     id: string;
     requestId: string;
@@ -102,6 +92,19 @@ export interface AccountSnapshot {
   policy: {
     mobilePurchaseUiEnabled: boolean;
   };
+}
+
+export interface AccountActivitySummary {
+  recordingsToday: number;
+  audioSecondsToday: number;
+  processingCallsToday: number;
+  transcriptionCallsToday: number;
+  refinementCallsToday: number;
+  sourceBreakdown: Array<{
+    source: AccountPlatform | 'desktop' | 'unknown';
+    recordingsToday: number;
+    audioSecondsToday: number;
+  }>;
 }
 
 export interface AccountSessionResponse {

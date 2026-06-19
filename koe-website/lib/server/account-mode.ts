@@ -28,7 +28,7 @@ type UsagePeriodRow = {
 };
 
 export type ResolvedMode =
-  | { mode: "byok"; provider: "groq"; credentialId: string; reason: "byok_credential_present" }
+  | { mode: "byok"; provider: "groq"; credentialId: string; credential?: CredentialRow; reason: "byok_credential_present" }
   | { mode: "managed"; provider: "groq"; allocationId: string; reason: "managed_allocation_active" };
 
 export function currentPeriodKey(date = new Date()) {
@@ -153,6 +153,7 @@ export async function resolveAccountMode(args: {
       mode: "byok",
       provider: "groq",
       credentialId: capabilities.credential.id,
+      credential: capabilities.credential,
       reason: "byok_credential_present",
     } satisfies ResolvedMode;
   }
@@ -204,7 +205,7 @@ export async function resolveProviderApiKey(userId: string, resolvedMode: Resolv
     return key;
   }
 
-  const credential = await getActiveCredential(userId);
+  const credential = resolvedMode.credential ?? await getActiveCredential(userId);
   if (!credential || credential.id !== resolvedMode.credentialId) {
     throw new ApiError("MISSING_BYOK_CREDENTIAL", "Save a Groq API key before using BYOK mode.", 409);
   }

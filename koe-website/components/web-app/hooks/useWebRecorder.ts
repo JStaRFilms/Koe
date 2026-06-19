@@ -12,7 +12,7 @@ type WindowWithAudioContext = Window & {
   webkitAudioContext?: typeof AudioContext;
 };
 
-const DEFAULT_MAX_RECORDING_MS = 90_000;
+const DEFAULT_MAX_RECORDING_MS = 4.5 * 60_000;
 
 function getAudioContextCtor() {
   if (typeof window === "undefined") {
@@ -166,6 +166,7 @@ export function useWebRecorder({
 
       stopTimeoutRef.current = window.setTimeout(() => {
         if (mediaRecorderRef.current?.state === "recording") {
+          onStatus("Reached the web recording safety limit. Processing audio...");
           mediaRecorderRef.current.stop();
         }
       }, maxRecordingMs);

@@ -141,10 +141,7 @@ export async function POST(request: Request) {
       return apiError("AUDIO_TOO_LARGE", "Audio file too large. Keep uploads under 20 MB.", 413);
     }
 
-    phase = "derive_duration";
-    const serverAudioSeconds = await deriveAudioSeconds(audio);
     const requestedOrDefaultMode = requestedMode || auth.user.defaultMode;
-    const billableAudioSeconds = serverAudioSeconds ?? (requestedOrDefaultMode === "managed" ? 0 : clientEstimatedAudioSeconds);
 
     phase = "check_existing_history";
     const existing = one<{
@@ -184,6 +181,19 @@ export async function POST(request: Request) {
       return stream ? ndjsonResponse([{ type: "complete", ...payload }]) : NextResponse.json(payload);
     }
 
+    phase = "derive_duration";
+    const shouldRequireServerDuration = requestedOrDefaultMode === "managed" || clientEstimatedAudioSeconds <= 0;
+    const serverAudioSeconds = shouldRequireServerDuration ? await deriveAudioSeconds(audio) : null;
+    const billableAudioSeconds = serverAudioSeconds ?? (requestedOrDefaultMode === "managed" ? 0 : clientEstimatedAudioSeconds);
+
+    if (requestedOrDefaultMode === "managed" && !serverAudioSeconds) {
+      throw new ApiError(
+        "BAD_REQUEST",
+        "Could not determine audio duration for managed processing.",
+        400,
+      );
+    }
+
     phase = "resolve_mode";
     const resolvedMode = await resolveAccountMode({
       userId: auth.user.id,
@@ -192,14 +202,6 @@ export async function POST(request: Request) {
       devicePlatform: auth.device?.platform,
       estimatedAudioSeconds: billableAudioSeconds,
     });
-
-    if (resolvedMode.mode === "managed" && !serverAudioSeconds) {
-      throw new ApiError(
-        "BAD_REQUEST",
-        "Could not determine audio duration for managed processing.",
-        400,
-      );
-    }
 
     phase = "resolve_provider_key";
     const apiKey = await resolveProviderApiKey(auth.user.id, resolvedMode);

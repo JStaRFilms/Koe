@@ -9,7 +9,7 @@ import {
   Easing,
   Dimensions,
 } from 'react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Colors, Spacing, Typography } from '../src/constants/Theme';
 import { RECORDER_STATES, type ScreenStage } from '../src/constants/RecorderStates';
 import { useRecordingPipeline } from '../src/hooks/use-recording-pipeline';
@@ -17,6 +17,8 @@ import { StatusCard } from '../src/components/StatusCard';
 import { GridBackground } from '../src/components/GridBackground';
 import { ScanlineOverlay } from '../src/components/ScanlineOverlay';
 import { BrutalButton } from '../src/components/BrutalButton';
+import { getAccountSnapshot } from '../src/api/account-client';
+import { getAccountSession } from '../src/storage/secure-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -44,6 +46,29 @@ export default function RecorderScreen() {
   const waveBars = useRef(Array.from({ length: 8 }, () => new Animated.Value(8))).current;
   const sweepValue = useRef(new Animated.Value(0)).current;
   const [enhanceImportedAudio, setEnhanceImportedAudio] = useState(true);
+  const [accountDeviceUsage, setAccountDeviceUsage] = useState<{
+    recordingsToday: number;
+    audioSecondsToday: number;
+  } | null>(null);
+
+  const refreshAccountDeviceUsage = useCallback(async () => {
+    try {
+      const session = await getAccountSession();
+      if (!session?.token) {
+        setAccountDeviceUsage(null);
+        return;
+      }
+
+      const snapshot = await getAccountSnapshot(session);
+      setAccountDeviceUsage(snapshot.deviceActivity ?? null);
+    } catch {
+      setAccountDeviceUsage(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshAccountDeviceUsage();
+  }, [refreshAccountDeviceUsage, usageStats?.requestCount, usageStats?.audioSecondsUsed]);
 
   useEffect(() => {
     Animated.parallel(
@@ -251,9 +276,11 @@ export default function RecorderScreen() {
 
         <View style={styles.footer}>
           <Text style={[styles.usageText, { color: theme.textDim }]}>
-            {usageStats
-              ? `This phone today: ${usageStats.requestCount} captures // ${usageStats.audioSecondsUsed}s audio`
-              : 'This phone usage updates after your first capture.'}
+            {accountDeviceUsage
+              ? `This signed-in device today: ${accountDeviceUsage.recordingsToday} captures // ${Math.round(accountDeviceUsage.audioSecondsToday)}s audio`
+              : usageStats
+                ? `This phone today: ${usageStats.requestCount} captures // ${usageStats.audioSecondsUsed}s audio`
+                : 'This phone usage updates after your first capture.'}
           </Text>
         </View>
       </ScrollView>
